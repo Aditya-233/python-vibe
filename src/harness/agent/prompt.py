@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from harness.act.autofix import apply_mechanical
 from harness.agent.options import AgentOptions
 from harness.locate import prelude, signature_line
 from harness.scan.project_brief import (
@@ -50,6 +51,7 @@ class Preamble:
     located_path: str = ""
     located_signature: str = ""
     pre_text: str = ""
+    autofix: str = ""
     notes: tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -82,6 +84,12 @@ def build_preamble(options: AgentOptions) -> Preamble:
     notes: list[str] = []
 
     pre_text, located_path = prelude(project, task, options.scope)
+    autofix = ""
+    if options.allow_writes and located_path:
+        autofix = apply_mechanical(project, task, located_path)
+        if autofix:
+            pre_text, located_path = prelude(project, task, options.scope)
+            pre_text = f"{pre_text}\n\n{autofix}" if pre_text else autofix
     located_signature = (
         signature_line(pre_text, question_symbol(task)) if pre_text else ""
     )
@@ -129,5 +137,6 @@ def build_preamble(options: AgentOptions) -> Preamble:
         located_path=located_path,
         located_signature=located_signature,
         pre_text=pre_text,
+        autofix=autofix,
         notes=tuple(notes),
     )

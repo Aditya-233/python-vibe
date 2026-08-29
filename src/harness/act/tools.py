@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from harness.act.autofix import apply_function_rename, apply_typo_fixes
 from harness.act.code import apply_source, read_project_file, resolve_project_file
 from harness.paths import is_secret_name, rel_posix, suffix_globs
 from harness.act.patch_fix import align_indent, find_match, miss_message
@@ -19,6 +20,7 @@ from harness.skillkit.style import (
     refuse_undefined_draft,
     refuse_weak_test,
 )
+from harness.task import looks_like_bugfix, looks_like_fix_smell, rename_pair
 from harness.scan.project_brief import render_map, resolve_scope
 from harness.scan.project_scan import SKIP_DIR
 from harness.scan.repo_map import render_outline
@@ -175,6 +177,13 @@ def patch_py(
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
     text = original
     note = ""
+    if looks_like_fix_smell(task):
+        old, new = rename_pair(task)
+        renamed = apply_function_rename(original, old, new)
+        if renamed != original:
+            text = renamed
+            note = " (harness renamed the def)"
+            find = ""
     if find:
         if len(find) < 8:
             return (
@@ -196,7 +205,7 @@ def patch_py(
             note = " (Find: matched after whitespace normalisation)"
         else:
             note = ""
-    elif not append:
+    elif text == original and not append:
         return "patch needs Find: or Append:"
     if append:
         repaired = repair_unittest_append(text, append)
@@ -205,6 +214,11 @@ def patch_py(
             if repaired is not None
             else text.rstrip() + "\n\n" + append.rstrip() + "\n"
         )
+    if looks_like_bugfix(task):
+        bound = apply_typo_fixes(text)
+        if bound != text:
+            text = bound
+            note = (note + " (harness bound unique NameError typo)").strip()
     blocked = _style_blocks(task, rel, original, text, fragment=append or replace)
     if blocked:
         return blocked

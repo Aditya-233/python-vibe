@@ -29,6 +29,7 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 - [Small models, classic development]({{ '/investigations/small-llm-harness/' | absolute_url }}): Oracles and refuses that make an 8B finish like a careful review.
 - [Fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | absolute_url }}): When new weights help. Not another 0.5B run. Not 30 seed traces.
 - [Model lanes]({{ '/investigations/model-lanes/' | absolute_url }}): Which local weight for which job. Default stays 8B.
+- [Hub models]({{ '/investigations/hub-models/' | absolute_url }}): Hugging Face weights to run or tune. 1.5B and 1B miss Action:.
 - [Platform engineering]({{ '/investigations/platform-engineering/' | absolute_url }}): pathlib, both venv layouts, config files, every OS.
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | absolute_url }}): Why the 0.5B LoRA is not daily work.
 - [Everyday skills]({{ '/investigations/everyday-skills/' | absolute_url }}): Skills are one copy-paste Action, written for an 8B.

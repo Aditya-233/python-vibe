@@ -75,6 +75,7 @@ class LoopState:
         last_path: file the most recent action applied to.
         ran_tests: whether the test suite has passed during this run.
         design_report: last deterministic structure scan, if any.
+        autofixed: the harness already applied a rename or unique typo.
         scope: optional subdirectory the run is limited to.
         questions_asked: how many questions the agent has put to the user.
         instructions: skill lines the model was given, used to detect a
@@ -91,6 +92,7 @@ class LoopState:
     last_path: str = ""
     ran_tests: bool = False
     design_report: str = ""
+    autofixed: bool = False
     scope: str = ""
     questions_asked: int = 0
     wrote_something: bool = False
@@ -129,6 +131,15 @@ def refuse_wrong_file(task: str, project: Path, action: str, path: str) -> str:
 
 def refuse_before(state: LoopState, turn) -> str:
     """The turn is about to run a tool. Return a refusal, or ""."""
+    if (
+        state.autofixed
+        and turn.action in {"edit", "patch"}
+        and "test" not in (turn.path or state.last_path or "").lower()
+    ):
+        return (
+            "Harness already applied the mechanical fix. "
+            "Action: run Argv: -m unittest discover -s tests -q"
+        )
     if not state.allow_writes and turn.action in WRITE_ACTIONS:
         return (
             "This run is read-only. Do not patch, edit, or run. "

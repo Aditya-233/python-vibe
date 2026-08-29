@@ -25,6 +25,7 @@ python-vibe route "create a pr for #50"
 ```
 
 Related: [fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | relative_url }})
+· [hub models]({{ '/investigations/hub-models/' | relative_url }})
 · [everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}).
 
 <nav class="toc" aria-label="On this page">
@@ -90,10 +91,17 @@ parsed `Action:` cannot sneak into a write.
 | NameError in `src/orders.py` | failed | 37 | Left `subtotal` unbound. Hit the step budget. |
 | rename `calc` → `multiply` | failed | 26 | Twelve `patch` turns, **no writes**. `Find:` never hit. |
 
-A different weight would not have made `Find:` unique. A 30B that times
-out would have cost more wall time and still sent you to a paid tool.
-The write-tests pass is the money win: the same 8B, a stricter done
-check, 19 seconds, $0 API.
+A different weight would not have made `Find:` unique. Those two misses
+are now **harness jobs**. Before the first generate, the harness:
+
+- binds a unique NameError typo (`subtotl` → `subtotal` next to
+  `subtotal = …`)
+- renames `def calc` to the name in the task and **keeps the typed
+  signature** (the skill’s `def calc(x, y):` never matched
+  `def calc(x: int, y: int)`)
+
+Then it refuses another patch of that file and asks for `run`. Same 8B.
+No 7B download.
 
 ## How to save money
 

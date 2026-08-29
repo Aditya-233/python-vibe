@@ -20,6 +20,7 @@ the harness effect from the weight effect.
 
 Related: [small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }})
 · [what to improve]({{ '/investigations/what-to-improve/' | relative_url }})
+· [hub models]({{ '/investigations/hub-models/' | relative_url }})
 · [everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}).
 
 <nav class="toc" aria-label="On this page">

@@ -78,6 +78,7 @@ Use a hosted IDE agent when the job is multi-file across languages, needs extra 
 - [Small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }}) — oracles that make an 8B finish a change
 - [Fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | relative_url }}) — when new weights help, and when they do not
 - [Model lanes]({{ '/investigations/model-lanes/' | relative_url }}) — which local weight for which job
+- [Hub models]({{ '/investigations/hub-models/' | relative_url }}) — Hugging Face ids to run or tune; 1.5B does not parse Action:
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}) — why 0.5B is not daily work
 - [Demo]({{ '/demo/' | relative_url }}) — eleven everyday tasks on one small tree, including misses
 - [Skills]({{ '/skills/' | relative_url }}) — the nineteen kit skills and when the harness loads each one

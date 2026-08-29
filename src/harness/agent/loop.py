@@ -110,6 +110,8 @@ class Agent:
             last_path=pre.located_path,
             instructions=_instruction_lines(pre),
             scope=options.scope,
+            autofixed=bool(pre.autofix),
+            wrote_something=bool(pre.autofix),
             design_report=(
                 render_design_review(self.project, options.scope)
                 if looks_like_design_loop(options.task)
@@ -119,6 +121,8 @@ class Agent:
         prompt = pre.prompt
         steps: list[Step] = []
         writes: list[str] = []
+        if pre.autofix and pre.located_path:
+            writes.append(pre.located_path)
 
         for number in range(1, options.steps + 1):
             draft = generate(prompt)

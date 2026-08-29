@@ -90,9 +90,12 @@ call-http is urllib.request only. The harness refuses curl, wget, and os.system 
 - 8B listen_addr answer after hint fix: done in 1 step, quoted a host/port tuple, omitted env and argv defaults.
 - 0.5B / --tiny parsed Actions that day: 0/2 (echoed the skill, no Action parse).
 - 0.5B held-out vibe (weekday, count-md, jsonl, docstring): 0/4.
+- qwen2.5-coder:1.5b first Action on add-feature_pkg (question + add multiply): 0/2 (prose or `# patch`, no Action:).
+- llama3.2:1b on the same two tasks: 0/2.
 - OpenSRE-style 100 smallest files: 100× "no issues". That is not a review.
-- 7B / 14B / 32B listed in everyday.py: not pulled, not measured that day.
+- 7B / 14B / 32B listed in everyday.py: not pulled. 30B-class on disk timed out at 180s.
 - python-vibe-8b adapters: missing.
+- Hub comparison: {{ '/investigations/hub-models/' | absolute_url }}
 
 ## Limits vs a hosted IDE agent
 
@@ -106,7 +109,7 @@ A free bash tool does not transfer to an 8B on a laptop working tree.
 2. Auto-pick review-design, refactor-split, readable-layout. refuse_thin_review is in the done handler.
 3. Refuse done on add / rename until a passing unittest (new-package already does).
 4. Quote more of a small file so answers include nearby constants.
-5. Measure 7B and any 30B coder already on disk before changing the default.
+5. Measure qwen2.5-coder:7b against the 8B demo log before changing the default. 1.5B and 1B already failed Action: parse. 30B-class timed out.
 6. Expand live parse prompts. Then record ~2k redacted --record traces before train.py --everyday. Decision: investigations/fine-tune-or-harness.
 
 ## Do not
