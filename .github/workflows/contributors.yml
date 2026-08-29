@@ -5,9 +5,6 @@ name: Contributors
 
 on:
   push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 permissions:
@@ -20,10 +17,16 @@ concurrency:
 
 jobs:
   readme:
-    if: github.actor != 'github-actions[bot]'
+    # Runs on the default branch, whatever it is called. Naming it here is
+    # how the Pages workflow went quiet when the default was renamed.
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     steps:
-      - uses: akhilmhdh/contributors-readme-action@v2.3.11
+      # Pinned by commit, not by tag: this job has contents: write,
+      # and a tag can be moved to point at different code.
+      - uses: akhilmhdh/contributors-readme-action@83ea0b4f1ac928fbfe88b9e8460a932a528eb79f  # v2.3.11
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
