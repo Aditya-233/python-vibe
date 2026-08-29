@@ -26,6 +26,8 @@ DEPTH = {
     "observe": 6,
     "agent": 7,
     "server": 8,
+    "mcp_stdio": 8,
+    "editor_kit": 1,
     "cli": 9,
     "__main__": 10,
 }

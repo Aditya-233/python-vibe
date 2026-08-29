@@ -64,6 +64,8 @@ These kit skills, each a **single copy-paste Action** (no essays):
 
 - `skills/answer-question/SKILL.md`
 - `skills/add-feature/SKILL.md`
+- `skills/write-paths/SKILL.md` — one `pathlib` helper. Both venv
+  layouts. `Path.home()`. No `os.path.join`.
 - `skills/write-tests/SKILL.md` — one AAA method named
   `test_<unit>_<result>` (`got = multiply(...)`, then assert `got`).
   A single new test that asserts without arranging is refused, as is an

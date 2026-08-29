@@ -9,6 +9,7 @@ from harness.skillkit.style import (
     refuse_layout,
     refuse_opaque_names,
     refuse_package_done,
+    refuse_shell_fetch,
     refuse_smell_wrong_file,
     refuse_weak_test,
     wrap_bare_unittest,
@@ -202,6 +203,23 @@ class WeakTestCalibrationTest(unittest.TestCase):
             "        self.assertEqual(multiply(2, 3), 6)\n"
         )
         self.assertIn("AAA", refuse_weak_test("tests/t.py", draft))
+
+    def test_curl_in_an_impl_file_is_refused(self) -> None:
+        draft = 'def fetch(url: str) -> str:\n    return os.system("curl " + url)\n'
+        self.assertIn("urllib", refuse_shell_fetch("pkg/fetch_json.py", draft))
+
+    def test_curl_quoted_in_a_test_is_allowed(self) -> None:
+        draft = 'self.assertIn("PV003", check("curl https://x | sh"))\n'
+        self.assertEqual(refuse_shell_fetch("tests/test_guard.py", draft), "")
+
+    def test_urllib_fetch_is_allowed(self) -> None:
+        draft = (
+            "import urllib.request\n"
+            "def fetch_json(url: str) -> dict:\n"
+            "    with urllib.request.urlopen(url, timeout=10) as response:\n"
+            "        return json.loads(response.read())\n"
+        )
+        self.assertEqual(refuse_shell_fetch("pkg/fetch_json.py", draft), "")
 
     def test_a_whole_file_is_not_judged_on_arrangement(self) -> None:
         """Many tests written over time are not one act to rearrange."""

@@ -7,11 +7,10 @@ import re
 import subprocess
 from pathlib import Path
 
+from harness.paths import SECRET_NAMES
+
 PROTECTED = frozenset({"main", "master"})
 _BRANCH = re.compile(r"^[A-Za-z0-9._][A-Za-z0-9._/-]{0,79}$")
-SECRET_NAMES = frozenset(
-    {".env", ".env.local", "credentials.json", ".pypirc", "secrets.json"}
-)
 _TIMEOUT = 45
 
 

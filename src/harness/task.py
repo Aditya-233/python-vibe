@@ -187,6 +187,15 @@ _ALGO = re.compile(
     r"implement (a |an )?(stack|queue|heap))\b",
     re.I,
 )
+_PLATFORM = re.compile(
+    r"\b("
+    r"pathlib|file.?system|cross.?platform|platform engineer|"
+    r"path helper|os\.path|USERPROFILE|ntpath|"
+    r"venv|virtual.?env|python\.exe|bin/python|"
+    r"Path\.home|tempfile|line.?ending"
+    r")\b",
+    re.I,
+)
 
 
 def looks_like_script(task: str) -> bool:
@@ -213,18 +222,28 @@ def looks_like_algorithm(task: str) -> bool:
     return bool(_ALGO.search(task))
 
 
+def looks_like_platform(task: str) -> bool:
+    """Path / venv / OS-layout work. Small files, many platforms."""
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    return bool(_PLATFORM.search(task))
+
+
 def looks_like_everyday_code(task: str) -> bool:
-    """Simple script, HTTP client, tally, or algorithm — write then test."""
+    """Simple script, HTTP client, tally, algorithm, or path helper."""
     return (
         looks_like_script(task)
         or looks_like_http_client(task)
         or looks_like_analytics(task)
         or looks_like_algorithm(task)
+        or looks_like_platform(task)
     )
 
 
 def everyday_skill_name(task: str) -> str:
-    """The kit skill for a script / HTTP / tally / algorithm task, or ""."""
+    """The kit skill for a script / HTTP / tally / algorithm / path task."""
+    if looks_like_platform(task):
+        return "write-paths"
     if looks_like_http_client(task):
         return "call-http"
     if looks_like_analytics(task):
@@ -234,6 +253,20 @@ def everyday_skill_name(task: str) -> str:
     if looks_like_script(task):
         return "write-script"
     return ""
+
+
+_EVERYDAY_PATH = {
+    "write-script": "pkg/weekday_name.py",
+    "call-http": "pkg/fetch_json.py",
+    "analyze-data": "pkg/tally.py",
+    "write-algorithm": "pkg/index_of.py",
+    "write-paths": "pkg/paths.py",
+}
+
+
+def everyday_example_path(task: str) -> str:
+    """The Path: the skill wants the 8B to copy. Keep in sync with SKILL.md."""
+    return _EVERYDAY_PATH.get(everyday_skill_name(task), "pkg/<noun>.py")
 
 
 def looks_like_add_feature(task: str) -> bool:

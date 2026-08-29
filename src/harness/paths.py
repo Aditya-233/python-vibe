@@ -12,6 +12,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# Small platform trees are Python plus a few config files. Secrets stay out.
+TEXT_SUFFIXES = frozenset(
+    {".py", ".pyi", ".md", ".toml", ".yml", ".yaml", ".cfg", ".ini", ".json"}
+)
+SECRET_NAMES = frozenset(
+    {".env", ".env.local", "credentials.json", ".pypirc", "secrets.json"}
+)
+
 
 def _find_kit_skills() -> Path:
     """Locate the skills shipped with python-vibe.
@@ -30,13 +38,27 @@ KIT_SKILLS_DIR = _find_kit_skills()
 EVAL_DIR = REPO_ROOT / "eval"
 
 
+def suffix_globs() -> tuple[str, ...]:
+    """rglob patterns for every jail text suffix, sorted for stable tests."""
+    return tuple(f"*{suffix}" for suffix in sorted(TEXT_SUFFIXES))
+
+
+def is_secret_name(name: str) -> bool:
+    return name.lower() in {item.lower() for item in SECRET_NAMES}
+
+
+def is_windows(*, windows: bool | None = None) -> bool:
+    """True on this OS, or the layout a caller asked to simulate."""
+    return os.name == "nt" if windows is None else windows
+
+
 def venv_python(venv: Path, *, windows: bool | None = None) -> Path:
     """The interpreter inside a virtual environment, on any platform.
 
     POSIX puts it at `bin/python`; Windows puts it at `Scripts/python.exe`.
     Pass `windows` to ask for one layout regardless of the platform running.
     """
-    on_windows = os.name == "nt" if windows is None else windows
+    on_windows = is_windows(windows=windows)
     if on_windows:
         return venv / "Scripts" / "python.exe"
     return venv / "bin" / "python"

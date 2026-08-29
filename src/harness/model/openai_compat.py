@@ -37,3 +37,36 @@ def models_payload(model: str) -> dict[str, Any]:
         "object": "list",
         "data": [{"id": model, "object": "model", "owned_by": "ollama"}],
     }
+
+
+def last_user_text(messages: list[Any]) -> str:
+    """The last user turn, as plain text. Editors send a string or parts."""
+    for message in reversed(messages):
+        if not isinstance(message, dict) or message.get("role") != "user":
+            continue
+        content = message.get("content")
+        if isinstance(content, str):
+            return content.strip()
+        if isinstance(content, list):
+            parts = [
+                str(item.get("text") or "")
+                for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            ]
+            return "\n".join(part for part in parts if part).strip()
+    return ""
+
+
+def chat_completion_payload(content: str, model: str) -> dict[str, Any]:
+    return {
+        "id": "python-vibe",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop",
+            }
+        ],
+        "model": model,
+    }

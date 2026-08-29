@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from harness.act.parse import parse_turn
-from harness.task import looks_like_add_feature
+from harness.task import everyday_example_path, looks_like_add_feature
 from harness.skillkit.catalog import get_skill, list_skills, pick_skills, render_catalog, render_skill, skill_from_action
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +79,23 @@ class SkillsTest(unittest.TestCase):
         assert turn is not None
         self.assertEqual(turn.action, "skill")
         self.assertEqual(turn.name, "add-feature")
+
+    def test_everyday_paths_match_the_skill_files(self) -> None:
+        for task, name in (
+            ("write a weekday script from argv", "write-script"),
+            ("fetch json from the HTTP API", "call-http"),
+            ("tally counts by key from a csv", "analyze-data"),
+            ("implement binary search", "write-algorithm"),
+            ("write a pathlib helper for the venv", "write-paths"),
+        ):
+            skill = get_skill(name, ROOT)
+            assert skill is not None
+            path_line = next(
+                line.split(":", 1)[1].strip()
+                for line in skill.body.splitlines()
+                if line.startswith("Path:")
+            )
+            self.assertEqual(everyday_example_path(task), path_line)
 
     def test_action_write_tests_is_a_skill(self) -> None:
         shortcut = skill_from_action("write-tests", project=ROOT)

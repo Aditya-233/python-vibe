@@ -48,6 +48,7 @@ also gets `stay-scoped`.
 | HTTP API / fetch JSON / “like curl” | `call-http`, `write-tests` |
 | Analytics / tally / csv | `analyze-data`, `write-tests` |
 | Algorithm / binary search / stack | `write-algorithm`, `write-tests` |
+| Path / venv / filesystem / platform | `write-paths`, `write-tests` |
 | Vague, no file and no symbol | `ask-when-unclear` |
 | Mentions tests | `write-tests` |
 | Mode is large | `stay-scoped` as well |
@@ -58,7 +59,7 @@ filenames.
 
 ## Kit catalog
 
-Eighteen skills ship with python-vibe.
+Nineteen skills ship with python-vibe.
 
 ### Code changes
 
@@ -69,6 +70,7 @@ Eighteen skills ship with python-vibe.
 | [`call-http`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/call-http/SKILL.md) | One `urllib.request` JSON GET/POST. | HTTP API, REST, “like curl”. Never `curl\|sh`. |
 | [`analyze-data`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/analyze-data/SKILL.md) | One `Counter` / group-by over rows. | Analytics, tally, csv, histogram. |
 | [`write-algorithm`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-algorithm/SKILL.md) | One named algorithm (binary search, stack). | Data structures and algorithms. |
+| [`write-paths`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-paths/SKILL.md) | One `pathlib` helper. Both venv layouts. `Path.home()`. | Filesystem, venv, Windows / macOS / Linux paths. |
 | [`write-tests`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-tests/SKILL.md) | Add one test that sets up its inputs, calls the function, then checks the result. | After `add-feature`, or when the task asks for tests. |
 | [`new-package`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/new-package/SKILL.md) | Create `pkg/` and `tests/`, with an `__init__.py` that only lists what the package exports. | Create a package or project structure. Not for one function on an existing module. |
 | [`fix-smell`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/fix-smell/SKILL.md) | Rename one opaque function to readable snake_case. One `Find:` / `Replace:`. | Smell, rename, or clean up. Not for add or questions. |

@@ -59,8 +59,11 @@ Use a hosted IDE agent when the job is multi-file across languages, needs extra 
 
 - [Local loop vs hosted agents]({{ '/investigations/local-vs-cloud/' | relative_url }}) — every shipped path, same jobs
 - [What to improve]({{ '/investigations/what-to-improve/' | relative_url }}) — harness work that closes a gap, and work that does not
+- [Small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }}) — oracles that make an 8B finish a change
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}) — why 0.5B is not daily work
-- [Skills]({{ '/skills/' | relative_url }}) — the fourteen kit skills and when the harness loads each one
+- [Demo]({{ '/demo/' | relative_url }}) — eleven everyday tasks on one small tree, including misses
+- [Skills]({{ '/skills/' | relative_url }}) — the nineteen kit skills and when the harness loads each one
+- [Platform engineering]({{ '/investigations/platform-engineering/' | relative_url }}) — pathlib, venv layouts, config files, every OS
 - [Everyday skills]({{ '/investigations/everyday-skills/' | relative_url }}) — skills written for an 8B
 - [Harness comparison]({{ '/investigations/harness-comparison/' | relative_url }}) — what transfers from other agent harnesses
 - [Architecture]({{ '/architecture/' | relative_url }}) — layer rule

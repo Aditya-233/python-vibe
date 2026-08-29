@@ -10,10 +10,13 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.paths import rel_posix
+from harness.paths import TEXT_SUFFIXES, is_secret_name, rel_posix, suffix_globs
 from harness.scan.project_scan import SKIP_DIR
 from harness.task import (
+    everyday_example_path,
+    everyday_skill_name,
     looks_like_add_feature,
+    looks_like_everyday_code,
     looks_like_fix_smell,
     looks_like_merge,
     looks_like_new_package,
@@ -22,7 +25,6 @@ from harness.task import (
     question_symbol,
 )
 
-TEXT_SUFFIXES = {".py", ".pyi", ".md"}
 SMALL_MAX_FILES = 40
 SMALL_MAX_BYTES = 200_000
 MAP_MAX_ENTRIES = 80
@@ -61,13 +63,15 @@ def iter_text_files(project: Path, scope: str = "") -> list[tuple[Path, int]]:
     root = project.resolve()
     base = resolve_scope(project, scope) if scope else root
     found: list[tuple[Path, int]] = []
-    for suffix in ("*.py", "*.pyi", "*.md"):
-        for path in base.rglob(suffix):
+    for pattern in suffix_globs():
+        for path in base.rglob(pattern):
             if not path.is_file():
                 continue
             if any(part in SKIP_DIR for part in path.parts):
                 continue
             if path.suffix.lower() not in TEXT_SUFFIXES:
+                continue
+            if is_secret_name(path.name):
                 continue
             try:
                 size = path.stat().st_size
@@ -140,7 +144,7 @@ def render_map(project: Path, scope: str = "", *, max_entries: int = MAP_MAX_ENT
     root = project.resolve()
     found = iter_text_files(project, scope)
     if not found:
-        return "(no .py/.md files in scope)"
+        return "(no project text files in scope)"
     lines = [f"map {scope or '.'}  {len(found)} files  {_kb(sum(s for _p, s in found))}"]
     for path, size in found[:max_entries]:
         lines.append(f"  {rel_posix(path, root)}  {_kb(size)}")
@@ -193,6 +197,13 @@ def start_hint(brief: ProjectBrief, task: str, *, located: bool = False) -> str:
         return (
             "This is a smell/rename task. Patch one opaque name to readable "
             "snake_case. Do not add features."
+        )
+    if looks_like_everyday_code(task):
+        skill = everyday_skill_name(task) or "write-script"
+        example = everyday_example_path(task)
+        return (
+            f"This is a {skill} task. First Action: edit Path: {example} "
+            "with one function. urllib only — no curl. Then a test, then run."
         )
     if looks_like_add_feature(task):
         return (

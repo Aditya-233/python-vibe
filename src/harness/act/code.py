@@ -9,7 +9,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.paths import as_project_rel
+from harness.paths import SECRET_NAMES, TEXT_SUFFIXES, as_project_rel
 
 _FENCE = re.compile(r"```(?:python|py)?\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 _SKIP_PARTS = {".git", ".venv", "node_modules", "adapters", "fused", "__pycache__"}
@@ -66,8 +66,12 @@ def resolve_project_file(project: Path, rel: str) -> Path:
         raise ValueError(f"{path} is outside {root}") from exc
     if any(part in _SKIP_PARTS for part in path.parts):
         raise ValueError(f"refusing {path}")
-    if path.suffix not in {".py", ".pyi", ".md"}:
-        raise ValueError("only .py or .md files")
+    if path.name.lower() in {item.lower() for item in SECRET_NAMES}:
+        raise ValueError(f"refusing secret filename {path.name}")
+    if path.suffix.lower() not in TEXT_SUFFIXES:
+        raise ValueError(
+            "only project text files: " + ", ".join(sorted(TEXT_SUFFIXES))
+        )
     return path
 
 

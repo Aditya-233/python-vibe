@@ -1,0 +1,172 @@
+"""Local MCP over stdio so an editor can call the jail without a tunnel.
+
+This is the editor calling python-vibe. It is not an Action the 8B may emit.
+Stdout is JSON-RPC only. Logs go to stderr.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any, TextIO
+
+from harness.agent import Agent, AgentOptions
+
+PROTOCOL = "2024-11-05"
+TOOLS = (
+    {
+        "name": "ask",
+        "description": (
+            "Read-only question about the project. Uses the python-vibe jail. "
+            "Does not change files."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"task": {"type": "string"}},
+            "required": ["task"],
+        },
+    },
+    {
+        "name": "run",
+        "description": (
+            "Explore, edit and run inside the project jail. Writes only when "
+            "the server was started with --allow-writes."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string"},
+                "scope": {"type": "string"},
+            },
+            "required": ["task"],
+        },
+    },
+)
+
+
+def handle_rpc(
+    message: dict[str, Any],
+    *,
+    project: Path,
+    allow_writes: bool,
+    model: str,
+) -> dict[str, Any] | None:
+    """One JSON-RPC message. Notifications return None."""
+    method = str(message.get("method") or "")
+    rpc_id = message.get("id")
+    if method == "initialize":
+        return {
+            "jsonrpc": "2.0",
+            "id": rpc_id,
+            "result": {
+                "protocolVersion": PROTOCOL,
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "python-vibe", "version": "0.1.0"},
+            },
+        }
+    if method == "notifications/initialized":
+        return None
+    if method == "tools/list":
+        return {"jsonrpc": "2.0", "id": rpc_id, "result": {"tools": list(TOOLS)}}
+    if method == "tools/call":
+        params = message.get("params") or {}
+        name = str(params.get("name") or "")
+        args = params.get("arguments") or {}
+        task = str(args.get("task") or "").strip()
+        if not task:
+            return _error(rpc_id, "task required")
+        if name == "run" and not allow_writes:
+            return {
+                "jsonrpc": "2.0",
+                "id": rpc_id,
+                "result": {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                "this server is read-only. Restart it with "
+                                "--allow-writes, or run python-vibe run in the terminal."
+                            ),
+                        }
+                    ],
+                    "isError": True,
+                },
+            }
+        if name not in {"ask", "run"}:
+            return _error(rpc_id, f"unknown tool {name}")
+        options = AgentOptions(
+            project=project,
+            task=task,
+            model=model,
+            scope=str(args.get("scope") or ""),
+            allow_writes=allow_writes and name == "run",
+        )
+        try:
+            result = Agent(options).run()
+        except (ValueError, OSError) as exc:
+            return _error(rpc_id, str(exc))
+        return {
+            "jsonrpc": "2.0",
+            "id": rpc_id,
+            "result": {
+                "content": [{"type": "text", "text": result.summary}],
+                "isError": not result.ok,
+            },
+        }
+    if rpc_id is None:
+        return None
+    return _error(rpc_id, f"unknown method {method}")
+
+
+def _error(rpc_id: Any, text: str) -> dict[str, Any]:
+    return {"jsonrpc": "2.0", "id": rpc_id, "error": {"code": -32600, "message": text}}
+
+
+def _read_message(stdin: TextIO) -> dict[str, Any] | None:
+    first = stdin.readline()
+    if first == "":
+        return None
+    if first.lstrip().startswith("{"):
+        return json.loads(first)
+    headers: dict[str, str] = {}
+    line = first
+    while line not in ("", "\r\n", "\n"):
+        key, _, value = line.partition(":")
+        headers[key.strip().lower()] = value.strip()
+        line = stdin.readline()
+        if line == "" and "content-length" not in headers:
+            return None
+    length = int(headers.get("content-length") or "0")
+    raw = stdin.read(length) if length else ""
+    return json.loads(raw) if raw else None
+
+
+def _write_message(stdout: TextIO, payload: dict[str, Any]) -> None:
+    raw = json.dumps(payload, separators=(",", ":"))
+    stdout.write(f"Content-Length: {len(raw.encode('utf-8'))}\r\n\r\n{raw}")
+    stdout.flush()
+
+
+def serve_stdio(
+    project: Path, *, allow_writes: bool = False, model: str = ""
+) -> int:
+    print(
+        f"python-vibe mcp  project {project}  "
+        f"{'read-write' if allow_writes else 'read-only'}",
+        file=sys.stderr,
+        flush=True,
+    )
+    while True:
+        try:
+            message = _read_message(sys.stdin)
+        except (json.JSONDecodeError, ValueError) as exc:
+            print(f"bad mcp message: {exc}", file=sys.stderr)
+            continue
+        if message is None:
+            return 0
+        reply = handle_rpc(
+            message, project=project, allow_writes=allow_writes, model=model
+        )
+        if reply is not None:
+            _write_message(sys.stdout, reply)

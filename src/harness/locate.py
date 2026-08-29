@@ -9,6 +9,7 @@ from harness.act.tools import grep_py, read_py
 from harness.task import looks_like_question, question_symbol
 from harness.task import looks_like_add_feature
 from harness.task import (
+    everyday_example_path,
     everyday_skill_name,
     named_project_file,
     looks_like_design_loop,
@@ -166,8 +167,9 @@ def prelude(project: Path, task: str, scope: str = "") -> tuple[str, str]:
             "Replace: a readable snake_case name. Do not grep."
         )
     elif looks_like_everyday_code(task):
+        example = everyday_example_path(task)
         header += (
-            "\nNext Action must be edit Path: pkg/<noun>.py with one function. "
+            f"\nNext Action must be edit Path: {example} with one function. "
             "Do not grep. Do not emit curl."
         )
     elif looks_like_add_feature(task):
@@ -190,8 +192,9 @@ def refuse_redundant_locate(task: str, action: str, prelude_ran: bool) -> str:
             "already located. Action: done Summary: quote the -> type."
         )
     if looks_like_everyday_code(task):
+        example = everyday_example_path(task)
         return (
-            "already located. Action: edit Path: pkg/<noun>.py with one function."
+            f"already located. Action: edit Path: {example} with one function."
         )
     if looks_like_add_feature(task):
         return (

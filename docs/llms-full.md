@@ -23,7 +23,7 @@ Do not train more 0.5B weights expecting agency. Do not describe a 100-file stub
 
 ## When to use
 
-Use python-vibe when you want an offline loop on a small Python tree (≤40 first-party .py/.md files, ≤200 KB), writes jailed, no cloud API.
+Use python-vibe when you want an offline loop on a small Python tree (≤40 first-party text files, ≤200 KB), writes jailed, no cloud API. Jail suffixes include .py, .md, and platform config (.toml, .yml, .json). Secret names are refused.
 
 Use a hosted IDE agent when the job is multi-file across languages, needs extra tools or a browser, or you must quote more than one call site.
 
@@ -43,6 +43,7 @@ pip install -e .
 python-vibe brief /path/to/your/app
 python-vibe ask   /path/to/your/app "what does compute_total return?"
 python-vibe run   /path/to/your/app --scope src "find a real NameError and fix it"
+python-vibe editors vscode --project /path/to/your/app
 ```
 
 Training on Apple Silicon needs MLX, which does not install on Linux or
@@ -74,11 +75,13 @@ scripts/agent.py is a text Action protocol (not native IDE tools). One Action pe
 
 Actions include: glob, grep, read, edit, patch, run, map, plan, skill, locate, layout, done, issue, branch, commit, push, pr, merge.
 
-Writes stay under --project. Suffixes .py .pyi .md only. PythonVibeGuard (PV001–PV005) plus .bak, 2/3-length refuse on full-file edit, ast.parse. Action: run is Python argv only — no shell, no pipes, no pip. Find: must be a unique line (≥8 chars). Questions refuse patch/edit/run.
+Writes stay under --project. Suffixes .py .pyi .md .toml .yml .yaml .cfg .ini .json. Secret names refused. PythonVibeGuard (PV001–PV005) plus .bak, 2/3-length refuse on full-file edit, ast.parse. Action: run is Python argv only — no shell, no pipes, no pip. Find: must be a unique line (≥8 chars). Questions refuse patch/edit/run.
 
 Skills live in skills/*/SKILL.md as one copy-paste Action. Catalog: {{ '/skills/' | absolute_url }}. The loop auto-picks from the task; --skill names win; a large tree also gets stay-scoped. Project AGENTS.md and <project>/skills/ outrank the kit. Do not put third-party product names in skill text.
 
-Kit skills: add-feature, write-tests, new-package, fix-smell, refactor-split, answer-question, ask-when-unclear, review-code, review-design, readable-layout, read-issue, open-pr, merge-pr, stay-scoped.
+Kit skills: add-feature, write-script, call-http, analyze-data, write-algorithm, write-tests, new-package, fix-smell, refactor-split, answer-question, ask-when-unclear, review-code, review-design, readable-layout, read-issue, open-pr, merge-pr, stay-scoped.
+
+call-http is urllib.request only. The harness refuses curl, wget, and os.system in implementation drafts (PV003 still blocks curl|sh).
 
 ## Measurements (29 Aug 2026, one laptop)
 

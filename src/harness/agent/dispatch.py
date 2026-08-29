@@ -49,7 +49,7 @@ SHIP_ACTIONS = frozenset({"issue", "branch", "commit", "push", "pr", "merge"})
 
 
 def run_action(
-    project: Path, turn, last_path: str, scope: str, target=None
+    project: Path, turn, last_path: str, scope: str, target=None, task: str = ""
 ) -> tuple[str, str]:
     path = turn.path or last_path
     used_scope = turn.scope or scope
@@ -91,11 +91,13 @@ def run_action(
         blocked = PythonVibeGuard().check(turn.source)
         if blocked.verdict != "pass":
             return f"harness blocked: {[f.rule_id for f in blocked.findings]}", path
-        return edit_py(project, path, turn.source), path
+        return edit_py(project, path, turn.source, task=task), path
     if turn.action == "patch":
         if not path:
             return "patch needs Path: (or read that file first)", last_path
-        return patch_py(project, path, turn.find, turn.replace, turn.append), path
+        return patch_py(
+            project, path, turn.find, turn.replace, turn.append, task=task
+        ), path
     if turn.action == "run":
         return run_python(project, turn.argv), last_path
     if turn.action == "issue":
