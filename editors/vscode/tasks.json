@@ -4,21 +4,21 @@
     {
       "label": "python-vibe: ask",
       "type": "shell",
-      "command": "python-vibe ask \"${workspaceFolder}\" \"${input:task}\"",
+      "command": "__RUNNER__ ask \"${workspaceFolder}\" \"${input:task}\"",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
       "label": "python-vibe: run",
       "type": "shell",
-      "command": "python-vibe run \"${workspaceFolder}\" \"${input:task}\"",
+      "command": "__RUNNER__ run \"${workspaceFolder}\" \"${input:task}\"",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" }
     },
     {
       "label": "python-vibe: brief",
       "type": "shell",
-      "command": "python-vibe brief \"${workspaceFolder}\"",
+      "command": "__RUNNER__ brief \"${workspaceFolder}\"",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "dedicated" }
     }

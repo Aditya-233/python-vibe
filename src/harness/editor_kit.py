@@ -30,10 +30,7 @@ def install_editors(project: Path, kind: str) -> list[Path]:
     if kind == "vscode":
         dest = root / ".vscode" / "tasks.json"
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(
-            (kit_dir() / "vscode" / "tasks.json").read_text(encoding="utf-8"),
-            encoding="utf-8",
-        )
+        dest.write_text(_vscode_tasks(), encoding="utf-8")
         written.append(dest)
         return written
     if kind == "continue":
@@ -56,6 +53,28 @@ def install_editors(project: Path, kind: str) -> list[Path]:
     dest.write_text(_mcp_json(root, kit_dir() / "cursor" / "mcp.json"), encoding="utf-8")
     written.append(dest)
     return written
+
+
+def _vscode_tasks() -> str:
+    """Task file that runs whichever interpreter has python-vibe installed.
+
+    The tasks used to call a bare `python-vibe`. An editor runs a task in a
+    plain shell, and that command is only there if the install put it on
+    PATH, which a virtual environment or a --user install often does not.
+    Naming the interpreter directly works in every case.
+    """
+    template = json.loads(
+        (kit_dir() / "vscode" / "tasks.json").read_text(encoding="utf-8")
+    )
+    runner = f'"{Path(sys.executable).as_posix()}" -m harness'
+    env = None if _harness_is_importable() else {
+        "PYTHONPATH": (REPO_ROOT / "src").as_posix()
+    }
+    for task in template["tasks"]:
+        task["command"] = task["command"].replace("__RUNNER__", runner)
+        if env:
+            task["options"] = {"env": env}
+    return json.dumps(template, indent=2) + "\n"
 
 
 def _harness_is_importable() -> bool:

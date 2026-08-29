@@ -271,3 +271,64 @@ class ZedConfigTest(unittest.TestCase):
         self.assertEqual(data["theme"], "one")
         self.assertEqual(data["context_servers"]["other"]["command"], "x")
         self.assertIn("python-vibe", data["context_servers"])
+
+
+class VscodeTaskTest(unittest.TestCase):
+    """A task runs in a plain shell, where a bare command may not exist.
+
+    `python-vibe` is only on PATH if the install put it there, which a
+    virtual environment or a --user install often does not. Naming the
+    interpreter works in every case.
+    """
+
+    def _tasks(self, project: Path) -> dict:
+        install_editors(project, "vscode")
+        return json.loads(
+            (project / ".vscode" / "tasks.json").read_text(encoding="utf-8")
+        )
+
+    def test_no_task_relies_on_a_bare_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tasks = self._tasks(Path(tmp))["tasks"]
+        for task in tasks:
+            self.assertFalse(
+                task["command"].startswith("python-vibe"),
+                f"{task['label']} needs python-vibe on PATH",
+            )
+
+    def test_every_task_names_the_interpreter(self) -> None:
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tasks = self._tasks(Path(tmp))["tasks"]
+        for task in tasks:
+            self.assertIn(Path(sys.executable).as_posix(), task["command"])
+            self.assertIn("-m harness", task["command"])
+
+    def test_the_placeholder_is_always_replaced(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tasks = self._tasks(Path(tmp))["tasks"]
+        for task in tasks:
+            self.assertNotIn("__RUNNER__", task["command"])
+
+    def test_a_source_checkout_carries_the_import_path(self) -> None:
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch(
+                "harness.editor_kit._harness_is_importable", return_value=False
+            ):
+                tasks = self._tasks(Path(tmp))["tasks"]
+        for task in tasks:
+            self.assertIn("PYTHONPATH", task["options"]["env"])
+
+    def test_an_installed_package_needs_no_import_path(self) -> None:
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch(
+                "harness.editor_kit._harness_is_importable", return_value=True
+            ):
+                tasks = self._tasks(Path(tmp))["tasks"]
+        for task in tasks:
+            self.assertNotIn("options", task)
