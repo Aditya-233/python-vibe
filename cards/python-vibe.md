@@ -114,7 +114,7 @@ Base weights: `Qwen/Qwen2.5-Coder-0.5B-Instruct`, Apache-2.0.
 ## What was measured
 
 Full write-up:
-[research-vibe-review](https://github.com/YauhenBichel/python-vibe/blob/feat/initial-python-vibe/docs/research-vibe-review.md).
+[research-vibe-review](https://github.com/YauhenBichel/python-vibe/blob/HEAD/docs/research-vibe-review.md).
 
 - About 45 training pairs. Validation was best near step 100, which is what
   this repository ships.
