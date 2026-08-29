@@ -100,5 +100,80 @@ class PagesInvestigationsTest(unittest.TestCase):
         self.assertEqual(hits, [])
 
 
+def _front_matter(path: Path) -> dict[str, str]:
+    """The YAML block at the top of a Jekyll page, as plain key/value pairs."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    fields: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        key, sep, value = line.partition(":")
+        if sep and not key.startswith(" "):
+            fields[key.strip()] = value.strip()
+    return fields
+
+
+def _site_pages() -> list[Path]:
+    """Pages the site renders, excluding includes, layouts and raw files."""
+    return sorted(
+        path
+        for path in DOCS.rglob("*.md")
+        if "_includes" not in path.parts and "_layouts" not in path.parts
+    )
+
+
+class SiteFrontMatterTest(unittest.TestCase):
+    """A page with no front matter publishes untitled and unlisted."""
+
+    def test_every_page_has_front_matter(self) -> None:
+        missing = [
+            str(path.relative_to(ROOT))
+            for path in _site_pages()
+            if not _front_matter(path)
+        ]
+        self.assertEqual(missing, [])
+
+    def test_every_rendered_page_has_a_title(self) -> None:
+        missing = [
+            str(path.relative_to(ROOT))
+            for path in _site_pages()
+            if _front_matter(path).get("layout") != "null"
+            and not _front_matter(path).get("title")
+        ]
+        self.assertEqual(missing, [])
+
+    def test_every_rendered_page_has_a_description(self) -> None:
+        missing = [
+            str(path.relative_to(ROOT))
+            for path in _site_pages()
+            if _front_matter(path).get("layout") != "null"
+            and path.name not in {"404.md", "index.md"}
+            and not _front_matter(path).get("description")
+        ]
+        self.assertEqual(missing, [])
+
+    def test_every_rendered_page_is_in_the_sitemap(self) -> None:
+        sitemap = (DOCS / "sitemap.xml").read_text(encoding="utf-8") if (
+            DOCS / "sitemap.xml"
+        ).is_file() else (DOCS / "sitemap.md").read_text(encoding="utf-8")
+        unlisted = []
+        for path in _site_pages():
+            fields = _front_matter(path)
+            if fields.get("layout") == "null" or path.name == "404.md":
+                continue
+            rel = path.relative_to(DOCS)
+            url = fields.get("permalink") or (
+                "/" if rel.name == "index.md" and rel.parent == Path(".")
+                else f"/{rel.parent.as_posix()}/".replace("/./", "/")
+                if rel.name == "index.md"
+                else f"/{rel.with_suffix('').as_posix()}/"
+            )
+            if f"'{url}'" not in sitemap:
+                unlisted.append(f"{rel} -> {url}")
+        self.assertEqual(unlisted, [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -110,8 +110,12 @@ between two candidates; ambiguity is a refusal.
 file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.
 
 **Site.** `docs/` is the public site (Jekyll → GitHub Pages). CSS is inlined
-from `_includes/site.css` (one HTML request, no webfonts, no script). After
-the first `Pages` workflow, turn on **Settings → Pages → GitHub Actions**.
+from `_includes/site.css` (one HTML request, no webfonts, no script). The
+first `Pages` job 404s until you turn the site on in a browser: **Settings →
+Pages → Build and deployment → Source → GitHub Actions**. The default Actions
+token cannot create that site. Then re-run the workflow. Pages publishes from
+the default branch only. Every page needs `title:` and `description:` front
+matter and an entry in `sitemap.md`; `tests/test_pages.py` checks both.
 URL: `https://yauhenbichel.github.io/python-vibe/`. `llms.txt` and
 `llms-full.txt` are the map for coding agents (llms.txt v2). Do not name
 third-party editors or chat products. Do not put personal paths. Do not add

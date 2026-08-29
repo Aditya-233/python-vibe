@@ -1,4 +1,8 @@
-# Using python-vibe
+---
+title: Using python-vibe
+description: Run the agent as a Python library, as one command, or over HTTP on 127.0.0.1. Settings, read-only runs, and the server routes.
+date: 2026-08-29
+---
 
 Three ways to run the same agent: as a Python library, as one command, or
 over HTTP on your own machine.
