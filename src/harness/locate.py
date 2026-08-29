@@ -187,6 +187,16 @@ def refuse_redundant_locate(task: str, action: str, prelude_ran: bool) -> str:
     return ""
 
 
+def refuse_question_ask(task: str, action: str, located_path: str) -> str:
+    if action != "ask" or not looks_like_question(task):
+        return ""
+    if not located_path:
+        return ""
+    return (
+        "already located. Action: done Summary: quote the -> type from # auto-read."
+    )
+
+
 def refuse_question_write(task: str, action: str) -> str:
     if looks_like_design_loop(task):
         return ""

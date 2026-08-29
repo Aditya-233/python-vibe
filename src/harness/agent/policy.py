@@ -26,6 +26,7 @@ from harness.paths import as_project_rel
 from harness.locate import (
     refuse_design_dirty,
     refuse_early_done,
+    refuse_question_ask,
     refuse_question_write,
     refuse_redundant_explore,
     refuse_redundant_locate,
@@ -121,6 +122,10 @@ def refuse_before(state: LoopState, turn) -> str:
             "This run is read-only. Do not patch, edit, or run. "
             "Action: done Summary: say what you would change and why."
         )
+    if turn.action == "ask" and state.ran_tests and state.wrote_something:
+        return (
+            "Tests already passed. Action: done Summary: say what you changed."
+        )
     if turn.action == "ask" and state.questions_asked >= MAX_QUESTIONS:
         return (
             "You have already asked. Choose the most likely reading, say "
@@ -131,6 +136,8 @@ def refuse_before(state: LoopState, turn) -> str:
     )
     if not blocked:
         blocked = refuse_question_write(state.task, turn.action)
+    if not blocked:
+        blocked = refuse_question_ask(state.task, turn.action, state.located_path)
     if not blocked:
         blocked = refuse_redundant_explore(
             state.task, turn.action, turn.path, state.located_path
@@ -264,6 +271,16 @@ def refuse_done(state: LoopState, turn) -> str:
 def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
     """A tool just ran. Name the one right next step, or "" to stay open."""
     path = (turn.path or state.last_path).lower()
+    # Tests passing only means the work is finished if there was some work.
+    # An agent that runs the suite first, to see the starting state, would
+    # otherwise be told to finish before it had changed anything.
+    if (
+        turn.action == "run"
+        and result.startswith("exit 0")
+        and state.wrote_something
+        and not looks_like_design_loop(state.task)
+    ):
+        return "Tests passed. Action: done Summary: say what you changed.\n"
     wrote = result.startswith(("patched", "wrote"))
     if looks_like_design_loop(state.task) and wrote:
         from harness.scan.design import design_is_clean, render_design_review

@@ -10,6 +10,7 @@ from pathlib import Path
 from harness.act.code import apply_source, read_project_file, resolve_project_file
 from harness.paths import rel_posix
 from harness.act.patch_fix import align_indent, find_match, miss_message
+from harness.skillkit.style import refuse_layout
 from harness.scan.project_brief import render_map, resolve_scope
 from harness.scan.project_scan import SKIP_DIR
 from harness.scan.repo_map import render_outline
@@ -161,6 +162,9 @@ def patch_py(
             if repaired is not None
             else text.rstrip() + "\n\n" + append.rstrip() + "\n"
         )
+    blocked = refuse_layout(rel, original, text)
+    if blocked:
+        return blocked
     apply_source(path, text, original=original)
     return (
         f"patched {rel_posix(path, project.resolve())} "
@@ -171,6 +175,9 @@ def patch_py(
 def edit_py(project: Path, rel: str, source: str) -> str:
     path = resolve_project_file(project, rel)
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
+    blocked = refuse_layout(rel, original, source)
+    if blocked:
+        return blocked
     apply_source(path, source, original=original)
     return f"wrote {rel_posix(path, project.resolve())} (backup {path.name}.bak)"
 

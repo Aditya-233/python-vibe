@@ -24,26 +24,42 @@ QUESTION_PREFIXES = (
     "who ",
 )
 _SYMBOL = re.compile(r"\b([a-z_][a-z0-9_]{4,})\b")
+_DOES_SYMBOL = re.compile(r"\bdoes\s+([a-z_][a-z0-9_]*)\b")
 _SYMBOL_SKIP = frozenset(
     {
         "about",
         "after",
+        "and",
         "apply",
+        "are",
         "before",
+        "but",
+        "can",
+        "did",
         "does",
         "explain",
         "feature",
+        "for",
         "from",
         "function",
+        "had",
+        "has",
+        "how",
+        "not",
         "refuse",
         "return",
         "source",
         "that",
+        "the",
         "this",
+        "was",
         "what",
         "where",
         "which",
+        "who",
+        "why",
         "with",
+        "you",
     }
 )
 _ADD_START = re.compile(r"^(please\s+)?(add|implement|introduce|create)\b|new feature")
@@ -73,6 +89,11 @@ def looks_like_question(task: str) -> bool:
 
 def question_symbol(task: str) -> str:
     """The first word in the task that could be a symbol name."""
+    does = _DOES_SYMBOL.search(task.lower())
+    if does:
+        name = does.group(1)
+        if name not in _SYMBOL_SKIP:
+            return name
     hits = [word for word in _SYMBOL.findall(task.lower()) if word not in _SYMBOL_SKIP]
     return hits[0] if hits else ""
 

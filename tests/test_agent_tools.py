@@ -42,6 +42,21 @@ class AgentToolsTest(unittest.TestCase):
             self.assertIn("value_0 = 1", dest.read_text(encoding="utf-8"))
             self.assertTrue(dest.with_suffix(".py.bak").is_file())
 
+    def test_edit_refuses_a_god_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dest = root / "kitchen.py"
+            dest.write_text(
+                "def one():\n    return 1\n\n"
+                "def two():\n    return 2\n\n"
+                "def three():\n    return 3\n\n"
+                "def four():\n    return 4\n",
+                encoding="utf-8",
+            )
+            result = edit_py(root, "kitchen.py", "def one():\n    return 1\n")
+            self.assertIn("already has 4", result)
+            self.assertIn("def four", dest.read_text(encoding="utf-8"))
+
     def test_patch_append_adds_function(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
