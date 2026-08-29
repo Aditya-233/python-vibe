@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from harness.task import (
     looks_like_add_feature,
@@ -106,6 +107,88 @@ def refuse_smell_wrong_file(
     return (
         f"rename the implementation first. "
         f"Action: patch Path: {located_path} Find: the old def line."
+    )
+
+
+_TEST_DEF = re.compile(r"^[ \t]*def\s+(test_\w+)\s*\(", re.MULTILINE)
+_TEST_CLASS = re.compile(r"^[ \t]*class\s+(\w+)\s*\(", re.MULTILINE)
+_ONE_SHOT_ASSERT = re.compile(
+    r"self\.assert\w+\s*\(\s*[A-Za-z_]\w+\s*\(",
+)
+_OPAQUE_TEST_PART = frozenset(
+    {"bar", "foo", "fn", "func", "it", "ok", "tmp", "works"}
+)
+_ACT_NAMES = ("got", "actual", "result", "outcome")
+
+
+def refuse_weak_test(rel: str, draft: str) -> str:
+    """Refuse a newly written test that is unclear about what it checks.
+
+    Calibrated against this project's own tests: none of them is refused.
+    A rule that rejects the code it is shipped with is not a style rule, it
+    is an obstacle, so `tests/test_style.py` checks that directly.
+
+    Only a draft holding a single test is judged on arrangement. A whole
+    file holds many tests written over time, and judging it as one unit
+    turns one inline assertion anywhere into a refusal for everything.
+    """
+    posix = rel.replace("\\", "/").lower()
+    if "test" not in posix and "def test_" not in (draft or ""):
+        return ""
+    if "def test_" not in (draft or ""):
+        return ""
+    one_test = len(_TEST_DEF.findall(draft)) == 1
+    for match in _TEST_CLASS.finditer(draft):
+        name = match.group(1)
+        if name.startswith("test_") or name in {"Test", "Tests"} or "_" in name:
+            return (
+                f"class name {name}. Use Test<Unit> PascalCase "
+                "(TestMultiply), not Tests or test_mathy."
+            )
+    for match in _TEST_DEF.finditer(draft):
+        name = match.group(1)
+        parts = name.split("_")
+        # A short name is only a problem when it says nothing: test_total
+        # and test_health name their subject, test_ok and test_works do not.
+        if any(part in _OPAQUE_TEST_PART for part in parts[1:]):
+            return (
+                f"opaque test name {name}. "
+                "Name the behavior, not it/fn/ok/works."
+            )
+    # Anchored to the start of a line so the phrase inside a string literal,
+    # which is how several of this project's own tests carry sample code,
+    # is not mistaken for the statement.
+    if re.search(r"^[ \t]*assert\s+True\b", draft, re.MULTILINE):
+        return "do not assert True. Assert the value you computed."
+    named_act = any(re.search(rf"\b{name}\s*=", draft) for name in _ACT_NAMES)
+    if one_test and _ONE_SHOT_ASSERT.search(draft) and not named_act:
+        return (
+            "use AAA. Arrange inputs, Act: got = multiply(left, right), "
+            "Assert: self.assertEqual(got, expected)."
+        )
+    return ""
+
+
+def refuse_god_target(task: str, project: Path, action: str, path: str) -> str:
+    """Design-loop writes go to a new one-function file, not the god module."""
+    if not looks_like_design_loop(task) or action not in {"edit", "patch"}:
+        return ""
+    rel = (path or "").replace("\\", "/").lstrip("./")
+    if not rel:
+        return ""
+    target = Path(project) / rel
+    if not target.is_file():
+        return ""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    count = len(re.findall(r"^def ", text, re.MULTILINE))
+    if count < 4:
+        return ""
+    return (
+        f"SoC: {rel} already has {count} functions. "
+        "Action: edit Path: pkg/<new_concern>.py with only the new function."
     )
 
 

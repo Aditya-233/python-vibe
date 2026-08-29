@@ -11,7 +11,7 @@ from harness.agent.policy import LoopState, next_prompt, refuse_done
 from harness.locate import prelude, refuse_question_write
 from harness.scan.design import design_is_clean, render_design_review
 from harness.skillkit.catalog import list_skills, pick_skills
-from harness.skillkit.style import refuse_write_done
+from harness.skillkit.style import refuse_god_target, refuse_write_done
 from harness.task import looks_like_design_loop
 
 
@@ -54,6 +54,21 @@ class DesignLoopTest(unittest.TestCase):
     def test_review_may_edit(self) -> None:
         self.assertEqual(
             refuse_question_write("review the project structure", "edit"),
+            "",
+        )
+
+    def test_god_module_is_refused_before_the_draft_runs(self) -> None:
+        root = self._dirty_tree()
+        self.assertIn(
+            "already has 4",
+            refuse_god_target(
+                "review the project structure", root, "edit", "pkg/kitchen.py"
+            ),
+        )
+        self.assertEqual(
+            refuse_god_target(
+                "review the project structure", root, "edit", "pkg/prices.py"
+            ),
             "",
         )
 

@@ -64,7 +64,12 @@ These kit skills, each a **single copy-paste Action** (no essays):
 
 - `skills/answer-question/SKILL.md`
 - `skills/add-feature/SKILL.md`
-- `skills/write-tests/SKILL.md`
+- `skills/write-tests/SKILL.md` — one AAA method named
+  `test_<unit>_<result>` (`got = multiply(...)`, then assert `got`).
+  A single new test that asserts without arranging is refused, as is an
+  opaque name such as `test_it_works`. A short name that still says what it
+  covers, such as `test_health`, is allowed: the rule is calibrated so that
+  none of this project's own 26 test files is refused by it.
 - `skills/stay-scoped/SKILL.md`
 - `skills/new-package/SKILL.md` — `pkg/__init__.py` exports only, then
   `pkg/<noun>.py`. SoC, not a SOLID lecture.

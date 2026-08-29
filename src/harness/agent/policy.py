@@ -34,7 +34,11 @@ from harness.locate import (
     refuse_thin_review,
 )
 from harness.skillkit.catalog import get_skill, render_skill
-from harness.skillkit.style import refuse_smell_wrong_file, refuse_write_done
+from harness.skillkit.style import (
+    refuse_god_target,
+    refuse_smell_wrong_file,
+    refuse_write_done,
+)
 from harness.task import (
     looks_like_add_feature,
     looks_like_bugfix,
@@ -144,6 +148,10 @@ def refuse_before(state: LoopState, turn) -> str:
         )
     if not blocked:
         blocked = refuse_redundant_locate(state.task, turn.action, state.prelude_ran)
+    if not blocked:
+        blocked = refuse_god_target(
+            state.task, state.project, turn.action, turn.path or state.last_path
+        )
     if not blocked:
         blocked = refuse_smell_wrong_file(
             state.task,
@@ -321,7 +329,8 @@ def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
         if not is_test:
             return (
                 f"Next Action must be edit Path: tests/test_{noun}.py as a "
-                f"unittest.TestCase that imports {noun}. Then Action: run.\n"
+                f"unittest.TestCase. Name test_{noun}_<result>. "
+                f"AAA: got = {noun}(...); assert got. Then Action: run.\n"
             )
         return "Next Action must be run Argv: -m unittest discover -s tests -q\n"
     if looks_like_fix_smell(state.task) and turn.action == "patch" and not is_test:
