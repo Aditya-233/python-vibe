@@ -153,13 +153,40 @@ def handle_rpc(
             "jsonrpc": "2.0",
             "id": rpc_id,
             "result": {
-                "content": [{"type": "text", "text": result.summary}],
+                "content": [{"type": "text", "text": describe(result)}],
                 "isError": not result.ok,
             },
         }
     if rpc_id is None:
         return None
     return _error(rpc_id, f"unknown method {method}")
+
+
+def describe(result) -> str:
+    """What to show in the editor: the answer, and what it left behind.
+
+    The summary alone is not enough when a run stops early. A person who
+    asked for a feature and got a question back also needs to know that
+    files were changed and that the tests no longer pass, or they will
+    find out later and blame the wrong thing.
+    """
+    lines = [result.summary or "done"]
+    if result.writes:
+        changed = ", ".join(sorted(set(result.writes)))
+        lines.append(f"\nChanged: {changed}")
+    if not result.ok:
+        if result.stopped == "question":
+            lines.append(
+                "This run stopped to ask. Nothing further was done, so the "
+                "change above may be half finished — run the tests before "
+                "relying on it."
+            )
+        elif result.stopped == "steps":
+            lines.append(
+                "This run ran out of steps before it finished. Check what "
+                "changed above."
+            )
+    return "\n".join(lines)
 
 
 def _error(rpc_id: Any, text: str) -> dict[str, Any]:

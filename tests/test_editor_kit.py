@@ -366,3 +366,55 @@ class VscodeTaskTest(unittest.TestCase):
                 tasks = self._tasks(Path(tmp))["tasks"]
         for task in tasks:
             self.assertNotIn("options", task)
+
+
+class McpReplyTest(unittest.TestCase):
+    """What the editor shows must include what the run left behind.
+
+    A person who asked for a feature and got a question back also needs to
+    know that files changed, or they find out later and blame the wrong
+    thing. Observed in a session: the run wrote a function to one file and
+    a test to another, stopped to ask, and the editor was told only the
+    question. The suite was red.
+    """
+
+    def _result(self, **kwargs):
+        from harness.agent.options import AgentResult
+
+        base = dict(ok=True, summary="done", stopped="done", writes=())
+        base.update(kwargs)
+        return AgentResult(**base)
+
+    def _describe(self, result) -> str:
+        from harness.mcp_stdio import describe
+
+        return describe(result)
+
+    def test_a_clean_run_names_what_changed(self) -> None:
+        text = self._describe(self._result(writes=("src/app.py",)))
+        self.assertIn("src/app.py", text)
+
+    def test_a_run_that_stopped_to_ask_says_it_may_be_half_finished(self) -> None:
+        text = self._describe(
+            self._result(ok=False, stopped="question", summary="which file?",
+                         writes=("src/app.py",))
+        )
+        self.assertIn("which file?", text)
+        self.assertIn("src/app.py", text)
+        self.assertIn("half finished", text)
+
+    def test_a_run_out_of_steps_says_so(self) -> None:
+        text = self._describe(
+            self._result(ok=False, stopped="steps", writes=("src/app.py",))
+        )
+        self.assertIn("ran out of steps", text)
+
+    def test_a_run_that_changed_nothing_does_not_claim_it_did(self) -> None:
+        text = self._describe(self._result(summary="compute_total returns int"))
+        self.assertNotIn("Changed:", text)
+
+    def test_each_file_is_named_once(self) -> None:
+        text = self._describe(
+            self._result(writes=("src/app.py", "src/app.py", "tests/test_app.py"))
+        )
+        self.assertEqual(text.count("src/app.py"), 1)
