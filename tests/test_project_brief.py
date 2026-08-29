@@ -79,6 +79,11 @@ class ProjectBriefTest(unittest.TestCase):
             self.assertIn("grep", hint)
             self.assertIn("apply_source", hint)
             self.assertTrue(hint.index("grep") < hint.index("read"))
+            located = start_hint(
+                brief, "what does apply_source refuse?", located=True
+            )
+            self.assertIn("done", located)
+            self.assertNotIn("First Action: grep", located)
 
 
 if __name__ == "__main__":

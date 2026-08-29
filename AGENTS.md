@@ -44,6 +44,9 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 | Path | Role |
 | --- | --- |
 | `src/harness/` | Guard, serve helpers, agent parse/tools, report formatter |
+| `src/harness/skill_target.py` | Repoints a kit skill's paths at the target project |
+| `src/harness/patch_fix.py` | Recovers a near-miss `Find:` and names the closest lines |
+| `src/harness/repo_map.py` | Signature outline under `Action: map` |
 | `src/finetune/` | Specs, splits, Hub card, agent system prompt |
 | `scripts/vibe.py` | Laptop REPL (`/run`, `--then`, `--project`) |
 | `scripts/serve.py` | Local HTTP sidecar |
@@ -67,8 +70,13 @@ style prior, not a capability unlock. See investigation
 routes need a test in `tests/test_serve.py` that does not call Ollama.
 
 **Skills.** `skills/*/SKILL.md` is written for the everyday 8B: one copy-paste
-`Action:` block, no essays. Measure with `scripts/skill_probe.py` before you
-publish a new skill. See [everyday-skills](docs/investigations/everyday-skills.md).
+`Action:` block, no essays. Paths in a skill are `{{module}}` / `{{test}}` /
+`{{scope}}`, or a real eval-fixture path — never an invented one. The harness
+repoints anything that does not exist in the target project
+(`src/harness/skill_target.py`); a literal fixture path that slips through
+gets created in someone else's repo — see
+[harness-comparison](docs/investigations/harness-comparison.md).
+Measure with `scripts/skill_probe.py` before you publish a new skill. See [everyday-skills](docs/investigations/everyday-skills.md).
 The loop auto-picks skills; `Action: locate` is grep + auto-read. Do not name
 third-party products.
 
@@ -80,6 +88,11 @@ Train the 7B-class tool LoRA with `scripts/agent.py --record data/agent-loop/ext
 then `scripts/build_agent_data.py` and `scripts/train.py --everyday`. Name it in
 Ollama with `scripts/export_ollama.py --create`. Do not spend more 0.5B train
 steps expecting everyday-agent quality.
+
+**Edit tool.** `Find:` stays exact-substring: it fails loudly instead of
+editing the wrong line. A miss must come back *recoverable* — whitespace
+retry, then the closest real lines. Do not add fuzzy matching that guesses
+between two candidates; ambiguity is a refusal.
 
 **Investigations.** New measurement pages go in `docs/investigations/`. Add the
 file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.

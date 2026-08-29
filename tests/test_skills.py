@@ -23,7 +23,15 @@ class SkillsTest(unittest.TestCase):
         catalog = list_skills(ROOT)
         names = {item.name for item in catalog}
         self.assertEqual(
-            names, {"add-feature", "answer-question", "write-tests", "stay-scoped"}
+            names,
+            {
+                "add-feature",
+                "answer-question",
+                "fix-smell",
+                "new-package",
+                "write-tests",
+                "stay-scoped",
+            },
         )
         loaded = get_skill("add-feature", ROOT)
         self.assertIsNotNone(loaded)
@@ -34,11 +42,26 @@ class SkillsTest(unittest.TestCase):
         catalog = list_skills(ROOT)
         self.assertTrue(looks_like_add_feature("add a function multiply and a test"))
         self.assertFalse(looks_like_add_feature("what does add return?"))
+        self.assertFalse(looks_like_add_feature("create a package for total_price"))
+        self.assertFalse(looks_like_add_feature("rename calc to total_price"))
         picked = pick_skills("add a function multiply(a, b) and a unit test", catalog)
         self.assertEqual([item.name for item in picked], ["add-feature", "write-tests"])
         self.assertEqual(
             [item.name for item in pick_skills("what does add return?", catalog)],
             ["answer-question"],
+        )
+        self.assertEqual(
+            [item.name for item in pick_skills("create a package for total_price", catalog)],
+            ["new-package"],
+        )
+        self.assertEqual(
+            [
+                item.name
+                for item in pick_skills(
+                    "rename calc to total_price to fix the code smell", catalog
+                )
+            ],
+            ["fix-smell"],
         )
 
     def test_render_and_parse_skill_action(self) -> None:

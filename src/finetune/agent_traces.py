@@ -126,6 +126,22 @@ def seed_pairs() -> list[tuple[str, str]]:
     )
     pairs.append(
         (
+            "This is a new-package task. First Action: edit Path: pkg/__init__.py "
+            "(exports only).",
+            "Action: edit\nPath: pkg/__init__.py\n```python\n"
+            '"""Public exports only. Implementation lives in sibling modules."""\n```',
+        )
+    )
+    pairs.append(
+        (
+            "This is a smell/rename task. Patch one opaque name to readable "
+            "snake_case. Do not add features.",
+            "Action: patch\nPath: pkg/mathy.py\nFind: def calc(x, y):\n"
+            "Replace: def total_price(quantity: int, unit_price: int) -> int:",
+        )
+    )
+    pairs.append(
+        (
             "Task: add a function multiply(a, b) and a unit test\n",
             "Action: grep\nQuery: def multiply",
         )

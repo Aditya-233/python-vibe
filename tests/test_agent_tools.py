@@ -5,7 +5,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_tools import edit_py, grep_py, map_py, patch_py, read_py, run_python
+from harness.agent_tools import (
+    edit_py,
+    grep_py,
+    map_py,
+    patch_py,
+    read_py,
+    repair_unittest_append,
+    run_python,
+)
 from harness.code import resolve_project_file
 
 
@@ -88,6 +96,26 @@ class AgentToolsTest(unittest.TestCase):
             (root / "ok.py").write_text("print(1)\n", encoding="utf-8")
             out = map_py(root)
             self.assertIn("ok.py", out)
+
+    def test_repair_unittest_append_places_method(self) -> None:
+        original = (
+            "from pkg.mathy import add\n\n"
+            "class TestMathy(unittest.TestCase):\n"
+            "    def test_add(self) -> None:\n"
+            "        self.assertEqual(add(2, 3), 5)\n\n"
+            "if __name__ == \"__main__\":\n"
+            "    unittest.main()\n"
+        )
+        append = (
+            "    def test_multiply(self) -> None:\n"
+            "        self.assertEqual(multiply(2, 3), 6)\n"
+        )
+        out = repair_unittest_append(original, append)
+        self.assertIsNotNone(out)
+        assert out is not None
+        self.assertIn("from pkg.mathy import add, multiply", out)
+        self.assertLess(out.index("def test_multiply"), out.index("if __name__"))
+        self.assertIn("class TestMathy", out.split("def test_multiply")[0])
 
     def test_run_refuses_dash_c(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

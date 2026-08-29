@@ -5,7 +5,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.smart import def_hit_path, locate_py, prelude, refuse_early_done
+from harness.smart import (
+    def_hit_path,
+    locate_py,
+    prelude,
+    refuse_early_done,
+    refuse_question_write,
+    refuse_redundant_explore,
+    refuse_redundant_locate,
+    refuse_shallow_done,
+    return_annotation,
+    signature_line,
+)
 
 
 class SmartHarnessTest(unittest.TestCase):
@@ -42,12 +53,13 @@ class SmartHarnessTest(unittest.TestCase):
             pkg = root / "pkg"
             pkg.mkdir()
             (pkg / "mathy.py").write_text(
-                "def compute_total(rows):\n    return sum(rows)\n",
+                "def compute_total(rows) -> int:\n    return sum(rows)\n",
                 encoding="utf-8",
             )
             q_text, q_path = prelude(root, "what does compute_total return?")
             self.assertIn("auto-read", q_text)
             self.assertEqual(q_path, "pkg/mathy.py")
+            self.assertIn("-> type", q_text)
             add_text, _add_path = prelude(
                 root, "add a function multiply(a, b) and a unit test"
             )
@@ -60,6 +72,72 @@ class SmartHarnessTest(unittest.TestCase):
                 "what does apply_source refuse?",
                 "src/harness/code.py",
                 "src/harness/code.py",
+            ),
+            "",
+        )
+
+    def test_refuse_question_write_and_reread(self) -> None:
+        self.assertIn(
+            "do not edit",
+            refuse_question_write("what does complete do?", "patch").lower(),
+        )
+        self.assertEqual(refuse_question_write("add a function multiply", "patch"), "")
+        self.assertIn(
+            "auto-read",
+            refuse_redundant_explore(
+                "what does listen_addr return?",
+                "read",
+                "src/harness/http.py",
+                "src/harness/http.py",
+            ),
+        )
+        self.assertEqual(
+            refuse_redundant_explore(
+                "what does listen_addr return?",
+                "read",
+                "src/harness/run.py",
+                "src/harness/http.py",
+            ),
+            "",
+        )
+
+    def test_signature_and_shallow_done(self) -> None:
+        grep = (
+            "src/harness/http.py:18:"
+            "def listen_addr(argv: list[str] | None = None) -> tuple[str, int]:"
+        )
+        sig = signature_line(grep, "listen_addr")
+        self.assertIn("def listen_addr(", sig)
+        self.assertEqual(return_annotation(sig), "tuple[str, int]")
+        self.assertIn(
+            "tuple[str, int]",
+            refuse_shallow_done(
+                "what does listen_addr return?",
+                "a tuple containing the host and port",
+                sig,
+            ),
+        )
+        self.assertEqual(
+            refuse_shallow_done(
+                "what does listen_addr return?",
+                "returns tuple[str, int] from env or argv",
+                sig,
+            ),
+            "",
+        )
+        self.assertEqual(
+            refuse_shallow_done("add a function multiply", "done", sig),
+            "",
+        )
+        self.assertIn(
+            "patch",
+            refuse_redundant_locate(
+                "add a function multiply(a, b) and a unit test", "locate", True
+            ),
+        )
+        self.assertEqual(
+            refuse_redundant_locate(
+                "add a function multiply(a, b) and a unit test", "locate", False
             ),
             "",
         )

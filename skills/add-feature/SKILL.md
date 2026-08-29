@@ -6,5 +6,5 @@ description: Adds one requested function plus a test. Use when the task starts w
 Action: patch
 Path: pkg/mathy.py
 Append:
-def multiply(a: int, b: int) -> int:
-    return a * b
+def multiply(left: int, right: int) -> int:
+    return left * right

@@ -8,8 +8,10 @@ import sys
 from pathlib import Path
 
 from harness.code import apply_source, read_project_file, resolve_project_file
+from harness.patch_fix import align_indent, find_match, miss_message
 from harness.project_brief import render_map, resolve_scope
 from harness.project_scan import SKIP_DIR
+from harness.repo_map import render_outline
 
 MAX_HITS = 30
 _TRUNC = "\n# … truncated. Narrow Query or pass --scope"
@@ -64,12 +66,61 @@ def grep_py(project: Path, query: str, scope: str = "") -> str:
 
 
 def map_py(project: Path, scope: str = "") -> str:
-    return render_map(project, scope)
+    """File list plus a signature outline. Sizes do not tell it where to look."""
+    return f"{render_map(project, scope)}\n\n{render_outline(project, scope)}"
 
 
 def read_py(project: Path, rel: str) -> str:
     path = resolve_project_file(project, rel)
     return read_project_file(path)
+
+
+_TEST_METH = re.compile(r"def\s+(test_\w+)\s*\(")
+_ASSERT_CALL = re.compile(r"assertEqual\s*\(\s*([A-Za-z_]\w+)\s*\(")
+_IMPORT_LINE = re.compile(r"^(from\s+\S+\s+import\s+)(.+)$")
+
+
+def _add_import_symbol(text: str, name: str) -> str:
+    if not name or name in {"self", "True", "False", "None"}:
+        return text
+    for line in text.splitlines():
+        match = _IMPORT_LINE.match(line)
+        if not match:
+            continue
+        imported = {part.strip() for part in match.group(2).split(",")}
+        if name in imported:
+            return text
+        if any(skip in line for skip in ("unittest", "pathlib", "typing")):
+            continue
+        return text.replace(line, f"{match.group(1)}{match.group(2).rstrip()}, {name}", 1)
+    return text
+
+
+def repair_unittest_append(original: str, append: str) -> str | None:
+    """8B Append: often lands after if __name__ and skips the import."""
+    if "def test_" not in append:
+        return None
+    if "TestCase" not in original and "unittest" not in original:
+        return None
+    meth = _TEST_METH.search(append)
+    if not meth or re.search(rf"def\s+{re.escape(meth.group(1))}\s*\(", original):
+        return None
+    lines = append.strip("\n").splitlines()
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    if not lines:
+        return None
+    base = len(lines[0]) - len(lines[0].lstrip())
+    dedented = "\n".join(
+        line[base:] if len(line) >= base else line.lstrip() for line in lines
+    )
+    method = "    " + dedented.replace("\n", "\n    ")
+    called = _ASSERT_CALL.search(append)
+    text = _add_import_symbol(original, called.group(1) if called else "")
+    marker = "\nif __name__"
+    if marker in text:
+        return text.replace(marker, "\n" + method + "\n" + marker, 1)
+    return text.rstrip() + "\n\n" + method + "\n"
 
 
 def patch_py(
@@ -78,6 +129,7 @@ def patch_py(
     path = resolve_project_file(project, rel)
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
     text = original
+    note = ""
     if find:
         if len(find) < 8:
             return (
@@ -85,17 +137,34 @@ def patch_py(
                 "Use a unique full line such as: Find: return tota"
             )
         hits = text.count(find)
-        if hits == 0:
-            return "Find: string not in file"
         if hits > 1:
             return f"Find: matches {hits} times — use a longer unique snippet"
-        text = text.replace(find, replace, 1)
+        match = find_match(text, find)
+        if match is None:
+            return miss_message(text, find)
+        text = text.replace(
+            match.text,
+            replace if match.exact else align_indent(match.text, replace),
+            1,
+        )
+        if not match.exact:
+            note = " (Find: matched after whitespace normalisation)"
+        else:
+            note = ""
     elif not append:
         return "patch needs Find: or Append:"
     if append:
-        text = text.rstrip() + "\n\n" + append.rstrip() + "\n"
+        repaired = repair_unittest_append(text, append)
+        text = (
+            repaired
+            if repaired is not None
+            else text.rstrip() + "\n\n" + append.rstrip() + "\n"
+        )
     apply_source(path, text, original=original)
-    return f"patched {path.relative_to(project.resolve())} (backup {path.name}.bak)"
+    return (
+        f"patched {path.relative_to(project.resolve())} "
+        f"(backup {path.name}.bak){note}"
+    )
 
 
 def edit_py(project: Path, rel: str, source: str) -> str:
