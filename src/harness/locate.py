@@ -9,8 +9,10 @@ from harness.act.tools import grep_py, read_py
 from harness.task import looks_like_question, question_symbol
 from harness.task import looks_like_add_feature
 from harness.task import (
+    everyday_skill_name,
     named_project_file,
     looks_like_design_loop,
+    looks_like_everyday_code,
     looks_like_fix_smell,
     looks_like_new_package,
     looks_like_refactor,
@@ -146,6 +148,8 @@ def prelude(project: Path, task: str, scope: str = "") -> tuple[str, str]:
         kind = "question"
     elif looks_like_fix_smell(task):
         kind = "fix-smell"
+    elif looks_like_everyday_code(task):
+        kind = everyday_skill_name(task) or "everyday"
     else:
         kind = "add-feature"
     header = f"Harness locate ({kind}) Query: {symbol}"
@@ -160,6 +164,11 @@ def prelude(project: Path, task: str, scope: str = "") -> tuple[str, str]:
         header += (
             "\nNext Action must be patch Find: the old def line "
             "Replace: a readable snake_case name. Do not grep."
+        )
+    elif looks_like_everyday_code(task):
+        header += (
+            "\nNext Action must be edit Path: pkg/<noun>.py with one function. "
+            "Do not grep. Do not emit curl."
         )
     elif looks_like_add_feature(task):
         header += (
@@ -180,6 +189,10 @@ def refuse_redundant_locate(task: str, action: str, prelude_ran: bool) -> str:
         return (
             "already located. Action: done Summary: quote the -> type."
         )
+    if looks_like_everyday_code(task):
+        return (
+            "already located. Action: edit Path: pkg/<noun>.py with one function."
+        )
     if looks_like_add_feature(task):
         return (
             "already located. Action: patch Path: + Append: the new function."
@@ -197,7 +210,24 @@ def refuse_question_ask(task: str, action: str, located_path: str) -> str:
     )
 
 
+def reviews_one_named_file(task: str) -> bool:
+    """True for "review src/orders.py for bugs", false for the design loop.
+
+    A structure review is allowed to edit, because the loop it drives moves
+    on to splitting a module. A review of one named file is not: it was
+    asked to report.
+    """
+    from harness.task import looks_like_review_code, task_paths
+
+    return bool(task_paths(task)) and looks_like_review_code(task)
+
+
 def refuse_question_write(task: str, action: str) -> str:
+    if reviews_one_named_file(task) and action in _QUESTION_WRITE:
+        return (
+            "Reviews do not edit. Action: done Summary: name the defect and "
+            "quote the line it is on."
+        )
     if looks_like_design_loop(task):
         return ""
     if looks_like_question(task) and action in _QUESTION_WRITE:

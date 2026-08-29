@@ -9,6 +9,7 @@ from harness.task import (
     looks_like_add_feature,
     looks_like_bugfix,
     looks_like_design_loop,
+    looks_like_everyday_code,
     looks_like_fix_smell,
     looks_like_new_package,
     looks_like_refactor,
@@ -62,6 +63,24 @@ def _opaque_param(draft: str) -> str:
                     f"(quantity, unit_price), not x or tmp."
                 )
     return ""
+
+
+_SHELL_FETCH = re.compile(
+    r"(?m)^\s*(os\.system|subprocess\.|Popen)|"
+    r"\b(curl|wget)\s+\S"
+)
+
+
+def refuse_shell_fetch(rel: str, draft: str) -> str:
+    """HTTP helpers use urllib. curl|sh is already PV003; this catches curl alone.
+
+    Test files may quote the blocked pattern, so they are not judged.
+    """
+    if "test" in rel.replace("\\", "/").lower():
+        return ""
+    if not draft or not _SHELL_FETCH.search(draft):
+        return ""
+    return "urllib.request only. Do not emit curl, wget, or os.system."
 
 
 def refuse_opaque_names(draft: str) -> str:
@@ -150,7 +169,11 @@ def refuse_weak_test(rel: str, draft: str) -> str:
         parts = name.split("_")
         # A short name is only a problem when it says nothing: test_total
         # and test_health name their subject, test_ok and test_works do not.
-        if any(part in _OPAQUE_TEST_PART for part in parts[1:]):
+        # An opaque word only makes a name opaque when it carries the
+        # meaning. test_it_works says nothing;
+        # test_the_suite_passes_before_the_agent_touches_it says plenty and
+        # happens to end in "it".
+        if len(parts) <= 3 and any(part in _OPAQUE_TEST_PART for part in parts[1:]):
             return (
                 f"opaque test name {name}. "
                 "Name the behavior, not it/fn/ok/works."
@@ -227,6 +250,7 @@ def refuse_write_done(task: str, ran_tests: bool, *, wrote: bool = True) -> str:
         return ""
     needs_run = (
         looks_like_add_feature(task)
+        or looks_like_everyday_code(task)
         or looks_like_fix_smell(task)
         or looks_like_bugfix(task)
         or looks_like_refactor(task)

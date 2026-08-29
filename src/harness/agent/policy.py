@@ -113,6 +113,12 @@ def refuse_wrong_file(task: str, project: Path, action: str, path: str) -> str:
     got = as_project_rel(path)
     if not got or got == wanted or wanted.endswith(got) or got.endswith(wanted):
         return ""
+    # "write tests for apply_discount in src/orders.py" names the source
+    # file, but the test belongs beside it, not inside it. A test file is
+    # always an allowed destination.
+    parts = got.split("/")
+    if "tests" in parts or parts[-1].startswith("test_"):
+        return ""
     return (
         f"The task names {wanted}. Do not change {got}. "
         f"Action: patch Path: {wanted}"
@@ -309,7 +315,7 @@ def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
     is_test = "test" in path
     if (
         (looks_like_add_feature(state.task) or looks_like_bugfix(state.task))
-        and turn.action == "patch"
+        and turn.action in {"patch", "edit"}
         and not is_test
     ):
         loaded = get_skill("write-tests", state.project)

@@ -44,6 +44,10 @@ also gets `stay-scoped`.
 | Review one named file | `review-code` |
 | Review structure / design / layout | `review-design`, `refactor-split`, `readable-layout` |
 | Add, implement, or introduce | `add-feature`, `write-tests` |
+| Script / CLI / argv | `write-script`, `write-tests` |
+| HTTP API / fetch JSON / “like curl” | `call-http`, `write-tests` |
+| Analytics / tally / csv | `analyze-data`, `write-tests` |
+| Algorithm / binary search / stack | `write-algorithm`, `write-tests` |
 | Vague, no file and no symbol | `ask-when-unclear` |
 | Mentions tests | `write-tests` |
 | Mode is large | `stay-scoped` as well |
@@ -54,27 +58,31 @@ filenames.
 
 ## Kit catalog
 
-Fourteen skills ship with python-vibe.
+Eighteen skills ship with python-vibe.
 
 ### Code changes
 
 | Skill | What it tells the model to do | When it is used |
 | --- | --- | --- |
 | [`add-feature`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/add-feature/SKILL.md) | Add one requested function, then a test. One `Append:` patch. | Task starts with add, implement, or introduce. Not for questions or one-line bugs. |
-| [`write-tests`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-tests/SKILL.md) | Add one AAA unittest that names the behavior. | After `add-feature`, or when the task asks for tests. |
-| [`new-package`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/new-package/SKILL.md) | Scaffold `pkg/` + `tests/` with an exports-only `__init__.py`. | Create a package or project structure. Not for one function on an existing module. |
+| [`write-script`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-script/SKILL.md) | One argparse module in `pkg/` with `if __name__`. | Script, CLI, argv, weekday-style helpers. |
+| [`call-http`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/call-http/SKILL.md) | One `urllib.request` JSON GET/POST. | HTTP API, REST, “like curl”. Never `curl\|sh`. |
+| [`analyze-data`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/analyze-data/SKILL.md) | One `Counter` / group-by over rows. | Analytics, tally, csv, histogram. |
+| [`write-algorithm`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-algorithm/SKILL.md) | One named algorithm (binary search, stack). | Data structures and algorithms. |
+| [`write-tests`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-tests/SKILL.md) | Add one test that sets up its inputs, calls the function, then checks the result. | After `add-feature`, or when the task asks for tests. |
+| [`new-package`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/new-package/SKILL.md) | Create `pkg/` and `tests/`, with an `__init__.py` that only lists what the package exports. | Create a package or project structure. Not for one function on an existing module. |
 | [`fix-smell`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/fix-smell/SKILL.md) | Rename one opaque function to readable snake_case. One `Find:` / `Replace:`. | Smell, rename, or clean up. Not for add or questions. |
-| [`refactor-split`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/refactor-split/SKILL.md) | Split one god module into `pkg/<concern>.py`. | Refactor or extract. Does not rewrite the whole tree. |
+| [`refactor-split`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/refactor-split/SKILL.md) | Move part of a file that does too much into a file of its own. | Refactor or extract. Does not rewrite the whole tree. |
 
 ### Questions and reviews
 
 | Skill | What it tells the model to do | When it is used |
 | --- | --- | --- |
-| [`answer-question`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/answer-question/SKILL.md) | Answer from the locate prelude. `Action: done` with a short fact. | The task is a what / why / how question. |
-| [`ask-when-unclear`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/ask-when-unclear/SKILL.md) | Ask you one short question before changing anything. | No file and no symbol, or two files would both be reasonable. Not when locate already found the file. |
+| [`answer-question`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/answer-question/SKILL.md) | Answer from the file the harness already opened. One short fact. | The task is a what / why / how question. |
+| [`ask-when-unclear`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/ask-when-unclear/SKILL.md) | Ask you one short question before changing anything. | No file and no symbol, or two files would both be reasonable. Not when the harness has already found the file. |
 | [`review-code`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/review-code/SKILL.md) | Report defects in one file. Do not edit it. | Review, check, or find bugs. Not when the task asks for a fix. |
 | [`review-design`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/review-design/SKILL.md) | Read the design scan, then one split until the scan is clean. | Review, structure, or system design of the tree. |
-| [`readable-layout`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/readable-layout/SKILL.md) | Say why the tree is hard to read (cycle, flat package, god module, no tests) and name **one** move. | Structure, layout, layers, organise, or refactor. Not for adding one function. |
+| [`readable-layout`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/readable-layout/SKILL.md) | Say why the project is hard to read — two files importing each other, a folder with too many files, one file much larger than the rest, or no tests — and name **one** change. | Structure, layout, layers, organise, or refactor. Not for adding one function. |
 
 ### Ship and large trees
 
