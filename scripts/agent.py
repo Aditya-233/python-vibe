@@ -72,7 +72,9 @@ from harness.style import (  # noqa: E402
     looks_like_new_package,
     refuse_layout,
     refuse_opaque_names,
+    refuse_package_done,
     refuse_smell_wrong_file,
+    wrap_bare_unittest,
     rename_target,
     smell_symbol,
 )
@@ -141,7 +143,11 @@ def _tool(
         layout = refuse_layout(path, original, turn.source)
         if layout:
             return layout, path
-        return edit_py(project, path, turn.source), path
+        source = turn.source
+        if "test" in path.replace("\\", "/").lower():
+            stem = Path(path).stem.removeprefix("test_")
+            source = wrap_bare_unittest(source, stem)
+        return edit_py(project, path, source), path
     if turn.action == "patch":
         if not path:
             return "patch needs Path: (or read that file first)", last_path
@@ -278,6 +284,7 @@ def main() -> None:
         + start_hint(brief, args.task, located=bool(located_path))
     )
     loop_guard = LoopGuard()
+    ran_tests = False
     for step in range(1, args.steps + 1):
         draft = generate_once(prompt)
         _remember(generate_once, prompt, draft)
@@ -297,6 +304,8 @@ def main() -> None:
                 blocked = refuse_shallow_done(
                     args.task, turn.summary, located_sig
                 )
+            if not blocked:
+                blocked = refuse_package_done(args.task, ran_tests)
             if blocked:
                 prompt = blocked
                 print(blocked[:500], file=sys.stderr)
@@ -337,6 +346,8 @@ def main() -> None:
         except (ValueError, OSError) as exc:
             result = str(exc)
         print(result[:2000], file=sys.stderr)
+        if turn.action == "run" and result.startswith("exit 0"):
+            ran_tests = True
         prompt = f"Tool result:\n{result}\n\nNext Action:"
         if (
             looks_like_add_feature(args.task)
@@ -354,8 +365,8 @@ def main() -> None:
                 )
         if (
             looks_like_new_package(args.task)
-            and turn.action == "edit"
-            and result.startswith("wrote")
+            and turn.action in {"edit", "patch"}
+            and result.startswith(("wrote", "patched"))
             and "__init__" in (turn.path or last_path)
         ):
             noun = question_symbol(args.task) or "service"
@@ -363,6 +374,29 @@ def main() -> None:
                 f"Tool result:\n{result}\n\n"
                 f"Next Action must be edit Path: pkg/{noun}.py with one "
                 f"function def {noun}(...). snake_case. Not in __init__.py.\n"
+            )
+        if (
+            looks_like_new_package(args.task)
+            and turn.action in {"edit", "patch"}
+            and result.startswith(("wrote", "patched"))
+            and "__init__" not in (turn.path or last_path)
+            and "test" not in (turn.path or last_path).lower()
+        ):
+            noun = question_symbol(args.task) or "service"
+            prompt = (
+                f"Tool result:\n{result}\n\n"
+                f"Next Action must be edit Path: tests/test_{noun}.py as a "
+                f"unittest.TestCase that imports {noun}. Then Action: run.\n"
+            )
+        if (
+            looks_like_new_package(args.task)
+            and turn.action in {"edit", "patch"}
+            and result.startswith(("wrote", "patched"))
+            and "test" in (turn.path or last_path).lower()
+        ):
+            prompt = (
+                f"Tool result:\n{result}\n\n"
+                "Next Action must be run Argv: -m unittest discover -s tests -q\n"
             )
         if (
             looks_like_fix_smell(args.task)

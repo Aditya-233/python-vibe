@@ -9,7 +9,9 @@ from harness.style import (
     looks_like_new_package,
     refuse_layout,
     refuse_opaque_names,
+    refuse_package_done,
     refuse_smell_wrong_file,
+    wrap_bare_unittest,
     rename_target,
     smell_symbol,
 )
@@ -91,6 +93,17 @@ class StyleHarnessTest(unittest.TestCase):
             ),
             "",
         )
+
+    def test_wrap_bare_test_and_package_done(self) -> None:
+        wrapped = wrap_bare_unittest(
+            "def test_total_price(self):\n    self.assertEqual(total_price(2, 3), 6)\n",
+            "total_price",
+        )
+        self.assertIn("TestCase", wrapped)
+        self.assertIn("from pkg.total_price import total_price", wrapped)
+        self.assertIn("def test_total_price", wrapped)
+        self.assertIn("run", refuse_package_done("create a package for total_price", False))
+        self.assertEqual(refuse_package_done("create a package for total_price", True), "")
 
 
 if __name__ == "__main__":

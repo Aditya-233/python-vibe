@@ -180,3 +180,34 @@ def refuse_layout(rel: str, original: str, draft: str) -> str:
                 "Action: edit Path: pkg/<new_concern>.py with only the new function."
             )
     return ""
+
+
+def refuse_package_done(task: str, ran_tests: bool) -> str:
+    if looks_like_new_package(task) and not ran_tests:
+        return "not done. Action: run Argv: -m unittest discover -s tests -q"
+    return ""
+
+
+def wrap_bare_unittest(source: str, symbol: str) -> str:
+    """8B writes def test_*(self) with no TestCase. Wrap it."""
+    if "TestCase" in source:
+        return source
+    if not re.search(r"^def\s+test_\w+\s*\(\s*self", source, re.MULTILINE):
+        return source
+    class_name = "Test" + "".join(
+        part[:1].upper() + part[1:] for part in symbol.split("_") if part
+    )
+    if class_name == "Test":
+        class_name = "TestModule"
+    import_line = f"from pkg.{symbol} import {symbol}\n\n" if symbol else ""
+    body = "\n".join(
+        ("    " + line if line.strip() else "") for line in source.strip().splitlines()
+    )
+    return (
+        "import unittest\n\n"
+        f"{import_line}"
+        f"class {class_name}(unittest.TestCase):\n"
+        f"{body}\n\n"
+        'if __name__ == "__main__":\n'
+        "    unittest.main()\n"
+    )

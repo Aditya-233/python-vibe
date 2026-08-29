@@ -71,6 +71,11 @@ snake_case classes) and `refuse_layout` (no impl in `__init__.py` or
 Plus harness: `prelude()` locate before the model, `Action: locate`,
 `parse_turn_smart`, syntax reject, skill-name-as-action.
 
+Live `create a package for total_price` (empty dir, 29 Aug 2026):
+`pkg/__init__.py` (export only) → `pkg/total_price.py` → a `TestCase` →
+`unittest` OK → done. A bare `def test_*(self)` is wrapped. `done`
+before a passing run is refused.
+
 Do not publish a new skill until `skill_probe.py` shows the intended
 `action` with `"prelude": true`.
 
