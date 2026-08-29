@@ -191,7 +191,12 @@ class Agent:
 
             try:
                 result, state.last_path = run_action(
-                    self.project, turn, state.last_path, options.scope, pre.target
+                    self.project,
+                    turn,
+                    state.last_path,
+                    options.scope,
+                    pre.target,
+                    task=options.task,
                 )
             except (ValueError, OSError) as exc:
                 result = str(exc)

@@ -10,7 +10,7 @@ type: article
 
 The product gap is not closable. The harness gap is.
 
-A hosted IDE agent has native tools, extra servers, a browser, and a large context window. python-vibe is a local loop: twenty typed Actions, a write jail, twenty steps, 700 tokens, `.py`/`.md` only. Improving this project means making the **8B loop reliable on small Python trees** — not growing a browser Action or pretending 8B is a frontier model.
+A hosted IDE agent has native tools, extra servers, a browser, and a large context window. python-vibe is a local loop: twenty typed Actions, a write jail, twenty steps, 700 tokens, project text files only (Python plus a few config suffixes; no secrets). Improving this project means making the **8B loop reliable on small Python and platform trees** — not growing a browser Action or pretending 8B is a frontier model.
 
 Related: [local loop vs hosted agents]({{ '/investigations/local-vs-cloud/' | relative_url }}) · [harness comparison]({{ '/investigations/harness-comparison/' | relative_url }}).
 
@@ -64,7 +64,11 @@ Ship these before training another model.
 5. **Measure bigger local models.** 29 Aug 2026, this laptop: 8B first Action was `done` on `complete` (thin summary), `patch` on add-multiply (tests file first, not impl), `read` on a dirty design review (skills were auto-picked; prelude asked for `edit`). The on-disk 30B coder timed out at the 180s Ollama cap. 7B coder is not pulled. Default stays 8B.
 6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has ten rows. Live 8B parse is 7/10. Everyday-ready still means beating an untuned 8B on parse **and** a real ≥1 KB fix.
 7. **AAA tests.** `write-tests` now requires `test_<unit>_<result>` and `got = …`. One-line `assertEqual(fn(), n)` is refused.
-8. **Traces, then a 7B LoRA.** Only after a live design loop reaches no structure findings. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
+8. **Editor drop-in.** `python -m harness editors vscode|continue|cursor` copies tasks / Continue / local MCP. `serve` speaks `/v1/chat/completions`. Hosted-editor chat override of loopback is out of scope (no public tunnel).
+9. **Everyday laptop Python.** Skills `write-script`, `call-http`, `analyze-data`, `write-algorithm`. Prelude now quotes the skill `Path:` (`pkg/weekday_name.py`, not `pkg/<noun>.py`). Drafts that emit `curl` / `wget` / `os.system` are refused.
+10. **Compiler oracle.** Undefined-name scan (`scan/names.py`). `done` is refused if a bugfix file still has `subtotl`. Tests in an impl file are refused. A rename that still defines the old name is refused. See [small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }}).
+11. **Platform paths.** Skill `write-paths`. Jail includes `.toml` / `.yml` / `.json`. Drafts that use `os.path.join`, a hardcoded home or `/tmp`, or a POSIX-only venv path are refused. See [platform engineering]({{ '/investigations/platform-engineering/' | relative_url }}).
+12. **Traces, then a 7B LoRA.** Only after a live design loop reaches no structure findings. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
 
 ## What not to spend a week on
 

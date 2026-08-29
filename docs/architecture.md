@@ -12,18 +12,20 @@ below it, never one above or beside it.** That rule is enforced by
 rather than the next reader.
 
 ```
-observe/   what a run leaves behind      trace_record, report_md, eval_gate
-locate.py  find the symbol before acting
-act/       intent becomes a change       parse, tools, patch_fix, code
-skillkit/  the skill kit                 catalog, target, style
-scan/      facts about a tree            project_scan, project_brief,
-                                         repo_map, project_docs, layout
-guard/     what ships, what is refused   python_vibe, run, types,
-                                         fallbacks, loop_guard
-task.py    what the user asked for       (leaf)
-paths.py   where this repo is on disk    (leaf)
-model/     talking to weights            engine, ollama_generate,
-ship/      git and PR helpers            openai_compat / git_ship  (leaves)
+cli.py       commands                    run, serve, mcp, editors
+server.py    HTTP on 127.0.0.1           /v1/ask, /v1/chat/completions
+mcp_stdio    editor child process        JSON-RPC on stdin/stdout
+observe/     what a run leaves behind    trace_record, report_md, eval_gate
+locate.py    find the symbol before acting
+act/         intent becomes a change     parse, tools, patch_fix, code
+skillkit/    the skill kit               catalog, target, style
+scan/        facts about a tree          project_brief, repo_map, layout
+guard/       what ships, what is refused python_vibe, run, types
+editor_kit   copy drop-in editor files
+task.py      what the user asked for     (leaf)
+paths.py     where this repo is on disk  (leaf)
+model/       talking to weights          engine, ollama_generate, openai_compat
+ship/        git and PR helpers          git_ship
 ```
 
 Read a layer top-down and you learn what the harness does. Read it

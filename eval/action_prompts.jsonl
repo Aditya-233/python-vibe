@@ -8,3 +8,5 @@
 {"action": "run", "prompt": "Tool result:\nwrote tests/test_multiply.py\n\nNext Action must be run Argv: -m unittest discover -s tests -q"}
 {"action": "done", "prompt": "Harness locate (question) Query: listen_addr\n# auto-read src/harness/server.py\ndef listen_addr(argv: list[str] | None = None) -> tuple[str, int]:\nNext Action must be done. Summary must quote the -> type."}
 {"action": "layout", "prompt": "Task: review the project layout\n# skill readable-layout\nLook before you move anything.\nAction: layout"}
+{"action": "edit", "prompt": "Task: implement binary search\n# skill write-algorithm\nNext Action must be edit Path: pkg/index_of.py with one function.\nDo not write the test in this Action."}
+{"action": "edit", "prompt": "Task: fetch json from the HTTP API\n# skill call-http\nNext Action must be edit Path: pkg/fetch_json.py. urllib only. No curl."}

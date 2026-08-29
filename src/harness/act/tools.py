@@ -8,9 +8,17 @@ import sys
 from pathlib import Path
 
 from harness.act.code import apply_source, read_project_file, resolve_project_file
-from harness.paths import rel_posix
+from harness.paths import is_secret_name, rel_posix, suffix_globs
 from harness.act.patch_fix import align_indent, find_match, miss_message
-from harness.skillkit.style import refuse_layout, refuse_weak_test
+from harness.skillkit.style import (
+    refuse_layout,
+    refuse_platform_draft,
+    refuse_rename_incomplete,
+    refuse_shell_fetch,
+    refuse_test_in_impl,
+    refuse_undefined_draft,
+    refuse_weak_test,
+)
 from harness.scan.project_brief import render_map, resolve_scope
 from harness.scan.project_scan import SKIP_DIR
 from harness.scan.repo_map import render_outline
@@ -26,6 +34,8 @@ def glob_py(project: Path, pattern: str, scope: str = "") -> str:
     for path in base.glob(pattern):
         if any(part in SKIP_DIR for part in path.parts):
             continue
+        if is_secret_name(path.name):
+            continue
         if path.is_file():
             hits.append(rel_posix(path, root))
         if len(hits) >= MAX_HITS:
@@ -34,6 +44,8 @@ def glob_py(project: Path, pattern: str, scope: str = "") -> str:
         # rglob if user passed **/...
         for path in base.rglob(pattern.removeprefix("**/")):
             if any(part in SKIP_DIR for part in path.parts):
+                continue
+            if is_secret_name(path.name):
                 continue
             if path.is_file():
                 hits.append(rel_posix(path, root))
@@ -50,9 +62,11 @@ def grep_py(project: Path, query: str, scope: str = "") -> str:
     except re.error as exc:
         return f"bad regex: {exc}"
     lines: list[str] = []
-    for suffix in ("*.py", "*.pyi", "*.md"):
-        for path in base.rglob(suffix):
+    for pattern in suffix_globs():
+        for path in base.rglob(pattern):
             if any(part in SKIP_DIR for part in path.parts):
+                continue
+            if is_secret_name(path.name):
                 continue
             try:
                 text = path.read_text(encoding="utf-8")
@@ -125,8 +139,37 @@ def repair_unittest_append(original: str, append: str) -> str | None:
     return text.rstrip() + "\n\n" + method + "\n"
 
 
+def _style_blocks(
+    task: str, rel: str, original: str, draft: str, fragment: str = ""
+) -> str:
+    blocked = refuse_layout(rel, original, draft)
+    if blocked:
+        return blocked
+    blocked = refuse_shell_fetch(rel, draft)
+    if blocked:
+        return blocked
+    blocked = refuse_platform_draft(rel, draft)
+    if blocked:
+        return blocked
+    blocked = refuse_test_in_impl(rel, draft)
+    if blocked:
+        return blocked
+    blocked = refuse_undefined_draft(task, rel, original, draft)
+    if blocked:
+        return blocked
+    blocked = refuse_rename_incomplete(task, rel, draft)
+    if blocked:
+        return blocked
+    return refuse_weak_test(rel, fragment or draft)
+
+
 def patch_py(
-    project: Path, rel: str, find: str, replace: str, append: str = ""
+    project: Path,
+    rel: str,
+    find: str,
+    replace: str,
+    append: str = "",
+    task: str = "",
 ) -> str:
     path = resolve_project_file(project, rel)
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
@@ -162,10 +205,7 @@ def patch_py(
             if repaired is not None
             else text.rstrip() + "\n\n" + append.rstrip() + "\n"
         )
-    blocked = refuse_layout(rel, original, text)
-    if blocked:
-        return blocked
-    blocked = refuse_weak_test(rel, append or replace or text)
+    blocked = _style_blocks(task, rel, original, text, fragment=append or replace)
     if blocked:
         return blocked
     apply_source(path, text, original=original)
@@ -175,13 +215,10 @@ def patch_py(
     )
 
 
-def edit_py(project: Path, rel: str, source: str) -> str:
+def edit_py(project: Path, rel: str, source: str, task: str = "") -> str:
     path = resolve_project_file(project, rel)
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
-    blocked = refuse_layout(rel, original, source)
-    if blocked:
-        return blocked
-    blocked = refuse_weak_test(rel, source)
+    blocked = _style_blocks(task, rel, original, source)
     if blocked:
         return blocked
     apply_source(path, source, original=original)

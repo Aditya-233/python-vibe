@@ -34,7 +34,9 @@ from harness.locate import (
     refuse_thin_review,
 )
 from harness.skillkit.catalog import get_skill, render_skill
+from harness.scan.names import undefined_in_file
 from harness.skillkit.style import (
+    refuse_done_oracle,
     refuse_god_target,
     refuse_smell_wrong_file,
     refuse_write_done,
@@ -279,6 +281,8 @@ def refuse_done(state: LoopState, turn) -> str:
         )
     if not blocked:
         blocked = refuse_done_without_change(state, turn)
+    if not blocked:
+        blocked = refuse_done_oracle(state.task, state.project, state.last_path)
     return blocked
 
 
@@ -296,6 +300,15 @@ def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
     ):
         return "Tests passed. Action: done Summary: say what you changed.\n"
     wrote = result.startswith(("patched", "wrote"))
+    if wrote:
+        rel = turn.path or state.last_path
+        leftover = undefined_in_file(state.project / rel) if rel else []
+        if leftover and looks_like_bugfix(state.task):
+            return (
+                f"undefined name {leftover[0]} in {rel}. "
+                f"Next Action must be patch Path: {rel} Find: {leftover[0]} "
+                "Replace: the name you assigned.\n"
+            )
     if looks_like_design_loop(state.task) and wrote:
         from harness.scan.design import design_is_clean, render_design_review
 

@@ -54,6 +54,9 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 | `scripts/vibe.py` | Laptop REPL (`/run`, `--then`, `--project`) |
 | `scripts/serve.py` | Local HTTP sidecar |
 | `scripts/agent.py` | Everyday explore / edit / run / ship (use a **larger** Ollama model) |
+| `src/harness/mcp_stdio.py` | Local MCP over stdio (editor child process, not an 8B Action) |
+| `src/harness/editor_kit.py` | `python -m harness editors vscode|continue|cursor` |
+| `editors/` | Drop-in tasks.json, Continue yaml, MCP json |
 | `src/harness/ship/` | Jailed `issue` `branch` `commit` `push` `pr` `merge` |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
 | `data/python-vibe/` | Short stdlib train/valid/test JSONL |
@@ -117,9 +120,10 @@ token cannot create that site. Then re-run the workflow. Pages publishes from
 the default branch only. Every page needs `title:` and `description:` front
 matter and an entry in `sitemap.md`; `tests/test_pages.py` checks both.
 URL: `https://yauhenbichel.github.io/python-vibe/`. `llms.txt` and
-`llms-full.txt` are the map for coding agents (llms.txt v2). Do not name
-third-party editors or chat products. Do not put personal paths. Do not add
-analytics, webfonts, or a JS bundle.
+`llms-full.txt` are the map for coding agents (llms.txt v2). Name a
+third-party editor only where this repo ships an integration for it, as
+`editors/` does; a page must not otherwise advertise or compare products.
+Do not put personal paths. Do not add analytics, webfonts, or a JS bundle.
 
 ## What not to “fix”
 

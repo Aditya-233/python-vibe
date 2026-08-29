@@ -96,7 +96,7 @@ small, well-scoped jobs — not a full-repo rewrite.
 
 Same CLI, two briefs (no extra model):
 
-- **Small** (≤40 first-party `.py`/`.md`, ≤200 KB): inject the file list.
+- **Small** (≤40 first-party text files, ≤200 KB): inject the file list.
   Questions → read → `Action: done`. Bugs → patch → run. This is the
   everyday laptop path.
 - **Large**: inject top-level counts, require `Action: map`, `--scope`,

@@ -91,6 +91,45 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertIn("task", body["error"])
 
+    def test_models_needs_no_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._serve(_project(tmp), allow_writes=False)
+            with urllib.request.urlopen(base + "/v1/models", timeout=20) as response:
+                body = json.loads(response.read())
+        self.assertEqual(body["object"], "list")
+        self.assertTrue(body["data"])
+
+    def test_chat_write_is_refused_when_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._serve(_project(tmp), allow_writes=False)
+            status, body = self._post(
+                base,
+                "/v1/chat/completions",
+                {
+                    "model": "none",
+                    "messages": [
+                        {"role": "user", "content": "add a function multiply"}
+                    ],
+                },
+            )
+        self.assertEqual(status, 403)
+        self.assertIn("read-only", body["error"])
+
+    def test_chat_stream_is_400(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = self._serve(_project(tmp), allow_writes=False)
+            status, body = self._post(
+                base,
+                "/v1/chat/completions",
+                {
+                    "model": "none",
+                    "stream": True,
+                    "messages": [{"role": "user", "content": "what does go return?"}],
+                },
+            )
+        self.assertEqual(status, 400)
+        self.assertIn("stream", body["error"])
+
     def test_invalid_json_is_400(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = self._serve(_project(tmp), allow_writes=False)

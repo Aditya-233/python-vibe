@@ -1,14 +1,22 @@
 ---
 title: Local editor
-description: Point an OpenAI-compatible editor at local Ollama 8B. The write jail stays in scripts/agent.py. This changes the brain, not the tools.
+description: Add python-vibe to VS Code and other OpenAI-compatible editors in one command. Tasks and a local MCP stay on this machine. Chat override of localhost is optional.
 date: 2026-08-29
 ---
 
-# Use a local everyday model in an OpenAI-compatible editor
+# Use python-vibe from an editor
 
-The 0.5B LoRA is a style prior, not a daily coding brain. Point your editor
-at **Ollama 8B+** on this machine. The write jail in `scripts/agent.py` is a
-separate CLI loop for comfortable explore / edit / run.
+Three easy paths. All stay on `127.0.0.1` unless you choose otherwise.
+
+| Path | One command | What you get |
+| --- | --- | --- |
+| Editor tasks | `python-vibe editors vscode --project ~/app` | Command Palette → Run Task → ask / run / brief. Uses the **jail**. |
+| Continue (VS Code) | `python-vibe editors continue --project ~/app` | Chat uses local Ollama 8B. Uses the **editor’s** tools. |
+| Local MCP | `python-vibe editors cursor --project ~/app` | The editor starts `python -m harness mcp` as a child process. Uses the **jail**. No tunnel. |
+
+`pip install -e .` first so `python-vibe` is on your PATH. Files land in `.vscode/`, `.continue/`, or `.cursor/` inside **your** app, not inside this repo.
+
+Drop-in sources: [`editors/`](https://github.com/YauhenBichel/python-vibe/tree/HEAD/editors).
 
 ## 1. Pull the everyday brain
 
@@ -18,69 +26,84 @@ ollama pull llama3.1:8b
 # or: ollama pull qwen2.5-coder:14b
 ```
 
-Optional name with the agent system prompt baked in:
+## 2. Easiest: tasks in the integrated terminal
 
 ```bash
-PYTHONPATH=src python scripts/export_ollama.py --create
-# → ollama run python-vibe-everyday
+python-vibe editors vscode --project /path/to/your/app
 ```
 
-## 2. OpenAI-compatible endpoint
+Then Run Task and type a task, for example:
 
-Ollama already exposes this:
+- `what does compute_total return?`
+- `write a weekday script from argv`
+- `fetch json from the HTTP API`
+- `tally counts by key from a csv`
+- `implement binary search`
+
+The same `tasks.json` works in VS Code and in other editors that read `.vscode/tasks.json`.
+
+## 3. OpenAI-compatible chat (brain only)
+
+Ollama already exposes:
 
 `http://127.0.0.1:11434/v1/chat/completions`
 
-A localhost proxy that defaults to the everyday model (and warns if you pick
-0.5B):
+A localhost proxy that defaults to the everyday model (and warns if you pick 0.5B):
 
 ```bash
 PYTHONPATH=src python scripts/openai_compat.py
 # http://127.0.0.1:8081/v1/chat/completions
 ```
 
-## 3. Editor model override
-
-In your editor’s OpenAI-compatible settings:
-
-- Enable the OpenAI-compatible API
-- Base URL: `http://127.0.0.1:8081/v1` (proxy) or
-  `http://127.0.0.1:11434/v1` (Ollama direct)
-- API key: `ollama` (any non-empty string; Ollama ignores it)
-- Model: `llama3.1:8b` or `python-vibe-everyday`
-
-The editor then uses **its** tools (read / edit / terminal). `scripts/agent.py`
-is the same job with **our** jail if you stay in the terminal.
-
-## 4. CLI agent (guarded writes)
+Or let the **jail** answer chat (writes off unless `--allow-writes`):
 
 ```bash
-PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
-  "find a real NameError and fix it"
-# large repo
-PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
-  --scope src "what does apply_source refuse?"
+python-vibe serve --project /path/to/your/app
+# GET  http://127.0.0.1:8090/v1/models
+# POST http://127.0.0.1:8090/v1/chat/completions
 ```
 
-Small projects get a file list and can answer questions (`Action: done`)
-without editing. Large projects start with `Action: map` and stay inside
-`--scope`. That is the harness; the model does not load the whole tree.
+In the editor’s OpenAI-compatible settings:
+
+- Base URL: `http://127.0.0.1:8081/v1` (proxy) or `http://127.0.0.1:8090/v1` (harness)
+- API key: `ollama` (any non-empty string)
+- Model: `llama3.1:8b`
+
+Some hosted editors send the OpenAI request from a **remote** backend. Those cannot see `127.0.0.1`. Do not open a public tunnel to the jail. Use tasks or the local MCP instead.
+
+## 4. Local MCP (jail, no tunnel)
+
+```bash
+python-vibe editors cursor --project /path/to/your/app
+```
+
+The editor launches `python3 -m harness mcp --project <abs path>`. Tools: `ask` (read-only) and `run` (needs `--allow-writes` on that command). Stdout is JSON-RPC only.
+
+This is the editor calling python-vibe. It is **not** an Action the 8B may emit.
+
+## 5. CLI (same jail, no editor)
+
+```bash
+python-vibe run /path/to/your/app "find a real NameError and fix it"
+python-vibe run /path/to/your/app --scope src "what does apply_source refuse?"
+```
 
 `--tiny` / `--engine mlx` is smoke only.
 
-Record redacted turns for a future 7B–14B LoRA:
+## What python-vibe is good at
 
-```bash
-PYTHONPATH=src python scripts/agent.py --project /path/to/your/app \
-  --record data/agent-loop/extra.jsonl \
-  "find a real NameError and fix it"
-PYTHONPATH=src python scripts/build_agent_data.py
-PYTHONPATH=src python scripts/train.py --everyday
-```
+Kit skills for everyday laptop Python (stdlib, AAA tests):
 
-`extra.jsonl` is gitignored. Do not commit live paths or keys.
+| You say | Skill |
+| --- | --- |
+| write a weekday script / argparse / argv | `write-script` |
+| fetch json / HTTP API / “like curl” | `call-http` (urllib only; never `curl\|sh`) |
+| tally / group by / csv / analytics | `analyze-data` |
+| binary search / stack / algorithm | `write-algorithm` |
 
-## 5. Optional: your LoRA as GGUF / Ollama
+Each write is followed by `write-tests` (`test_<unit>_<result>`, Act into `got`).
+
+## Optional: your LoRA as GGUF / Ollama
 
 Stand-in (this week): `export_ollama.py --create` is `FROM llama3.1:8b` plus the
 agent system prompt. That is **not** a trained python-vibe-8b.

@@ -1,8 +1,12 @@
 import re
+import re
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# A real personal path has a name and something after it. A page that states
+# the rule writes the bare prefix, as in: No `/Users/` or `C:\`.
+_PERSONAL_PATH = re.compile(r"/Users/[^/\s`'\"]+/|DevBox/[^\s`'\"]")
 DOCS = ROOT / "docs"
 
 _BANNED_PRODUCTS = re.compile(r"\b(Cursor|ChatGPT|Claude|Grok)\b")
@@ -29,6 +33,8 @@ class PagesInvestigationsTest(unittest.TestCase):
             "investigations/harness-comparison.md",
             "investigations/local-vs-cloud.md",
             "investigations/what-to-improve.md",
+            "investigations/small-llm-harness.md",
+            "investigations/platform-engineering.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]
         self.assertEqual(missing, [])
@@ -97,7 +103,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             if not path.is_file() or path.suffix not in {".md", ".html", ".css", ".yml"}:
                 continue
             text = path.read_text(encoding="utf-8")
-            if "/Users/" in text or "DevBox/" in text:
+            if _PERSONAL_PATH.search(text):
                 hits.append(str(path.relative_to(ROOT)))
         self.assertEqual(hits, [])
 

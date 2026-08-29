@@ -104,7 +104,9 @@ python -m harness layout ~/app                              # no model
 python -m harness ask    ~/app "what does compute_total return?"
 python -m harness run    ~/app "add multiply(a, b) and a test"
 python -m harness run    ~/app "..." --dry-run --scope src
-python -m harness serve  --project ~/app
+python -m harness serve    --project ~/app
+python -m harness mcp      --project ~/app          # stdio, for an editor
+python -m harness editors  vscode --project ~/app   # drop-in tasks.json
 ```
 
 `brief` and `layout` never call a model. `ask` is always read-only. `run`
@@ -127,13 +129,24 @@ server runs on.
 | `/v1/brief` | POST | no |
 | `/v1/layout` | POST | no |
 | `/v1/ask` | POST | no |
+| `/v1/models` | GET | no |
+| `/v1/chat/completions` | POST | writes only with `--allow-writes` |
 | `/v1/run` | POST | yes |
 
 ```bash
 curl -s localhost:8090/health
 curl -s localhost:8090/v1/layout -d '{}'
 curl -s localhost:8090/v1/ask -d '{"task":"what does compute_total return?"}'
+curl -s localhost:8090/v1/models
 ```
+
+`POST /v1/chat/completions` takes the last user message as the task and
+returns an OpenAI-shaped reply. `stream` is refused. A write task on a
+read-only server is `403`. Point VS Code and other OpenAI-compatible
+editors at `http://127.0.0.1:8090/v1`, or copy drop-in files with
+`python-vibe editors vscode --project ~/app`. Details:
+[local editor]({{ '/local-editor/' | relative_url }}).
+
 
 Without `--allow-writes`, `/v1/run` answers `403` and says how to enable it.
 The path restriction, the draft guard and the `.bak` backup apply in every

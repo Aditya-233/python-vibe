@@ -7,7 +7,9 @@ One command with subcommands, so a user does not have to know which file in
     python -m harness layout ~/app
     python -m harness ask    ~/app "what does compute_total return?"
     python -m harness run    ~/app "add multiply(a, b) and a test"
-    python -m harness serve  --project ~/app
+    python -m harness serve    --project ~/app
+    python -m harness mcp      --project ~/app
+    python -m harness editors  vscode --project ~/app
 """
 
 from __future__ import annotations
@@ -123,6 +125,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="let HTTP callers patch, edit and run inside --project",
     )
     serve.add_argument("--model", default=AgentOptions(project=Path(".")).model)
+
+    mcp = subs.add_parser(
+        "mcp",
+        help="MCP on stdio (editor child process). Read-only unless --allow-writes",
+    )
+    mcp.add_argument("--project", type=Path, required=True)
+    mcp.add_argument("--allow-writes", action="store_true")
+    mcp.add_argument("--model", default=AgentOptions(project=Path(".")).model)
+
+    editors = subs.add_parser(
+        "editors",
+        help="copy drop-in settings: vscode | continue | cursor",
+    )
+    editors.add_argument("kind", choices=("vscode", "continue", "cursor"))
+    editors.add_argument("--project", type=Path, required=True)
     return parser
 
 
@@ -149,6 +166,23 @@ def main(argv: list[str] | None = None) -> int:
             allow_writes=args.allow_writes,
             model=args.model,
         )
+
+    if args.command == "mcp":
+        from harness.mcp_stdio import serve_stdio
+
+        return serve_stdio(
+            args.project.expanduser().resolve(),
+            allow_writes=args.allow_writes,
+            model=args.model,
+        )
+
+    if args.command == "editors":
+        from harness.editor_kit import install_editors
+
+        written = install_editors(args.project, args.kind)
+        for path in written:
+            print(path)
+        return 0
 
     interactive = sys.stdin.isatty()
     if args.command == "ask":

@@ -41,7 +41,9 @@ the public adapters without an account.
 - More **short** Python training pairs (stdlib first, type hints, no secrets)
 - A harness rule with **two fixtures**: one string that must `block`, one
   near-miss that must `pass`
-- Docs, CI, and eval prompts
+- An 8B-shaped skill (`skills/<name>/SKILL.md`, one `Action:` block) after
+  `scripts/skill_probe.py` shows the intended first Action
+- Docs, CI, eval prompts, and drop-in files under `editors/`
 
 ## Before you open a pull request
 

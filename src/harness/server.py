@@ -18,13 +18,21 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from harness.agent import Agent, AgentOptions
+from harness.model.openai_compat import (
+    chat_completion_payload,
+    last_user_text,
+    models_payload,
+    parse_chat_body,
+)
 from harness.scan.layout import render_layout
 from harness.scan.project_brief import classify_project, render_brief
+from harness.task import looks_like_add_feature, looks_like_bugfix
 
 HOST = "127.0.0.1"
 MAX_BODY = 64 * 1024
 READ_ONLY_ROUTES = ("/v1/brief", "/v1/layout", "/v1/ask")
 WRITE_ROUTES = ("/v1/run",)
+CHAT_ROUTES = ("/v1/chat/completions", "/chat/completions")
 
 
 def make_handler(project: Path, *, allow_writes: bool, model: str):
@@ -62,7 +70,11 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
             return parsed
 
         def do_GET(self) -> None:  # noqa: N802
-            if self.path != "/health":
+            path = self.path.split("?", 1)[0]
+            if path in {"/v1/models", "/models"}:
+                self._send(200, models_payload(model or "llama3.1:8b"))
+                return
+            if path != "/health":
                 self._send(404, {"error": "no such route"})
                 return
             self._send(
@@ -73,15 +85,20 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
                     "allow_writes": allow_writes,
                     "model": model,
                     "routes": list(READ_ONLY_ROUTES)
+                    + list(CHAT_ROUTES)
                     + (list(WRITE_ROUTES) if allow_writes else []),
                 },
             )
 
         def do_POST(self) -> None:  # noqa: N802
-            if self.path not in READ_ONLY_ROUTES + WRITE_ROUTES:
+            path = self.path.split("?", 1)[0]
+            if path in CHAT_ROUTES:
+                self._chat()
+                return
+            if path not in READ_ONLY_ROUTES + WRITE_ROUTES:
                 self._send(404, {"error": "no such route"})
                 return
-            if self.path in WRITE_ROUTES and not allow_writes:
+            if path in WRITE_ROUTES and not allow_writes:
                 self._send(
                     403,
                     {
@@ -94,11 +111,11 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
             if payload is None:
                 return
             scope = str(payload.get("scope") or "")
-            if self.path == "/v1/brief":
+            if path == "/v1/brief":
                 brief = classify_project(project, scope)
                 self._send(200, {"brief": render_brief(brief, scope=scope)})
                 return
-            if self.path == "/v1/layout":
+            if path == "/v1/layout":
                 self._send(200, {"layout": render_layout(project)})
                 return
             task = str(payload.get("task") or "").strip()
@@ -111,7 +128,7 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
                 model=str(payload.get("model") or model),
                 scope=scope,
                 steps=int(payload.get("steps") or 20),
-                allow_writes=allow_writes and self.path in WRITE_ROUTES,
+                allow_writes=allow_writes and path in WRITE_ROUTES,
             )
             try:
                 result = Agent(options).run()
@@ -119,6 +136,46 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
                 self._send(400, {"error": str(exc)})
                 return
             self._send(200, result.as_dict())
+
+        def _chat(self) -> None:
+            payload = self._body()
+            if payload is None:
+                return
+            try:
+                parsed = parse_chat_body(json.dumps(payload).encode("utf-8"))
+            except ValueError as exc:
+                self._send(400, {"error": str(exc)})
+                return
+            if parsed["stream"]:
+                self._send(400, {"error": "stream is not supported; set stream false"})
+                return
+            task = last_user_text(parsed["messages"])
+            if not task:
+                self._send(400, {"error": "messages required"})
+                return
+            wants_write = looks_like_add_feature(task) or looks_like_bugfix(task)
+            if wants_write and not allow_writes:
+                self._send(
+                    403,
+                    {
+                        "error": "this server is read-only",
+                        "fix": "restart it with --allow-writes, or run "
+                        "python-vibe run <project> \"<task>\" in the editor terminal",
+                    },
+                )
+                return
+            options = AgentOptions(
+                project=project,
+                task=task,
+                model=str(parsed["model"] or model),
+                allow_writes=allow_writes and wants_write,
+            )
+            try:
+                result = Agent(options).run()
+            except (ValueError, OSError) as exc:
+                self._send(400, {"error": str(exc)})
+                return
+            self._send(200, chat_completion_payload(result.summary, options.model))
 
         def log_message(self, fmt: str, *args) -> None:
             print(f"{self.address_string()} - {fmt % args}")

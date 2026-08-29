@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from harness.scan.names import new_undefined, undefined_names
 from harness.task import (
     looks_like_add_feature,
     looks_like_bugfix,
@@ -13,6 +14,7 @@ from harness.task import (
     looks_like_fix_smell,
     looks_like_new_package,
     looks_like_refactor,
+    rename_pair,
     smell_symbol,
 )
 
@@ -81,6 +83,53 @@ def refuse_shell_fetch(rel: str, draft: str) -> str:
     if not draft or not _SHELL_FETCH.search(draft):
         return ""
     return "urllib.request only. Do not emit curl, wget, or os.system."
+
+
+_OS_PATH = re.compile(
+    r"\bos\.path\.(join|exists|isfile|isdir|dirname|abspath|basename|"
+    r"expanduser|normpath)\b"
+)
+_HARD_HOME = re.compile(
+    r"""['"](?:/Users/|/home/|[A-Za-z]:\\Users\\|[A-Za-z]:\\\\Users\\\\)"""
+)
+_HARD_TMP = re.compile(r"""['"]/tmp/""")
+_POSIX_ONLY_VENV = re.compile(r"""['"]bin/python['"]""")
+_OPEN_CALL = re.compile(r"\bopen\(([^)]*)\)")
+
+
+def refuse_platform_draft(rel: str, draft: str) -> str:
+    """Path helpers stay pathlib and work on Windows, macOS, and Linux.
+
+    Test files may quote a blocked pattern, so they are not judged.
+    """
+    if "test" in (rel or "").replace("\\", "/").lower():
+        return ""
+    if not draft:
+        return ""
+    if _OS_PATH.search(draft):
+        return (
+            "use pathlib. Path / 'src' / 'app.py', not os.path.join. "
+            "exists is Path.exists()."
+        )
+    if _HARD_HOME.search(draft):
+        return "no hardcoded home. Use Path.home()."
+    if _HARD_TMP.search(draft):
+        return "no hardcoded /tmp. Use tempfile.TemporaryDirectory."
+    if _POSIX_ONLY_VENV.search(draft) and "Scripts" not in draft:
+        return (
+            "venv interpreter is Scripts/python.exe on Windows, "
+            "bin/python on POSIX. Branch on os.name."
+        )
+    for match in _OPEN_CALL.finditer(draft):
+        args = match.group(1)
+        if "encoding" in args:
+            continue
+        if re.search(r"['\"][^'\"]*b", args):
+            continue
+        return 'open(..., encoding="utf-8"). Text files need an encoding.'
+    if ".chmod(" in draft and "nt" not in draft:
+        return 'chmod is POSIX-only. Guard with os.name != "nt".'
+    return ""
 
 
 def refuse_opaque_names(draft: str) -> str:
@@ -192,6 +241,62 @@ def refuse_weak_test(rel: str, draft: str) -> str:
     return ""
 
 
+def refuse_test_in_impl(rel: str, draft: str) -> str:
+    """Tests belong in tests/. Live 8B wrote def test_ into src/orders.py."""
+    posix = (rel or "").replace("\\", "/").lower()
+    if "test" in posix or posix.endswith("conftest.py"):
+        return ""
+    if re.search(r"^[ \t]*def test_", draft or "", re.MULTILINE):
+        return (
+            "tests go in tests/test_<unit>.py. "
+            "Do not write def test_ in the implementation file."
+        )
+    return ""
+
+
+def refuse_undefined_draft(task: str, rel: str, original: str, draft: str) -> str:
+    """Refuse a write that adds an unbound name, or a bugfix that leaves one."""
+    if not draft or not (rel or "").endswith(".py"):
+        return ""
+    if looks_like_bugfix(task):
+        leftover = undefined_names(draft)
+        if leftover:
+            return (
+                f"undefined name {leftover[0]}. "
+                f"Action: patch Path: {rel} Find: {leftover[0]} "
+                "Replace: the name you assigned."
+            )
+        return ""
+    added = new_undefined(original, draft)
+    if added:
+        return (
+            f"undefined name {added[0]}. "
+            f"Action: patch Path: {rel} Find: {added[0]} "
+            "Replace: the name you assigned."
+        )
+    return ""
+
+
+def refuse_rename_incomplete(task: str, rel: str, draft: str) -> str:
+    """A rename is not done if the old def is still there."""
+    if not looks_like_fix_smell(task) or "test" in (rel or "").replace("\\", "/").lower():
+        return ""
+    old, new = rename_pair(task)
+    if not old or not new:
+        return ""
+    if re.search(rf"^def {re.escape(old)}\b", draft or "", re.MULTILINE):
+        return (
+            f"still defines {old}. "
+            f"Action: patch Find: def {old} Replace: def {new}"
+        )
+    if not re.search(rf"^def {re.escape(new)}\b", draft or "", re.MULTILINE):
+        return (
+            f"missing def {new}. "
+            f"Action: patch Find: def {old} Replace: def {new}"
+        )
+    return ""
+
+
 def refuse_god_target(task: str, project: Path, action: str, path: str) -> str:
     """Design-loop writes go to a new one-function file, not the god module."""
     if not looks_like_design_loop(task) or action not in {"edit", "patch"}:
@@ -233,6 +338,39 @@ def refuse_layout(rel: str, original: str, draft: str) -> str:
                 f"SoC: {posix} already has {count} functions. "
                 "Action: edit Path: pkg/<new_concern>.py with only the new function."
             )
+    return ""
+
+
+def refuse_done_oracle(task: str, project: Path, last_path: str) -> str:
+    """Refuse done when the named file or last write still has an unbound name."""
+    from harness.scan.names import undefined_in_file
+    from harness.task import named_project_file, rename_pair
+
+    paths: list[str] = []
+    named = named_project_file(task, project)
+    if named:
+        paths.append(named)
+    if last_path and last_path not in paths:
+        paths.append(last_path)
+    if looks_like_bugfix(task):
+        for rel in paths:
+            leftover = undefined_in_file(Path(project) / rel)
+            if leftover:
+                return (
+                    f"undefined name {leftover[0]} in {rel}. "
+                    f"Action: patch Path: {rel} Find: {leftover[0]} "
+                    "Replace: the name you assigned."
+                )
+    if looks_like_fix_smell(task) and named:
+        old, new = rename_pair(task)
+        try:
+            body = (Path(project) / named).read_text(encoding="utf-8")
+        except OSError:
+            body = ""
+        if old and new and body:
+            missed = refuse_rename_incomplete(task, named, body)
+            if missed:
+                return missed
     return ""
 
 

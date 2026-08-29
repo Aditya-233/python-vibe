@@ -48,7 +48,9 @@ The agent loads kit [skills]({{ '/skills/' | relative_url }}) from the wording
 of the task (`add-feature`, `write-tests`, `answer-question`, and the rest),
 or you pass `--skill`. `--brief` prints the pick with no model.
 
-Same 8B in an OpenAI-compatible editor: [local editor]({{ '/local-editor/' | relative_url }}).
+Add the same jail to VS Code and other editors in one command:
+`python-vibe editors vscode --project /path/to/your/app`.
+Details: [local editor]({{ '/local-editor/' | relative_url }}).
 
 ## Tests (no model)
 

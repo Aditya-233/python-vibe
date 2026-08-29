@@ -18,7 +18,7 @@ Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/Ya
 | Track | What to run | Role |
 | --- | --- | --- |
 | Everyday (laptop) | `scripts/agent.py` (default `llama3.1:8b`) | Comfortable explore / edit / run; `--scope` on large trees |
-| Local editor | [docs/local-editor.md](./docs/local-editor.md) | OpenAI-compatible Ollama on this machine |
+| Local editor | `python -m harness editors vscode --project ~/app` | One-command tasks / Continue / local MCP. See [docs/local-editor.md](./docs/local-editor.md) |
 | Tiny (Hub / smoke) | `scripts/vibe.py`, `serve.py`, `--tiny` | 0.5B drafts through `PythonVibeGuard` |
 
 Join: [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue) ·
@@ -41,7 +41,8 @@ result.summary, result.writes
 python -m harness brief  ~/app                    # no model
 python -m harness layout ~/app                    # no model
 python -m harness run    ~/app "add multiply(a, b) and a test"
-python -m harness serve  --project ~/app          # 127.0.0.1, read-only
+python -m harness serve    --project ~/app          # 127.0.0.1, read-only
+python -m harness editors  vscode --project ~/app   # drop-in editor tasks
 ```
 
 Full settings, read-only runs, and the HTTP routes: [docs/api.md](./docs/api.md).

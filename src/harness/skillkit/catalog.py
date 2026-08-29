@@ -13,10 +13,15 @@ from pathlib import Path
 from harness.paths import KIT_SKILLS_DIR
 from harness.task import (
     looks_like_add_feature,
+    looks_like_algorithm,
+    looks_like_analytics,
     looks_like_design_loop,
     looks_like_fix_smell,
+    looks_like_http_client,
     looks_like_new_package,
+    looks_like_platform,
     looks_like_question,
+    looks_like_script,
 )
 
 _FRONT = re.compile(r"^---\n(.*?)\n---\n(.*)\Z", re.DOTALL)
@@ -87,6 +92,17 @@ def get_skill(name: str, project: Path | None = None) -> Skill | None:
     return None
 
 
+def skill_example_path(name: str, project: Path | None = None) -> str:
+    """The Path: line in a kit skill, so the 8B copies a real file name."""
+    skill = get_skill(name, project)
+    if skill is None:
+        return "pkg/<noun>.py"
+    for line in skill.body.splitlines():
+        if line.startswith("Path:"):
+            return line.split(":", 1)[1].strip() or "pkg/<noun>.py"
+    return "pkg/<noun>.py"
+
+
 def skill_from_action(
     action: str, name: str = "", path: str = "", project: Path | None = None
 ) -> Skill | None:
@@ -129,6 +145,26 @@ def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
             for s in catalog
             if s.name in {"review-design", "refactor-split", "readable-layout"}
         )
+        return picked
+    if looks_like_platform(task):
+        picked.extend(s for s in catalog if s.name == "write-paths")
+        picked.extend(s for s in catalog if s.name == "write-tests")
+        return picked
+    if looks_like_http_client(task):
+        picked.extend(s for s in catalog if s.name == "call-http")
+        picked.extend(s for s in catalog if s.name == "write-tests")
+        return picked
+    if looks_like_analytics(task):
+        picked.extend(s for s in catalog if s.name == "analyze-data")
+        picked.extend(s for s in catalog if s.name == "write-tests")
+        return picked
+    if looks_like_algorithm(task):
+        picked.extend(s for s in catalog if s.name == "write-algorithm")
+        picked.extend(s for s in catalog if s.name == "write-tests")
+        return picked
+    if looks_like_script(task):
+        picked.extend(s for s in catalog if s.name == "write-script")
+        picked.extend(s for s in catalog if s.name == "write-tests")
         return picked
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")
