@@ -24,6 +24,9 @@ SERVE = _load_serve()
 
 
 class ServeSidecarTest(unittest.TestCase):
+    """/health probes Ollama before replying, so the client waits longer
+    than that probe's own timeout."""
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.httpd = ThreadingHTTPServer(("127.0.0.1", 0), SERVE.Handler)
@@ -38,7 +41,7 @@ class ServeSidecarTest(unittest.TestCase):
         cls.httpd.server_close()
 
     def _get(self, path: str):
-        with urllib.request.urlopen(self.base + path, timeout=2) as resp:
+        with urllib.request.urlopen(self.base + path, timeout=30) as resp:
             return resp.status, json.loads(resp.read().decode("utf-8"))
 
     def _post(self, path: str, raw: bytes, content_type: str = "application/json"):
@@ -49,7 +52,7 @@ class ServeSidecarTest(unittest.TestCase):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=2) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 return resp.status, json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             return exc.code, json.loads(exc.read().decode("utf-8"))

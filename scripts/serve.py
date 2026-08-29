@@ -48,8 +48,12 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(raw)))
+        # Say the exchange is over. A client left waiting blocks until its
+        # own timeout, which is how this failed on Windows.
+        self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(raw)
+        self.close_connection = True
 
     def do_GET(self) -> None:  # noqa: N802
         if urlparse(self.path).path != "/health":
