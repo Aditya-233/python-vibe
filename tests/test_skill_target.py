@@ -3,7 +3,6 @@ import unittest
 from pathlib import Path
 
 from harness.skillkit.target import (
-    FALLBACK_MODULE,
     Target,
     pick_target,
     retarget,
@@ -47,10 +46,11 @@ class PickTargetTest(unittest.TestCase):
             target = pick_target(_project(tmp), "add x", located_path="tests/test_app.py")
         self.assertEqual(target.module, "src/app.py")
 
-    def test_empty_project_falls_back(self) -> None:
+    def test_empty_project_gets_a_real_path_not_a_placeholder(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             target = pick_target(Path(tmp), "add x")
-        self.assertEqual(target.module, FALLBACK_MODULE)
+        self.assertEqual(target.module, "src/main.py")
+        self.assertNotIn("path/to/", target.module)
 
 
 class RetargetTest(unittest.TestCase):
@@ -112,6 +112,50 @@ class KitSkillTest(unittest.TestCase):
                             f"{name} points at {rel}, which is not in this project",
                         )
 
+
+
+class EmptyProjectTest(unittest.TestCase):
+    """A project with nothing in it still needs a real path.
+
+    The placeholder used to reach the model, which then created a file
+    literally at `path/to/module.py`. That is the fixture-path fault
+    arriving by another route, so the check is on the path itself.
+    """
+
+    def test_no_placeholder_reaches_the_model(self) -> None:
+        from harness.skillkit.catalog import list_skills, render_skill
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            target = pick_target(project, "add a function multiply(a, b)")
+            for skill in list_skills():
+                rendered = render_skill(skill, target, project)
+                for line in rendered.splitlines():
+                    if line.startswith(("Path:", "File:")):
+                        self.assertNotIn(
+                            "path/to/", line, f"{skill.name} names a placeholder"
+                        )
+
+    def test_the_task_names_the_first_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pick_target(Path(tmp), "add a function multiply(a, b)")
+        self.assertEqual(target.module, "src/multiply.py")
+        self.assertEqual(target.test, "tests/test_multiply.py")
+
+    def test_a_task_naming_nothing_still_gets_a_real_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pick_target(Path(tmp), "")
+        self.assertEqual(target.module, "src/main.py")
+
+    def test_an_existing_module_still_wins(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            (project / "src").mkdir()
+            (project / "src" / "app.py").write_text(
+                "def go() -> int:\n    return 1\n", encoding="utf-8"
+            )
+            target = pick_target(project, "add a function multiply(a, b)")
+        self.assertEqual(target.module, "src/app.py")
 
 if __name__ == "__main__":
     unittest.main()

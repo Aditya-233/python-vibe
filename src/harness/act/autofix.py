@@ -8,16 +8,21 @@ before the first generate. A green suite ends the run without a model.
 
 from __future__ import annotations
 
+import ast
+import importlib.util
 import io
 import re
+import sys
 import tokenize
 from pathlib import Path
 
 from harness.act.code import apply_source
 from harness.scan.names import undefined_names
 from harness.task import (
+    covered_symbol,
     looks_like_bugfix,
     looks_like_fix_smell,
+    looks_like_write_tests,
     named_project_file,
     rename_pair,
 )
@@ -136,41 +141,255 @@ def apply_function_rename(source: str, old: str, new: str) -> str:
     return re.sub(rf"\b{re.escape(old)}\s*\(", f"{new}(", text)
 
 
-def apply_mechanical(project: Path, task: str, rel: str) -> str:
-    """Write a rename or unique typo fix. Return a note, or empty."""
+def apply_mechanical(
+    project: Path, task: str, rel: str, *, write: bool = True
+) -> str:
+    """Write a rename, unique typo, or missing AAA test. Return a note, or empty."""
     if not rel:
         rel = named_project_file(task, project)
-    if not rel:
-        return ""
-    path = Path(project) / rel
-    if not path.is_file():
-        return ""
-    try:
-        original = path.read_text(encoding="utf-8")
-    except OSError:
-        return ""
-    text = original
     notes: list[str] = []
-    if looks_like_fix_smell(task):
-        old, new = rename_pair(task)
-        if old and new:
-            renamed = apply_function_rename(text, old, new)
-            if renamed != text:
-                text = renamed
-                notes.append(f"renamed def {old} → def {new} in {rel}")
-    if looks_like_bugfix(task):
-        fixed = apply_typo_fixes(text)
-        if fixed != text:
-            pairs = typo_pairs(original)
-            text = fixed
-            shown = ", ".join(f"{bad} → {good}" for bad, good in pairs)
-            notes.append(f"bound unique NameError typo ({shown}) in {rel}")
-    if text == original or not notes:
+    path = Path(project) / rel if rel else None
+    text = original = ""
+    if path is not None and path.is_file():
+        try:
+            original = path.read_text(encoding="utf-8")
+        except OSError:
+            original = ""
+        text = original
+        if looks_like_fix_smell(task):
+            old, new = rename_pair(task)
+            if old and new:
+                renamed = apply_function_rename(text, old, new)
+                if renamed != text:
+                    text = renamed
+                    notes.append(f"renamed def {old} → def {new} in {rel}")
+        if looks_like_bugfix(task):
+            fixed = apply_typo_fixes(text)
+            if fixed != text:
+                pairs = typo_pairs(original)
+                text = fixed
+                shown = ", ".join(f"{bad} → {good}" for bad, good in pairs)
+                notes.append(f"bound unique NameError typo ({shown}) in {rel}")
+        if text != original and notes and write:
+            apply_source(path, text, original=original)
+    if looks_like_write_tests(task):
+        cover = apply_cover_test(project, task, write=write)
+        if cover:
+            notes.append(cover)
+    if not notes:
         return ""
-    apply_source(path, text, original=original)
+    verb = "applied" if write else "would apply (read-only)"
     return (
-        "Harness applied a mechanical fix (no model):\n"
+        f"Harness {verb} a mechanical fix (no model):\n"
         + "\n".join(f"- {item}" for item in notes)
-        + "\nNext Action must be run Argv: -m unittest discover -s tests -q. "
-        "Do not patch this file again."
+        + (
+            "\nNext Action must be run Argv: -m unittest discover -s tests -q. "
+            "Do not patch this file again."
+            if write
+            else "\nAction: done Summary: say what you would change and why."
+        )
     )
+
+
+def apply_cover_test(project: Path, task: str, *, write: bool = True) -> str:
+    """Add one AAA test for the named function. Empty if one already exists."""
+    name = covered_symbol(task)
+    if not name:
+        return ""
+    tests = Path(project) / "tests"
+    dests = sorted(tests.glob("test_*.py")) if tests.is_dir() else []
+    if not dests:
+        return ""
+    dest = dests[0]
+    body = dest.read_text(encoding="utf-8")
+    safe = name.replace(".", "_")
+    if name in body or f"def test_{safe}_" in body:
+        return ""
+    impl = named_project_file(task, project)
+    impl_path = Path(project) / impl if impl else None
+    if impl_path is None or not impl_path.is_file():
+        return ""
+    sample = _sample_values(impl_path, name, project=Path(project))
+    if sample is None:
+        return ""
+    args, expected, class_name, func_name = sample
+    module = impl.replace("\\", "/").removesuffix(".py").replace("/", ".")
+    imported = class_name or func_name
+    names = ", ".join(key for key, _value in args)
+    values = ", ".join(repr(value) for _key, value in args)
+    assigns = f"{names} = {values}" if args else ""
+    if class_name:
+        holder = class_name[0].lower() + class_name[1:]
+        act = (
+            f"        {holder} = {class_name}()\n"
+            + (f"        {assigns}\n" if assigns else "")
+            + f"        got = {holder}.{func_name}({names})\n"
+        )
+    else:
+        act = (
+            (f"        {assigns}\n" if assigns else "")
+            + f"        got = {func_name}({names})\n"
+        )
+    method = (
+        f"    def test_{safe}_returns_the_expected_result(self) -> None:\n"
+        f"{act}"
+        f"        self.assertEqual(got, {expected!r})\n"
+    )
+    merged = _add_import_symbol(body, module, imported)
+    merged = _append_class_method(merged, method)
+    try:
+        ast.parse(merged)
+    except SyntaxError:
+        return ""
+    if write:
+        apply_source(dest, merged, original=body)
+    try:
+        rel = dest.resolve().relative_to(Path(project).resolve()).as_posix()
+    except ValueError:
+        rel = dest.as_posix()
+    return f"AAA test for {name} in {rel}"
+
+
+def _find_callable(
+    tree: ast.AST, name: str
+) -> tuple[str, ast.FunctionDef] | None:
+    """(class_name or "", function). Empty class_name is a module function."""
+    cls_name, meth = name, ""
+    if "." in name:
+        cls_name, meth = name.split(".", 1)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name and not meth:
+            return "", node
+        if not isinstance(node, ast.ClassDef):
+            continue
+        if meth and node.name != cls_name:
+            continue
+        if not meth and node.name != name:
+            if any(
+                isinstance(item, ast.FunctionDef) and item.name == name
+                for item in node.body
+            ):
+                item = next(
+                    item
+                    for item in node.body
+                    if isinstance(item, ast.FunctionDef) and item.name == name
+                )
+                return node.name, item
+            continue
+        for item in node.body:
+            if not isinstance(item, ast.FunctionDef):
+                continue
+            if meth and item.name == meth:
+                return node.name, item
+            if not meth and not item.name.startswith("_"):
+                return node.name, item
+    return None
+
+
+def _sample_values(
+    path: Path, name: str, *, project: Path | None = None
+) -> tuple[list[tuple[str, object]], object, str, str] | None:
+    """Call the function with simple args. None when that is not safe."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (OSError, SyntaxError):
+        return None
+    found = _find_callable(tree, name)
+    if found is None:
+        return None
+    class_name, func = found
+    if func.args.kwonlyargs or func.args.vararg or func.args.kwarg:
+        return None
+    ints = (100, 10, 2, 0)
+    used_ints = 0
+    args: list[tuple[str, object]] = []
+    for arg in func.args.args:
+        if arg.arg in {"self", "cls"}:
+            continue
+        hint = ast.unparse(arg.annotation) if arg.annotation else ""
+        if "list" in hint:
+            args.append((arg.arg, [10, 20]))
+        elif "dict" in hint:
+            args.append((arg.arg, {"prices": [10, 20], "percent": 10}))
+        elif "str" in hint:
+            args.append((arg.arg, "x"))
+        elif "float" in hint:
+            args.append((arg.arg, 1.5))
+        else:
+            args.append((arg.arg, ints[used_ints % len(ints)]))
+            used_ints += 1
+    token = name.replace(".", "_")
+    module_name = f"_vibe_cover_{token}"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    inserted = ""
+    if project is not None:
+        inserted = str(Path(project).resolve())
+        sys.path.insert(0, inserted)
+    try:
+        spec.loader.exec_module(module)
+        values = tuple(value for _key, value in args)
+        if class_name:
+            cls = getattr(module, class_name, None)
+            if cls is None:
+                return None
+            expected = getattr(cls(), func.name)(*values)
+        else:
+            fn = getattr(module, func.name, None)
+            if fn is None:
+                return None
+            expected = fn(*values)
+    except Exception:
+        return None
+    finally:
+        sys.modules.pop(module_name, None)
+        if inserted and sys.path and sys.path[0] == inserted:
+            sys.path.pop(0)
+    return args, expected, class_name, func.name
+
+
+def _add_import_symbol(text: str, module: str, name: str) -> str:
+    if re.search(
+        rf"from\s+{re.escape(module)}\s+import\s+.*\b{re.escape(name)}\b", text
+    ):
+        return text
+    pattern = re.compile(rf"^(from\s+{re.escape(module)}\s+import\s+)(.+)$", re.M)
+    match = pattern.search(text)
+    if match:
+        imported = match.group(2)
+        if re.search(rf"\b{re.escape(name)}\b", imported):
+            return text
+        return text.replace(
+            match.group(0), f"{match.group(1)}{imported.rstrip()}, {name}", 1
+        )
+    line = f"from {module} import {name}\n"
+    if "import " in text:
+        last = 0
+        for hit in re.finditer(r"^(?:from\s+\S+\s+)?import\s+.+$", text, re.M):
+            last = hit.end()
+        return text[:last] + "\n" + line + text[last:]
+    return line + text
+
+
+def _append_class_method(text: str, method: str) -> str:
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return text
+    classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+    if not classes:
+        return text.rstrip() + (
+            "\n\nclass TestGenerated(unittest.TestCase):\n" + method + "\n"
+        )
+    last = classes[-1]
+    methods = [node for node in last.body if isinstance(node, ast.FunctionDef)]
+    end = methods[-1].end_lineno if methods else last.end_lineno
+    lines = text.splitlines(keepends=True)
+    insert = method if method.startswith("\n") else "\n" + method
+    if not insert.endswith("\n"):
+        insert += "\n"
+    lines.insert(end, insert)
+    return "".join(lines)

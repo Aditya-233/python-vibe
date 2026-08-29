@@ -89,6 +89,8 @@ class SkillChoiceTest(unittest.TestCase):
         self.assertTrue(looks_like_bugfix("find a real NameError and fix it"))
         self.assertFalse(looks_like_bugfix("fix the code smell in calc"))
         self.assertTrue(looks_like_design_loop("review the design then one-split"))
+        self.assertFalse(looks_like_design_loop("review src/orders.py for bugs"))
+        self.assertTrue(looks_like_design_loop("review the project structure"))
 
     def test_add_task_still_offers_add_and_tests(self) -> None:
         names = self._names("add multiply(a, b) and a unit test")

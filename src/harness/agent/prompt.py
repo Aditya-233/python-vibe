@@ -84,12 +84,14 @@ def build_preamble(options: AgentOptions) -> Preamble:
     notes: list[str] = []
 
     pre_text, located_path = prelude(project, task, options.scope)
-    autofix = ""
-    if options.allow_writes and located_path:
-        autofix = apply_mechanical(project, task, located_path)
-        if autofix:
-            pre_text, located_path = prelude(project, task, options.scope)
-            pre_text = f"{pre_text}\n\n{autofix}" if pre_text else autofix
+    autofix = apply_mechanical(
+        project, task, located_path, write=options.allow_writes
+    )
+    if autofix and options.allow_writes:
+        pre_text, located_path = prelude(project, task, options.scope)
+        pre_text = f"{pre_text}\n\n{autofix}" if pre_text else autofix
+    elif autofix:
+        pre_text = f"{pre_text}\n\n{autofix}" if pre_text else autofix
     located_signature = (
         signature_line(pre_text, question_symbol(task)) if pre_text else ""
     )

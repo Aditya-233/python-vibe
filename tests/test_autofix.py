@@ -7,6 +7,7 @@ from unittest import mock
 
 from harness import Agent, AgentOptions
 from harness.act.autofix import (
+    apply_cover_test,
     apply_function_rename,
     apply_mechanical,
     apply_typo_fixes,
@@ -140,6 +141,62 @@ class MechanicalFinishTest(unittest.TestCase):
         self.assertEqual(result.writes, ("src/orders.py",))
         self.assertIn("Tests passed", result.summary)
         self.assertNotIn("subtotl", body)
+
+    def test_a_read_only_run_does_not_write(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src" / "orders.py").write_text(ORDERS, encoding="utf-8")
+            options = AgentOptions(
+                project=root,
+                task="find a real NameError in src/orders.py and fix it",
+                allow_writes=False,
+            )
+            with mock.patch(
+                "harness.agent.loop.make_generate",
+                side_effect=AssertionError("model must not load for a dry run fix"),
+            ):
+                result = Agent(options).run()
+            body = (root / "src" / "orders.py").read_text(encoding="utf-8")
+        self.assertTrue(result.ok)
+        self.assertEqual(result.writes, ())
+        self.assertIn("subtotl", body)
+        self.assertIn("Read-only", result.summary)
+
+
+class CoverTestTest(unittest.TestCase):
+    """A named function with no test gets one AAA method. No model."""
+
+    IMPL = (
+        "def apply_discount(total: int, percent: int) -> int:\n"
+        "    return total - (total * percent) // 100\n"
+    )
+    TEST = (
+        "import unittest\n\n"
+        "from src.orders import compute_total\n\n\n"
+        "class TestComputeTotal(unittest.TestCase):\n"
+        "    def test_compute_total_sums_the_line_prices(self) -> None:\n"
+        "        prices = [10, 20, 30]\n"
+        "        got = compute_total(prices)\n"
+        "        self.assertEqual(got, 60)\n"
+    )
+
+    def test_the_method_names_the_function(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "tests").mkdir()
+            (root / "src" / "orders.py").write_text(self.IMPL, encoding="utf-8")
+            dest = root / "tests" / "test_orders.py"
+            dest.write_text(self.TEST, encoding="utf-8")
+            note = apply_cover_test(
+                root, "write tests for apply_discount in src/orders.py"
+            )
+            body = dest.read_text(encoding="utf-8")
+        self.assertIn("tests/test_orders.py", note)
+        self.assertIn("apply_discount", body)
+        self.assertIn("got = apply_discount", body)
+        self.assertIn("from src.orders import compute_total, apply_discount", body)
 
 
 if __name__ == "__main__":

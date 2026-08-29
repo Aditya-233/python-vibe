@@ -96,8 +96,23 @@ class Agent:
             options.emit("preamble", f"user answered: {answer}")
         writes: list[str] = []
         leftover_tests = ""
-        if pre.autofix and pre.located_path:
-            writes.append(pre.located_path)
+        if pre.autofix:
+            writes.extend(_autofix_paths(pre.autofix))
+            if not options.allow_writes:
+                note = next(
+                    (
+                        line[2:]
+                        for line in pre.autofix.splitlines()
+                        if line.startswith("- ")
+                    ),
+                    "mechanical fix",
+                )
+                return AgentResult(
+                    ok=True,
+                    summary=f"Read-only: would {note}. Nothing written.",
+                    stopped="done",
+                    writes=(),
+                )
             verdict, test_out = _verify_mechanical(self.project)
             options.emit("result", test_out)
             if verdict in {"passed", "no suite"}:
@@ -266,6 +281,18 @@ class Agent:
         if handler is None:
             return None
         return handler(question)
+
+
+def _autofix_paths(note: str) -> list[str]:
+    """Paths named in mechanical-fix notes, in the order they were written."""
+    found: list[str] = []
+    for line in note.splitlines():
+        if not line.startswith("- ") or " in " not in line:
+            continue
+        tail = line.rsplit(" in ", 1)[-1].strip()
+        if tail.endswith(".py") and tail not in found:
+            found.append(tail)
+    return found
 
 
 def _verify_mechanical(project) -> tuple[str, str]:
