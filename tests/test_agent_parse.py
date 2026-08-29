@@ -22,6 +22,17 @@ class AgentParseTest(unittest.TestCase):
         self.assertEqual(turn.path, "src/foo.py")
         self.assertEqual(turn.source, "print(1)")
 
+    def test_patch_append(self) -> None:
+        turn = parse_turn(
+            "Action: patch\nPath: pkg/mathy.py\nAppend:\n"
+            "def multiply(a: int, b: int) -> int:\n    return a * b\n"
+        )
+        self.assertIsNotNone(turn)
+        assert turn is not None
+        self.assertEqual(turn.action, "patch")
+        self.assertIn("def multiply", turn.append)
+        self.assertIn("return a * b", turn.append)
+
     def test_patch(self) -> None:
         turn = parse_turn(
             "Action: patch\nPath: pkg/util_stats.py\nFind: return tota\n"
@@ -35,6 +46,18 @@ class AgentParseTest(unittest.TestCase):
         turn = parse_turn("Action: done\nSummary: nothing to fix")
         self.assertEqual(turn.action, "done")
         self.assertIn("nothing", turn.summary)
+
+    def test_map_and_plan(self) -> None:
+        mapped = parse_turn("Action: map\nScope: src/harness")
+        self.assertIsNotNone(mapped)
+        assert mapped is not None
+        self.assertEqual(mapped.action, "map")
+        self.assertEqual(mapped.scope, "src/harness")
+        plan = parse_turn("Action: plan\nSummary: read then patch")
+        self.assertIsNotNone(plan)
+        assert plan is not None
+        self.assertEqual(plan.action, "plan")
+        self.assertEqual(plan.summary, "read then patch")
 
     def test_unparsed(self) -> None:
         self.assertIsNone(parse_turn("no issues"))

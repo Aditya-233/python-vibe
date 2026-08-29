@@ -1,4 +1,4 @@
-"""Seed explore→edit→run traces. Templates, not 2k Cursor sessions."""
+"""Seed explore→edit→run traces. Templates, not 2k live sessions."""
 
 from __future__ import annotations
 
@@ -94,6 +94,40 @@ def seed_pairs() -> list[tuple[str, str]]:
         (
             "Tool result:\npkg/util_stats.py:71:return tota\n\nNext Action:",
             "Action: patch\nPath: pkg/util_stats.py\nFind: return tota\nReplace: return sum(cleaned)",
+        )
+    )
+    pairs.append(
+        (
+            "Mode: large  files=120  size=400.0 KB\n"
+            "Large project — use the harness.\n"
+            "Start with Action: map, then grep. Do not Action: done yet.",
+            "Action: map\nScope: src",
+        )
+    )
+    pairs.append(
+        (
+            "Tool result:\nmap src  12 files  40.0 KB\n  src/harness/code.py  3.1 KB\n\nNext Action:",
+            "Action: grep\nQuery: def apply_source",
+        )
+    )
+    pairs.append(
+        (
+            "This is a question. Read what you need, then Action: done with the answer. "
+            "Do not edit unless asked.",
+            "Action: read\nPath: src/harness/code.py",
+        )
+    )
+    pairs.append(
+        (
+            "This is an add-feature task. Grep first. If it is missing, add the "
+            "smallest change plus a test, then run. Do not invent extras.",
+            "Action: skill\nName: add-feature",
+        )
+    )
+    pairs.append(
+        (
+            "Task: add a function multiply(a, b) and a unit test\n",
+            "Action: grep\nQuery: def multiply",
         )
     )
     return pairs

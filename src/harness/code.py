@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 import sys
@@ -67,9 +68,17 @@ def resolve_project_file(project: Path, rel: str) -> Path:
 
 def read_project_file(path: Path, *, limit: int = MAX_FILE_CHARS) -> str:
     text = path.read_text(encoding="utf-8")
-    if len(text) > limit:
-        return text[:limit] + f"\n# … truncated {len(text) - limit} chars\n"
-    return text
+    if len(text) <= limit:
+        return text
+    tail = min(800, max(0, len(text) - limit))
+    omitted = len(text) - limit - tail
+    if omitted <= 0:
+        return text
+    return (
+        text[:limit]
+        + f"\n# … truncated {omitted} chars …\n"
+        + text[-tail:]
+    )
 
 
 def apply_source(path: Path, source: str, *, original: str) -> None:
@@ -80,6 +89,14 @@ def apply_source(path: Path, source: str, *, original: str) -> None:
             f"draft is too short ({len(source)} chars vs {len(original)}) — "
             "use Action: patch for a small change"
         )
+    if path.suffix in {".py", ".pyi"}:
+        try:
+            ast.parse(source)
+        except SyntaxError as exc:
+            raise ValueError(
+                f"syntax error: {exc} — file not written. "
+                "Use a full unique line for Find: (not a prefix of def …)"
+            ) from exc
     bak = path.with_suffix(path.suffix + ".bak")
     if path.is_file():
         bak.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")

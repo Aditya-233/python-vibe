@@ -1,4 +1,4 @@
-"""OpenAI-compatible request helpers. Cursor talks to this; Ollama is the backend."""
+"""OpenAI-compatible request helpers. Local editors talk to this; Ollama is the backend."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def parse_chat_body(raw: bytes) -> dict[str, Any]:
 def warn_tiny(model: str) -> str | None:
     if is_tiny_model(model):
         return (
-            f"{model} is the 0.5B sidecar. Everyday Cursor use should be "
+            f"{model} is the 0.5B sidecar. Everyday laptop use should be "
             f"{DEFAULT_EVERYDAY_OLLAMA} (or qwen2.5-coder:7b / 14b)."
         )
     return None

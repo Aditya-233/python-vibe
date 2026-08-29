@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write data/agent-loop JSONL from seed tool traces (not 2k Cursor logs).
+"""Write data/agent-loop JSONL from seed tool traces (not 2k live logs).
 
   PYTHONPATH=src python scripts/build_agent_data.py
 """

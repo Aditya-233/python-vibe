@@ -4,3 +4,6 @@
 {"action": "run", "draft": "Action: run\nArgv: -m unittest discover -s tests -q"}
 {"action": "done", "draft": "Action: done\nSummary: fixed NameError in compute_total"}
 {"action": "glob", "draft": "I will look around.\n\nAction: glob\nPattern: **/*.py"}
+{"action": "map", "draft": "Action: map\nScope: src/harness"}
+{"action": "plan", "draft": "Action: plan\nSummary: read util_stats then patch return tota"}
+{"action": "skill", "draft": "Action: skill\nName: add-feature"}
