@@ -5,10 +5,16 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from harness.agent_tools import grep_py, read_py
-from harness.project_brief import looks_like_question, question_symbol
-from harness.skills import looks_like_add_feature
-from harness.style import looks_like_fix_smell, looks_like_new_package, smell_symbol
+from harness.act.tools import grep_py, read_py
+from harness.task import looks_like_question, question_symbol
+from harness.task import looks_like_add_feature
+from harness.task import (
+    looks_like_fix_smell,
+    looks_like_new_package,
+    looks_like_refactor,
+    looks_like_review,
+    smell_symbol,
+)
 
 _DEF = re.compile(r"\b(?:def|class)\s+([A-Za-z_][A-Za-z0-9_]*)")
 
@@ -82,6 +88,17 @@ def locate_py(project: Path, query: str, scope: str = "") -> tuple[str, str]:
 
 def prelude(project: Path, task: str, scope: str = "") -> tuple[str, str]:
     """Run locate before the model. Small models skip the first grep."""
+    if looks_like_review(task) or looks_like_refactor(task):
+        from harness.scan.design import render_design_review
+
+        report = render_design_review(project, scope)
+        kind = "refactor" if looks_like_refactor(task) and not looks_like_review(task) else "review"
+        next_line = (
+            "Next Action must be edit Path: pkg/<new_concern>.py with one function."
+            if kind == "refactor"
+            else "Next Action must be done. Quote one finding (SoC, god module, or missing tests)."
+        )
+        return f"Harness design review ({kind})\n{next_line}\n\n{report}", ""
     if looks_like_new_package(task):
         return "", ""
     symbol = smell_symbol(task) if looks_like_fix_smell(task) else question_symbol(task)
@@ -136,12 +153,36 @@ def refuse_redundant_locate(task: str, action: str, prelude_ran: bool) -> str:
 
 
 def refuse_question_write(task: str, action: str) -> str:
+    if looks_like_review(task) and not looks_like_refactor(task) and action in _QUESTION_WRITE:
+        return (
+            "Reviews do not edit. "
+            "Action: done Summary: quote one finding from the design review."
+        )
     if looks_like_question(task) and action in _QUESTION_WRITE:
         return (
             "Questions do not edit. "
             "Action: done Summary: quote return or refuse from # auto-read."
         )
     return ""
+
+
+def refuse_thin_review(task: str, summary: str, report: str) -> str:
+    if not looks_like_review(task) or looks_like_refactor(task):
+        return ""
+    keys = [
+        word
+        for word in ("SoC", "god", "tests", "scripts", "split", "__init__")
+        if word.lower() in report.lower()
+    ]
+    if not keys:
+        return ""
+    text = (summary or "").lower()
+    if any(key.lower() in text for key in keys):
+        return ""
+    return (
+        "too thin. Action: done Summary: quote one finding "
+        f"({', '.join(keys[:3])})"
+    )
 
 
 def refuse_redundant_explore(

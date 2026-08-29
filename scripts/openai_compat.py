@@ -27,8 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA  # noqa: E402
-from harness.ollama_generate import OllamaGenerate  # noqa: E402
-from harness.openai_compat import (  # noqa: E402
+from harness.model.ollama_generate import OllamaGenerate  # noqa: E402
+from harness.model.openai_compat import (  # noqa: E402
     models_payload,
     ollama_openai_url,
     parse_chat_body,

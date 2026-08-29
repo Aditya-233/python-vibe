@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.python_vibe import PythonVibeGuard
-from harness.run import complete
+from harness.guard.python_vibe import PythonVibeGuard
+from harness.guard.run import complete
 
 
 class PythonVibeGuardTest(unittest.TestCase):

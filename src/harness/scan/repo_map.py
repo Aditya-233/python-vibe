@@ -13,7 +13,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from harness.project_brief import iter_text_files
+from harness.scan.project_brief import iter_text_files
 
 MAX_OUTLINE_FILES = 24
 MAX_PER_FILE = 10

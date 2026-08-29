@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from harness.repo_map import file_signatures, render_outline
+from harness.scan.repo_map import file_signatures, render_outline
 
 MODULE = '''
 """Docstring."""

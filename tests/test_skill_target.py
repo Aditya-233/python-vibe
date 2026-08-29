@@ -2,13 +2,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from harness.skill_target import (
+from harness.skillkit.target import (
     FALLBACK_MODULE,
     Target,
     pick_target,
     retarget,
 )
-from harness.skills import get_skill, render_skill
+from harness.skillkit.catalog import get_skill, render_skill
 
 MODULE = "def compute_total(rows: list[int]) -> int:\n    return sum(rows)\n"
 TEST = (

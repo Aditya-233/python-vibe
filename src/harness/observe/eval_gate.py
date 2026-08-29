@@ -5,11 +5,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from harness.agent_parse import parse_turn
-from harness.code import apply_source, write_and_run
+from harness.act.parse import parse_turn
+from harness.paths import EVAL_DIR, REPO_ROOT
+from harness.act.code import apply_source, write_and_run
 
-ROOT = Path(__file__).resolve().parents[2]
-EVAL = ROOT / "eval"
+ROOT = REPO_ROOT
+EVAL = EVAL_DIR
 
 
 def action_parse_rate(path: Path | None = None) -> tuple[int, int]:

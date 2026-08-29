@@ -43,14 +43,18 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 
 | Path | Role |
 | --- | --- |
-| `src/harness/` | Guard, serve helpers, agent parse/tools, report formatter |
-| `src/harness/skill_target.py` | Repoints a kit skill's paths at the target project |
-| `src/harness/patch_fix.py` | Recovers a near-miss `Find:` and names the closest lines |
-| `src/harness/repo_map.py` | Signature outline under `Action: map` |
+| `src/harness/task.py` | What the user asked for (leaf; every layer reads it) |
+| `src/harness/guard/` | What ships and what is refused — the safety boundary |
+| `src/harness/scan/` | Facts about a tree: brief, map, outline, house rules, layout |
+| `src/harness/skillkit/` | Loads skills and repoints their paths at the target project |
+| `src/harness/act/` | Intent becomes a change: parse, tools, patch recovery, jail |
+| `src/harness/model/` | Talking to weights (the only non-deterministic layer) |
+| `src/harness/observe/` | Traces, report, offline eval gate |
 | `src/finetune/` | Specs, splits, Hub card, agent system prompt |
 | `scripts/vibe.py` | Laptop REPL (`/run`, `--then`, `--project`) |
 | `scripts/serve.py` | Local HTTP sidecar |
-| `scripts/agent.py` | Everyday explore / edit / run (use a **larger** Ollama model) |
+| `scripts/agent.py` | Everyday explore / edit / run / ship (use a **larger** Ollama model) |
+| `src/harness/ship/` | Jailed `issue` `branch` `commit` `push` `pr` `merge` |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
 | `data/python-vibe/` | Short stdlib train/valid/test JSONL |
 | `docs/` | GitHub Pages + investigations |
@@ -88,6 +92,14 @@ Train the 7B-class tool LoRA with `scripts/agent.py --record data/agent-loop/ext
 then `scripts/build_agent_data.py` and `scripts/train.py --everyday`. Name it in
 Ollama with `scripts/export_ollama.py --create`. Do not spend more 0.5B train
 steps expecting everyday-agent quality.
+
+**Layers.** `src/harness/` is ordered bottom-up and a module may import a
+layer strictly below it, never one above or beside it. `tests/test_architecture.py`
+is the gate: it fails on an upward import, a cycle, a `parents[N]`, or a
+`guard/` module importing anything that writes. New shared predicate about
+the *task*? It goes in `task.py`, not in whichever module needs it first —
+that is how the last three cycles happened. See
+[architecture](docs/architecture.md).
 
 **Edit tool.** `Find:` stays exact-substring: it fails loudly instead of
 editing the wrong line. A miss must come back *recoverable* — whitespace

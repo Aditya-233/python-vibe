@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Protocol
 
-from harness.types import Outcome
+from harness.guard.types import Outcome
 
 
 class Guard(Protocol):

@@ -4,17 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.style import (
-    looks_like_fix_smell,
-    looks_like_new_package,
-    refuse_layout,
-    refuse_opaque_names,
-    refuse_package_done,
-    refuse_smell_wrong_file,
-    wrap_bare_unittest,
-    rename_target,
-    smell_symbol,
-)
+from harness.task import looks_like_fix_smell, looks_like_new_package, rename_target, smell_symbol
+from harness.skillkit.style import refuse_layout, refuse_opaque_names, refuse_package_done, refuse_smell_wrong_file, wrap_bare_unittest
 
 
 class StyleHarnessTest(unittest.TestCase):

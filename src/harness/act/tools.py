@@ -7,11 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from harness.code import apply_source, read_project_file, resolve_project_file
-from harness.patch_fix import align_indent, find_match, miss_message
-from harness.project_brief import render_map, resolve_scope
-from harness.project_scan import SKIP_DIR
-from harness.repo_map import render_outline
+from harness.act.code import apply_source, read_project_file, resolve_project_file
+from harness.act.patch_fix import align_indent, find_match, miss_message
+from harness.scan.project_brief import render_map, resolve_scope
+from harness.scan.project_scan import SKIP_DIR
+from harness.scan.repo_map import render_outline
 
 MAX_HITS = 30
 _TRUNC = "\n# … truncated. Narrow Query or pass --scope"

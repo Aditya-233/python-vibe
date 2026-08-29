@@ -17,17 +17,17 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.agent_system import AGENT_SYSTEM  # noqa: E402
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA  # noqa: E402
-from harness.agent_parse import parse_turn_smart  # noqa: E402
-from harness.engine import make_generate  # noqa: E402
-from harness.project_brief import (  # noqa: E402
+from harness.act.parse import parse_turn_smart  # noqa: E402
+from harness.model.engine import make_generate  # noqa: E402
+from harness.task import looks_like_question
+from harness.scan.project_brief import (  # noqa: E402
     classify_project,
-    looks_like_question,
     render_brief,
     start_hint,
 )
-from harness.skill_target import pick_target  # noqa: E402
-from harness.skills import get_skill, list_skills, pick_skills, render_catalog, render_skill  # noqa: E402
-from harness.smart import prelude  # noqa: E402
+from harness.skillkit.target import pick_target  # noqa: E402
+from harness.skillkit.catalog import get_skill, list_skills, pick_skills, render_catalog, render_skill  # noqa: E402
+from harness.locate import prelude  # noqa: E402
 
 
 def main() -> None:

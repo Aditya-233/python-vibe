@@ -10,12 +10,17 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from harness.paths import KIT_SKILLS_DIR
+from harness.task import (
+    looks_like_add_feature,
+    looks_like_fix_smell,
+    looks_like_new_package,
+    looks_like_question,
+)
+
 _FRONT = re.compile(r"^---\n(.*?)\n---\n(.*)\Z", re.DOTALL)
 _NAME = re.compile(r"^name:\s*(.+)$", re.MULTILINE)
 _DESC = re.compile(r"^description:\s*(.+)$", re.MULTILINE)
-_ADD_START = re.compile(
-    r"^(please\s+)?(add|implement|introduce|create)\b|new feature"
-)
 MAX_SKILL_CHARS = 2500
 
 
@@ -28,7 +33,7 @@ class Skill:
 
 
 def kit_skills_dir() -> Path:
-    return Path(__file__).resolve().parents[2] / "skills"
+    return KIT_SKILLS_DIR
 
 
 def _parse_skill(path: Path) -> Skill | None:
@@ -90,25 +95,20 @@ def skill_from_action(
     return get_skill(action, project)
 
 
-def looks_like_add_feature(task: str) -> bool:
-    text = task.strip().lower()
-    from harness.project_brief import looks_like_question
-    from harness.style import looks_like_fix_smell, looks_like_new_package
-
-    if looks_like_question(text):
-        return False
-    if looks_like_new_package(text) or looks_like_fix_smell(text):
-        return False
-    return bool(_ADD_START.search(text))
-
-
 def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
     picked: list[Skill] = []
-    from harness.project_brief import looks_like_question
-    from harness.style import looks_like_fix_smell, looks_like_new_package
-
     if looks_like_question(task):
         picked.extend(s for s in catalog if s.name == "answer-question")
+    from harness.task import looks_like_merge, looks_like_ship
+
+    if looks_like_ship(task):
+        if looks_like_merge(task):
+            picked.extend(s for s in catalog if s.name == "merge-pr")
+        elif re.search(r"\b(pr|pull request|push|commit)\b", task, re.I):
+            picked.extend(s for s in catalog if s.name == "open-pr")
+        else:
+            picked.extend(s for s in catalog if s.name == "read-issue")
+        return picked
     if looks_like_new_package(task):
         picked.extend(s for s in catalog if s.name == "new-package")
         return picked
@@ -137,11 +137,11 @@ def render_skill(skill: Skill, target=None, project: Path | None = None) -> str:
     """Render one skill, repointed at `project` when a target is given.
 
     Without a target the kit paths stay literal, which is only right for the
-    eval fixtures. See harness.skill_target.
+    eval fixtures. See harness.skillkit.target.
     """
     body = skill.body
     if target is not None:
-        from harness.skill_target import retarget
+        from harness.skillkit.target import retarget
 
         body = retarget(body, target, project)
     if len(body) > MAX_SKILL_CHARS:

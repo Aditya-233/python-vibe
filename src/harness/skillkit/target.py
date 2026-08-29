@@ -21,7 +21,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.project_brief import iter_text_files, question_symbol
+from harness.task import question_symbol
+from harness.scan.project_brief import iter_text_files
 
 _PLACEHOLDER = re.compile(r"\{\{(module|test|scope|symbol)\}\}")
 _PATH_LINE = re.compile(r"^(Path|File):\s*(\S+)\s*$", re.MULTILINE)

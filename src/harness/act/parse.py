@@ -5,15 +5,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from harness.code import extract_python
+from harness.act.code import extract_python
 
 _ACTION = re.compile(r"^Action:\s*(\w+)\s*$", re.MULTILINE | re.IGNORECASE)
 _FIELD = re.compile(
-    r"^(Path|File|Query|Pattern|Argv|Summary|Scope|Name):\s*(.+)$",
+    r"^(Path|File|Query|Pattern|Argv|Summary|Scope|Name|Number|Title):\s*(.+)$",
     re.MULTILINE,
 )
 _STOP = re.compile(
-    r"^(Action|Path|File|Query|Pattern|Argv|Summary|Scope|Name|Find|Replace|Append|Add):\s*",
+    r"^(Action|Path|File|Query|Pattern|Argv|Summary|Scope|Name|Number|Title|Body|Find|Replace|Append|Add):\s*",
     re.IGNORECASE,
 )
 
@@ -47,10 +47,23 @@ class AgentTurn:
     scope: str = ""
     name: str = ""
     append: str = ""
+    number: str = ""
+    title: str = ""
+    body: str = ""
 
 
 _PREFERRED_WRITE = ("patch", "edit", "run", "locate", "done")
 _PREFERRED_QUESTION = ("done", "locate", "grep", "read")
+_PREFERRED_SHIP = (
+    "issue",
+    "branch",
+    "commit",
+    "push",
+    "pr",
+    "merge",
+    "patch",
+    "done",
+)
 
 
 def parse_turn(text: str) -> AgentTurn | None:
@@ -78,15 +91,25 @@ def parse_turn(text: str) -> AgentTurn | None:
         scope=fields.get("scope", ""),
         name=fields.get("name", ""),
         append=_block(text, "Append") or _block(text, "Add"),
+        number=fields.get("number", ""),
+        title=fields.get("title", ""),
+        body=_block(text, "Body"),
     )
 
 
-def parse_turn_smart(text: str, *, question: bool = False) -> AgentTurn | None:
+def parse_turn_smart(
+    text: str, *, question: bool = False, ship: bool = False
+) -> AgentTurn | None:
     """Small models paste the Action menu. Pick one block by task kind."""
     matches = list(_ACTION.finditer(text))
     if len(matches) <= 1:
         return parse_turn(text)
-    prefer = _PREFERRED_QUESTION if question else _PREFERRED_WRITE
+    if question:
+        prefer = _PREFERRED_QUESTION
+    elif ship:
+        prefer = _PREFERRED_SHIP
+    else:
+        prefer = _PREFERRED_WRITE
     chosen = matches[0]
     for match in matches:
         if match.group(1).lower() in prefer:

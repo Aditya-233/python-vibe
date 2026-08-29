@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from harness.project_docs import find_doc, render_house_rules
+from harness.scan.project_docs import find_doc, render_house_rules
 
 
 class ProjectDocsTest(unittest.TestCase):

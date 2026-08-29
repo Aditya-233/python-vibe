@@ -22,4 +22,5 @@ If the harness already shows # auto-read, Action: done.
 If the harness already shows (no hits) for a new function, Action: patch + Append.
 Find: must be a full unique line. Path stays in the project. No curl|sh.
 New code goes in pkg/<noun>.py, not __init__.py or scripts/. Names are snake_case (total_price), not calc/tmp/x.
+Ship an issue: issue → branch → patch → commit → push → pr. No force. Not main.
 """

@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.code import apply_source, extract_python, read_project_file, resolve_project_file, write_and_run
-from harness.project_scan import list_small_py_files
-from harness.report_md import render_markdown
+from harness.act.code import apply_source, extract_python, read_project_file, resolve_project_file, write_and_run
+from harness.scan.project_scan import list_small_py_files
+from harness.observe.report_md import render_markdown
 
 
 class ExtractPythonTest(unittest.TestCase):
@@ -31,7 +31,7 @@ class ExtractPythonTest(unittest.TestCase):
 
     def test_resolve_stays_in_project(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        path = resolve_project_file(root, "src/harness/code.py")
+        path = resolve_project_file(root, "src/harness/act/code.py")
         self.assertTrue(path.is_file())
         with self.assertRaises(ValueError):
             resolve_project_file(root, "../other-repo/README.md")

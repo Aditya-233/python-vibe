@@ -26,8 +26,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.agent_system import AGENT_SYSTEM  # noqa: E402
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA, TINY_OLLAMA, is_tiny_model  # noqa: E402
-from harness.agent_parse import parse_turn_smart  # noqa: E402
-from harness.agent_tools import (  # noqa: E402
+from harness.act.parse import parse_turn_smart  # noqa: E402
+from harness.act.tools import (  # noqa: E402
     edit_py,
     glob_py,
     grep_py,
@@ -36,17 +36,18 @@ from harness.agent_tools import (  # noqa: E402
     read_py,
     run_python,
 )
-from harness.engine import make_generate  # noqa: E402
-from harness.loop_guard import LoopGuard  # noqa: E402
-from harness.project_docs import render_house_rules  # noqa: E402
-from harness.project_brief import (  # noqa: E402
+from harness.model.engine import make_generate  # noqa: E402
+from harness.guard.loop_guard import LoopGuard  # noqa: E402
+from harness.scan.layout import render_layout  # noqa: E402
+from harness.scan.project_brief import resolve_scope  # noqa: E402
+from harness.scan.project_docs import render_house_rules  # noqa: E402
+from harness.task import looks_like_question, question_symbol
+from harness.scan.project_brief import (  # noqa: E402
     classify_project,
-    looks_like_question,
-    question_symbol,
     render_brief,
     start_hint,
 )
-from harness.smart import (  # noqa: E402
+from harness.locate import (  # noqa: E402
     locate_py,
     prelude,
     refuse_early_done,
@@ -56,31 +57,45 @@ from harness.smart import (  # noqa: E402
     refuse_shallow_done,
     signature_line,
 )
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.skill_target import pick_target  # noqa: E402
-from harness.skills import (  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.skillkit.target import pick_target  # noqa: E402
+from harness.task import looks_like_add_feature
+from harness.skillkit.catalog import (  # noqa: E402
     get_skill,
     list_skills,
-    looks_like_add_feature,
     pick_skills,
     render_catalog,
     render_skill,
     skill_from_action,
 )
-from harness.style import (  # noqa: E402
+from harness.task import (  # noqa: E402
     looks_like_fix_smell,
     looks_like_new_package,
+    rename_target,
+    smell_symbol,
+)
+from harness.skillkit.style import (  # noqa: E402
     refuse_layout,
     refuse_opaque_names,
     refuse_package_done,
     refuse_smell_wrong_file,
     wrap_bare_unittest,
-    rename_target,
-    smell_symbol,
 )
-from harness.trace_record import append_turn  # noqa: E402
+from harness.observe.trace_record import append_turn  # noqa: E402
+from harness.ship.git_ship import (  # noqa: E402
+    commit_changes,
+    create_pr,
+    make_branch,
+    merge_pr,
+    push_branch,
+    read_issue,
+)
+from harness.task import issue_number, looks_like_merge, looks_like_ship  # noqa: E402
 
-_ACTIONS = "glob|grep|read|edit|patch|run|map|plan|skill|locate|done"
+_ACTIONS = (
+    "glob|grep|read|edit|patch|run|map|plan|skill|locate|layout|done|"
+    "issue|branch|commit|push|pr|merge"
+)
 
 
 def _remember(generate_once, prompt: str, draft: str) -> None:
@@ -111,6 +126,9 @@ def _tool(
         return locate_py(project, query, used_scope)
     if turn.action == "map":
         return map_py(project, used_scope), last_path
+    if turn.action == "layout":
+        base = resolve_scope(project, used_scope) if used_scope else project
+        return render_layout(base), last_path
     if turn.action == "plan":
         return (
             f"plan noted:\n{turn.summary or '(empty plan)'}\n"
@@ -165,6 +183,25 @@ def _tool(
         return patch_py(project, path, turn.find, turn.replace, turn.append), path
     if turn.action == "run":
         return run_python(project, turn.argv), last_path
+    if turn.action == "issue":
+        number = turn.number or turn.query or turn.name
+        return read_issue(project, number), last_path
+    if turn.action == "branch":
+        return make_branch(project, turn.name or turn.path or turn.query), last_path
+    if turn.action == "commit":
+        return commit_changes(project, turn.summary or turn.title), last_path
+    if turn.action == "push":
+        return push_branch(project), last_path
+    if turn.action == "pr":
+        return create_pr(
+            project, turn.title or turn.summary, turn.body
+        ), last_path
+    if turn.action == "merge":
+        return merge_pr(
+            project,
+            turn.number or turn.query or turn.name,
+            allowed=True,
+        ), last_path
     if turn.action == "done":
         return turn.summary or "done", last_path
     return (
@@ -252,6 +289,12 @@ def main() -> None:
     if pre_text:
         last_path = located_path
         print(pre_text[:2000], file=sys.stderr)
+    ticket = issue_number(args.task)
+    if ticket:
+        issue_text = read_issue(project, ticket)
+        block = f"Harness issue #{ticket}\n{issue_text}"
+        print(block[:2000], file=sys.stderr)
+        pre_text = f"{pre_text}\n\n{block}" if pre_text else block
     preloaded = []
     for name in args.skill:
         loaded = get_skill(name, project)
@@ -289,7 +332,11 @@ def main() -> None:
         draft = generate_once(prompt)
         _remember(generate_once, prompt, draft)
         print(f"\n--- step {step} ---\n{draft}\n", flush=True)
-        turn = parse_turn_smart(draft, question=looks_like_question(args.task))
+        turn = parse_turn_smart(
+            draft,
+            question=looks_like_question(args.task),
+            ship=looks_like_ship(args.task),
+        )
         if args.record:
             append_turn(
                 args.record.expanduser(),
@@ -337,6 +384,21 @@ def main() -> None:
             )
         if not blocked:
             blocked = loop_guard.check(turn)
+        if not blocked and turn.action in {
+            "issue",
+            "branch",
+            "commit",
+            "push",
+            "pr",
+            "merge",
+        }:
+            if not looks_like_ship(args.task):
+                blocked = (
+                    "Ship actions only when the task is about an issue, PR, "
+                    "commit, or push."
+                )
+            elif turn.action == "merge" and not looks_like_merge(args.task):
+                blocked = "merge only when the task says merge"
         if blocked:
             prompt = blocked
             print(blocked[:500], file=sys.stderr)

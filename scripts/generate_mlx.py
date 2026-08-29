@@ -19,9 +19,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.huggingface_store import BEST_ADAPTER, ensure_adapters  # noqa: E402
 from finetune.models import SPECS  # noqa: E402
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 BEST_STEP = "0000100_adapters.safetensors"
 

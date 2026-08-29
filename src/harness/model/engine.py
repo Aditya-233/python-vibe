@@ -107,7 +107,7 @@ def _mlx_generate(
 def _ollama_generate(
     *, model: str | None = None, system: str | None = None
 ) -> tuple[str, Callable[[str], str]]:
-    from harness.ollama_generate import OllamaGenerate
+    from harness.model.ollama_generate import OllamaGenerate
 
     spec = SPECS["python-vibe"]
     name = model or spec.ollama_base

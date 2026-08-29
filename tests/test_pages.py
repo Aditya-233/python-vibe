@@ -8,6 +8,7 @@ DOCS = ROOT / "docs"
 class PagesInvestigationsTest(unittest.TestCase):
     def test_site_files_exist(self) -> None:
         required = (
+            "architecture.md",
             "local-editor.md",
             "investigations/everyday-laptop.md",
             "investigations/everyday-skills.md",

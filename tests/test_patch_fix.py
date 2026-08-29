@@ -1,6 +1,6 @@
 import unittest
 
-from harness.patch_fix import align_indent, find_match, miss_message, suggestions
+from harness.act.patch_fix import align_indent, find_match, miss_message, suggestions
 
 FILE = """import unittest
 

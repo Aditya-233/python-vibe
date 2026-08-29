@@ -10,36 +10,21 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.project_scan import SKIP_DIR
+from harness.scan.project_scan import SKIP_DIR
+from harness.task import (
+    looks_like_add_feature,
+    looks_like_fix_smell,
+    looks_like_merge,
+    looks_like_new_package,
+    looks_like_question,
+    looks_like_ship,
+    question_symbol,
+)
 
 TEXT_SUFFIXES = {".py", ".pyi", ".md"}
 SMALL_MAX_FILES = 40
 SMALL_MAX_BYTES = 200_000
 MAP_MAX_ENTRIES = 80
-QUESTION_PREFIXES = ("what ", "why ", "how ", "where ", "which ", "explain ", "list ", "who ")
-_SYMBOL = re.compile(r"\b([a-z_][a-z0-9_]{4,})\b")
-_SYMBOL_SKIP = frozenset(
-    {
-        "what",
-        "does",
-        "this",
-        "that",
-        "with",
-        "from",
-        "return",
-        "where",
-        "which",
-        "explain",
-        "refuse",
-        "about",
-        "after",
-        "before",
-        "source",
-        "apply",
-        "function",
-        "feature",
-    }
-)
 
 
 @dataclass(frozen=True)
@@ -69,20 +54,6 @@ def resolve_scope(project: Path, scope: str) -> Path:
     if not path.is_dir():
         raise ValueError(f"scope is not a directory: {scope}")
     return path
-
-
-def looks_like_question(task: str) -> bool:
-    text = task.strip().lower()
-    return text.endswith("?") or text.startswith(QUESTION_PREFIXES)
-
-
-def question_symbol(task: str) -> str:
-    hits = [
-        word
-        for word in _SYMBOL.findall(task.lower())
-        if word not in _SYMBOL_SKIP
-    ]
-    return hits[0] if hits else ""
 
 
 def iter_text_files(project: Path, scope: str = "") -> list[tuple[Path, int]]:
@@ -200,9 +171,17 @@ def start_hint(brief: ProjectBrief, task: str, *, located: bool = False) -> str:
             "This is a question. Read what you need, then Action: done with the answer. "
             "Do not edit unless asked."
         )
-    from harness.skills import looks_like_add_feature
-    from harness.style import looks_like_fix_smell, looks_like_new_package
-
+    if looks_like_ship(task):
+        if looks_like_merge(task):
+            return (
+                "This is a merge task. Action: merge Number: <pr>. No force."
+            )
+        return (
+            "This is a ship task. Order: Action: issue Number: N → "
+            "Action: branch Name: proceed/short-slug → patch → "
+            "Action: commit Summary: why → Action: push → "
+            "Action: pr Title: + Body: Closes #N. No force. Not main/master."
+        )
     if looks_like_new_package(task):
         return (
             "This is a new-package task. First Action: edit Path: pkg/__init__.py "

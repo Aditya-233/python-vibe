@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import re
 
+from harness.task import (
+    looks_like_fix_smell,
+    looks_like_new_package,
+    smell_symbol,
+)
+
 _DEF = re.compile(r"^def\s+([A-Za-z_]\w*)\s*\(", re.MULTILINE)
 _CLASS = re.compile(r"^class\s+([A-Za-z_]\w*)", re.MULTILINE)
 _OK_PARAM = frozenset({"self", "cls", "i", "j", "k"})
@@ -32,70 +38,8 @@ _OPAQUE = frozenset(
         "var",
     }
 )
-_SMELL = re.compile(
-    r"\b(code smell|smell|rename|readable name|human[- ]readable|clean up|cleanup)\b"
-)
-_PACKAGE = re.compile(
-    r"\b(scaffold|project structure|new package|new project|"
-    r"create a package|create a project|create a pkg)\b"
-)
-_RENAME = re.compile(
-    r"\brename\s+([A-Za-z_][A-Za-z0-9_]*)\s+to\s+([A-Za-z_][A-Za-z0-9_]*)",
-    re.I,
-)
 
 
-def looks_like_new_package(task: str) -> bool:
-    from harness.project_brief import looks_like_question
-
-    if looks_like_question(task):
-        return False
-    return bool(_PACKAGE.search(task.strip().lower()))
-
-
-def looks_like_fix_smell(task: str) -> bool:
-    from harness.project_brief import looks_like_question
-
-    if looks_like_question(task):
-        return False
-    return bool(_SMELL.search(task.strip().lower()))
-
-
-_SMELL_SKIP = frozenset(
-    {
-        "the",
-        "code",
-        "smell",
-        "rename",
-        "readable",
-        "human",
-        "clean",
-        "cleanup",
-        "fix",
-        "name",
-        "names",
-        "function",
-        "please",
-        "this",
-        "that",
-        "with",
-        "from",
-    }
-)
-
-
-def smell_symbol(task: str) -> str:
-    match = _RENAME.search(task)
-    if match:
-        return match.group(1)
-    names = re.findall(r"\b([a-z_][a-z0-9_]{2,})\b", task.lower())
-    hits = [name for name in names if name not in _SMELL_SKIP]
-    return hits[-1] if hits else ""
-
-
-def rename_target(task: str) -> str:
-    match = _RENAME.search(task)
-    return match.group(2) if match else ""
 
 
 def _opaque_param(draft: str) -> str:

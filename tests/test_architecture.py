@@ -1,0 +1,116 @@
+"""The layer rule, enforced. A refactor that rots fails here first.
+
+`src/harness/` is ordered bottom-up. A module may import a layer strictly
+below it and never one above or beside it, so the import graph stays a
+DAG and every layer can be read on its own.
+"""
+
+import ast
+import unittest
+from pathlib import Path
+
+HARNESS = Path(__file__).resolve().parents[1] / "src" / "harness"
+
+# Lower number = deeper. A layer may only import strictly lower layers.
+DEPTH = {
+    "task": 0,
+    "paths": 0,
+    "model": 0,
+    "ship": 0,
+    "guard": 1,
+    "scan": 2,
+    "skillkit": 3,
+    "act": 4,
+    "locate": 5,
+    "observe": 6,
+}
+
+
+def _layer(rel: Path) -> str:
+    """Package name for a subpackage module, else the module's own stem."""
+    return rel.parts[0] if len(rel.parts) > 1 else rel.stem
+
+
+def _edges() -> set[tuple[str, str, str]]:
+    found: set[tuple[str, str, str]] = set()
+    for path in sorted(HARNESS.rglob("*.py")):
+        rel = path.relative_to(HARNESS)
+        if rel == Path("__init__.py"):
+            continue
+        source = _layer(rel)
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ImportFrom):
+                continue
+            if not node.module or not node.module.startswith("harness."):
+                continue
+            target = node.module.split(".", 1)[1].split(".")[0]
+            if target != source:
+                found.add((source, target, str(rel)))
+    return found
+
+
+class LayerRuleTest(unittest.TestCase):
+    def test_every_layer_is_known(self) -> None:
+        layers = {_layer(p.relative_to(HARNESS)) for p in HARNESS.rglob("*.py")}
+        layers.discard("__init__")
+        unknown = sorted(layers - set(DEPTH))
+        self.assertEqual(
+            unknown,
+            [],
+            f"new layer(s) {unknown}: give them a depth in DEPTH, or move them",
+        )
+
+    def test_imports_only_point_downwards(self) -> None:
+        upward = [
+            f"{where}: {source} -> {target}"
+            for source, target, where in sorted(_edges())
+            if DEPTH[target] >= DEPTH[source]
+        ]
+        self.assertEqual(upward, [], "layer rule broken")
+
+    def test_no_import_cycles(self) -> None:
+        graph: dict[str, set[str]] = {}
+        for source, target, _where in _edges():
+            graph.setdefault(source, set()).add(target)
+        state: dict[str, int] = {}
+
+        def walk(node: str, trail: list[str]) -> list[str] | None:
+            state[node] = 1
+            for nxt in sorted(graph.get(node, ())):
+                if state.get(nxt) == 1:
+                    return trail + [node, nxt]
+                if state.get(nxt, 0) == 0:
+                    found = walk(nxt, trail + [node])
+                    if found:
+                        return found
+            state[node] = 2
+            return None
+
+        for node in sorted(graph):
+            if state.get(node, 0) == 0:
+                self.assertIsNone(walk(node, []), "import cycle between layers")
+
+    def test_no_module_counts_its_own_depth(self) -> None:
+        """`parents[N]` breaks the moment a module moves into a layer."""
+        offenders = [
+            str(path.relative_to(HARNESS))
+            for path in sorted(HARNESS.rglob("*.py"))
+            if "parents[" in path.read_text(encoding="utf-8")
+            and path.name != "paths.py"
+        ]
+        self.assertEqual(offenders, [], "use harness.paths instead of parents[N]")
+
+    def test_the_guard_layer_cannot_write(self) -> None:
+        """The safety boundary must not import a layer that touches files."""
+        writers = {"act", "locate"}
+        leaks = [
+            f"{where}: guard -> {target}"
+            for source, target, where in sorted(_edges())
+            if source == "guard" and target in writers
+        ]
+        self.assertEqual(leaks, [])
+
+
+if __name__ == "__main__":
+    unittest.main()
