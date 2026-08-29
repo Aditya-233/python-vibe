@@ -1,0 +1,8 @@
+{
+  "context_servers": {
+    "python-vibe": {
+      "command": "__PYTHON__",
+      "args": ["-m", "harness", "mcp", "--project", "__PROJECT__"]
+    }
+  }
+}

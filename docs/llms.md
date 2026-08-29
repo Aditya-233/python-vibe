@@ -19,6 +19,7 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 - [Demo]({{ '/demo/' | absolute_url }}): Eleven everyday tasks run against one small project, with an independent check of each outcome.
 - [Architecture]({{ '/architecture/' | absolute_url }}): Bottom-up harness layers. Imports only point downward.
 - [Local editor]({{ '/local-editor/' | absolute_url }}): One-command drop-in for VS Code tasks, Continue, or a local MCP. Chat override of localhost is optional.
+- [IDE plugins]({{ '/ide-plugins/' | absolute_url }}): Use the package as-is, or spawn it from an extension. No extra Python deps.
 - [Research index]({{ '/investigations/' | absolute_url }}): Measurements and design notes.
 
 ## Research
@@ -27,6 +28,7 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 - [What to improve]({{ '/investigations/what-to-improve/' | absolute_url }}): Harness work that can close a gap, and work that cannot.
 - [Small models, classic development]({{ '/investigations/small-llm-harness/' | absolute_url }}): Oracles and refuses that make an 8B finish like a careful review.
 - [Fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | absolute_url }}): When new weights help. Not another 0.5B run. Not 30 seed traces.
+- [Model lanes]({{ '/investigations/model-lanes/' | absolute_url }}): Which local weight for which job. Default stays 8B.
 - [Platform engineering]({{ '/investigations/platform-engineering/' | absolute_url }}): pathlib, both venv layouts, config files, every OS.
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | absolute_url }}): Why the 0.5B LoRA is not daily work.
 - [Everyday skills]({{ '/investigations/everyday-skills/' | absolute_url }}): Skills are one copy-paste Action, written for an 8B.

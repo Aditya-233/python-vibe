@@ -100,6 +100,7 @@ the model is shown them and copies them back.
 
 ```bash
 python -m harness brief  ~/app                              # no model
+python -m harness route  "what does compute_total return?"  # no model
 python -m harness layout ~/app                              # no model
 python -m harness ask    ~/app "what does compute_total return?"
 python -m harness run    ~/app "add multiply(a, b) and a test"
@@ -107,9 +108,10 @@ python -m harness run    ~/app "..." --dry-run --scope src
 python -m harness serve    --project ~/app
 python -m harness mcp      --project ~/app          # stdio, for an editor
 python -m harness editors  vscode --project ~/app   # drop-in tasks.json
+python -m harness editors  zed     --project ~/app   # merge .zed/settings.json
 ```
 
-`brief` and `layout` never call a model. `ask` is always read-only. `run`
+`brief`, `layout`, and `route` never call a model. `ask` is always read-only. `run`
 writes unless you pass `--dry-run`. Add `--json` for machine-readable
 output, `-v` for tool results.
 

@@ -7,6 +7,7 @@ Three easy paths. Pick one. You do not need a GPU to copy these files.
 | VS Code tasks | Command Palette → Run Task → `python-vibe: ask` / `run` | Yes. Uses the jail in the integrated terminal. |
 | Continue (VS Code) | Chat talks to `http://127.0.0.1:8081/v1` (Ollama proxy) | Yes. This changes the **brain**, not the jail. |
 | Cursor MCP | `.cursor/mcp.json` starts `python -m harness mcp` as a child process | Yes. The editor calls the jail on this machine. No tunnel. |
+| Zed | Merges `context_servers` into `.zed/settings.json` | Yes. Same stdio jail. Existing Zed keys stay. |
 
 One command from a python-vibe checkout (or `pip install -e .`):
 
@@ -14,6 +15,7 @@ One command from a python-vibe checkout (or `pip install -e .`):
 python -m harness editors vscode   --project /path/to/your/app
 python -m harness editors continue --project /path/to/your/app
 python -m harness editors cursor   --project /path/to/your/app
+python -m harness editors zed      --project /path/to/your/app
 ```
 
 Then:

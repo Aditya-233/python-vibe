@@ -26,6 +26,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "skills.md",
             "demo.md",
             "local-editor.md",
+            "ide-plugins.md",
             "research-vibe-review.md",
             "investigations/index.md",
             "investigations/everyday-laptop.md",
@@ -36,6 +37,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "investigations/small-llm-harness.md",
             "investigations/platform-engineering.md",
             "investigations/fine-tune-or-harness.md",
+            "investigations/model-lanes.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]
         self.assertEqual(missing, [])
@@ -206,7 +208,7 @@ class CrossPlatformDocsTest(unittest.TestCase):
     Apple Silicon. A page that offers only those shuts Windows out.
     """
 
-    RUN_PAGES = ("start.md", "api.md", "skills.md")
+    RUN_PAGES = ("start.md", "api.md", "skills.md", "ide-plugins.md")
 
     def test_each_page_shows_the_installed_command(self) -> None:
         missing = [
@@ -223,3 +225,54 @@ class CrossPlatformDocsTest(unittest.TestCase):
             if "pip install -r requirements.txt" in path.read_text(encoding="utf-8")
         ]
         self.assertEqual(offenders, [])
+
+
+class FirstRunOutputTest(unittest.TestCase):
+    """`brief` is the first command a new user runs. It must read as English.
+
+    `render_brief` is written for the model and ends in instructions such as
+    "Action: done". Printing that to a person shows them the machine's
+    prompt instead of an answer.
+    """
+
+    def _brief(self, project: Path) -> str:
+        from harness.scan.project_brief import (
+            classify_project,
+            render_brief_for_person,
+        )
+
+        return render_brief_for_person(classify_project(project))
+
+    def _sample(self, tmp: str) -> Path:
+        root = Path(tmp)
+        (root / "src").mkdir()
+        (root / "src" / "app.py").write_text("def go() -> int:\n    return 1\n", encoding="utf-8")
+        return root
+
+    def test_it_says_how_big_the_project_is(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            text = self._brief(self._sample(tmp))
+        self.assertIn("files", text)
+        self.assertIn("src/app.py", text)
+
+    def test_it_does_not_address_the_model(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            text = self._brief(self._sample(tmp))
+        for phrase in ("Action:", "auto-read", "Mode:"):
+            self.assertNotIn(phrase, text, f"{phrase!r} is written for the model")
+
+    def test_a_large_project_says_what_to_do_about_it(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pkg").mkdir()
+            for i in range(60):
+                (root / "pkg" / f"m{i}.py").write_text("x = 1\n", encoding="utf-8")
+            text = self._brief(root)
+        self.assertIn("--scope", text)
+        self.assertNotIn("Action:", text)

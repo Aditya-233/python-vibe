@@ -7,33 +7,72 @@ date: 2026-08-29
 
 # Start
 
-Everyday explore / edit / run needs Ollama and an 8B coder. Harness tests need neither a GPU nor a model.
+Four steps, about ten minutes, mostly waiting for one download.
+
+There are two pieces. **Ollama** runs the AI model on your own machine; it
+is free, and nothing you type leaves your computer. **python-vibe** is this
+project: it reads your code, decides what the model is allowed to do, and
+makes the changes safely.
+
+You do not need a graphics card.
 
 ## You need
 
 <ul class="need">
   <li>Python 3.11 or newer, on macOS, Linux or Windows</li>
-  <li><a href="https://ollama.com" rel="noreferrer">Ollama</a> and about 5 GB disk for <code>llama3.1:8b</code></li>
-  <li>A small Python tree to point <code>--project</code> at</li>
+  <li><a href="https://ollama.com" rel="noreferrer">Ollama</a>, free, plus about 5 GB of disk for the model it downloads</li>
+  <li>A Python project of your own to try it on</li>
 </ul>
 
-## Everyday agent
+## 1. Install
 
-The harness uses only the standard library, so the install builds nothing
-and is the same on every platform.
+The same three commands on macOS, Linux and Windows. Nothing is compiled,
+because python-vibe itself uses only what comes with Python.
 
 ```bash
-ollama pull llama3.1:8b
 git clone https://github.com/YauhenBichel/python-vibe.git
 cd python-vibe
 pip install -e .
 ```
 
+## 2. Check it works
+
+This needs no AI model at all, so you can run it straight away. Point it at
+any Python project and it prints a summary:
+
 ```bash
-python-vibe brief  /path/to/your/app
-python-vibe ask    /path/to/your/app "what does compute_total return?"
-python-vibe run    /path/to/your/app --scope src "find a real NameError and fix it"
+python-vibe brief /path/to/your/project
 ```
+
+You should see the project's size and a list of its files. If you see that,
+the install worked.
+
+## 3. Download the model
+
+One download of about 5 GB. It only happens once.
+
+```bash
+ollama pull llama3.1:8b
+```
+
+## 4. Ask it something
+
+```bash
+python-vibe ask /path/to/your/project "what does compute_total return?"
+```
+
+`ask` never changes a file. When you are ready to let it make a change:
+
+```bash
+python-vibe run /path/to/your/project "find the NameError and fix it"
+```
+
+It only touches files inside the folder you named, and it keeps a copy of
+anything it edits next to the original, ending in `.bak`. Add `--dry-run`
+to see what it would do without letting it do anything.
+
+On a large project, add `--scope src` so it works in one folder instead of
+trying to read everything.
 
 `python -m harness ...` does the same thing without the installed command.
 `scripts/agent.py` still works from a source checkout, with `PYTHONPATH=src`
@@ -50,7 +89,8 @@ or you pass `--skill`. `--brief` prints the pick with no model.
 
 Add the same jail to VS Code and other editors in one command:
 `python-vibe editors vscode --project /path/to/your/app`.
-Details: [local editor]({{ '/local-editor/' | relative_url }}).
+Details: [local editor]({{ '/local-editor/' | relative_url }}) ·
+[IDE plugins]({{ '/ide-plugins/' | relative_url }}).
 
 ## Tests (no model)
 

@@ -245,3 +245,29 @@ class CursorConfigTest(unittest.TestCase):
             with mock.patch("harness.editor_kit._harness_is_importable", return_value=True):
                 server = self._config(Path(tmp))["mcpServers"]["python-vibe"]
         self.assertNotIn("env", server)
+
+
+class ZedConfigTest(unittest.TestCase):
+    def test_empty_project_gets_a_context_server(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            written = install_editors(root, "zed")
+            data = json.loads(written[0].read_text(encoding="utf-8"))
+        server = data["context_servers"]["python-vibe"]
+        self.assertIn(root.resolve().as_posix(), server["args"])
+        self.assertNotIn("__PROJECT__", server["args"])
+
+    def test_existing_settings_are_not_wiped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dest = root / ".zed" / "settings.json"
+            dest.parent.mkdir()
+            dest.write_text(
+                '{"theme": "one", "context_servers": {"other": {"command": "x"}}}',
+                encoding="utf-8",
+            )
+            install_editors(root, "zed")
+            data = json.loads(dest.read_text(encoding="utf-8"))
+        self.assertEqual(data["theme"], "one")
+        self.assertEqual(data["context_servers"]["other"]["command"], "x")
+        self.assertIn("python-vibe", data["context_servers"])

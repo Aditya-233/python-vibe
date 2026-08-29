@@ -10,7 +10,7 @@ from pathlib import Path
 
 from harness.paths import REPO_ROOT
 
-KINDS = ("vscode", "continue", "cursor")
+KINDS = ("vscode", "continue", "cursor", "zed")
 
 
 def kit_dir() -> Path:
@@ -45,9 +45,15 @@ def install_editors(project: Path, kind: str) -> list[Path]:
         )
         written.append(dest)
         return written
+    if kind == "zed":
+        dest = root / ".zed" / "settings.json"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(_zed_settings(root, dest), encoding="utf-8")
+        written.append(dest)
+        return written
     dest = root / ".cursor" / "mcp.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_cursor_mcp(root), encoding="utf-8")
+    dest.write_text(_mcp_json(root, kit_dir() / "cursor" / "mcp.json"), encoding="utf-8")
     written.append(dest)
     return written
 
@@ -67,18 +73,49 @@ def _harness_is_importable() -> bool:
     return probe.returncode == 0
 
 
-def _cursor_mcp(project: Path) -> str:
-    template = json.loads(
-        (kit_dir() / "cursor" / "mcp.json").read_text(encoding="utf-8")
-    )
-    server = template["mcpServers"]["python-vibe"]
+def _stdio_server(project: Path) -> dict:
+    """Command an editor will spawn. Absolute interpreter + project."""
+    server = {
+        "command": Path(sys.executable).as_posix(),
+        "args": ["-m", "harness", "mcp", "--project", project.as_posix()],
+    }
+    if not _harness_is_importable():
+        server["env"] = {"PYTHONPATH": (REPO_ROOT / "src").as_posix()}
+    return server
+
+
+def _fill_server(server: dict, project: Path) -> dict:
     server["command"] = Path(sys.executable).as_posix()
     server["args"] = [
         project.as_posix() if arg == "__PROJECT__" else arg
         for arg in server["args"]
     ]
     if not _harness_is_importable():
-        # Running from a source checkout. Carry the path the editor will not
-        # have, so the file works without `pip install -e .` as well.
         server["env"] = {"PYTHONPATH": (REPO_ROOT / "src").as_posix()}
+    return server
+
+
+def _mcp_json(project: Path, template_path: Path) -> str:
+    template = json.loads(template_path.read_text(encoding="utf-8"))
+    server = template["mcpServers"]["python-vibe"]
+    template["mcpServers"]["python-vibe"] = _fill_server(server, project)
     return json.dumps(template, indent=2) + "\n"
+
+
+def _zed_settings(project: Path, dest: Path) -> str:
+    """Merge python-vibe into .zed/settings.json. Do not drop other keys."""
+    incoming = _stdio_server(project)
+    data: dict = {}
+    if dest.is_file():
+        try:
+            loaded = json.loads(dest.read_text(encoding="utf-8") or "{}")
+        except json.JSONDecodeError:
+            loaded = {}
+        if isinstance(loaded, dict):
+            data = loaded
+    servers = data.setdefault("context_servers", {})
+    if not isinstance(servers, dict):
+        servers = {}
+        data["context_servers"] = servers
+    servers["python-vibe"] = incoming
+    return json.dumps(data, indent=2) + "\n"

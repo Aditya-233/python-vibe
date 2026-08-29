@@ -23,7 +23,8 @@ classifiers = [
 
 # The harness itself uses only the standard library. That is deliberate: it
 # installs and runs the same way on macOS, Linux and Windows with nothing to
-# build. Training and Hub upload need extras.
+# build. Training and Hub upload need extras. IDE plugins spawn this
+# package; they do not add mcp / pygls here. See docs/ide-plugins.md.
 dependencies = []
 
 [project.optional-dependencies]

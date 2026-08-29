@@ -13,6 +13,7 @@ Three easy paths. All stay on `127.0.0.1` unless you choose otherwise.
 | Editor tasks | `python-vibe editors vscode --project ~/app` | Command Palette → Run Task → ask / run / brief. Uses the **jail**. |
 | Continue (VS Code) | `python-vibe editors continue --project ~/app` | Chat uses local Ollama 8B. Uses the **editor’s** tools. |
 | Local MCP | `python-vibe editors cursor --project ~/app` | The editor starts `python -m harness mcp` as a child process. Uses the **jail**. No tunnel. |
+| Zed | `python-vibe editors zed --project ~/app` | Merges a `context_servers` entry into `.zed/settings.json`. Same jail. |
 
 `pip install -e .` first so `python-vibe` is on your PATH. Files land in `.vscode/`, `.continue/`, or `.cursor/` inside **your** app, not inside this repo.
 

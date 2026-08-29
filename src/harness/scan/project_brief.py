@@ -140,6 +140,40 @@ def render_brief(brief: ProjectBrief, *, scope: str = "") -> str:
     return "\n".join(lines)
 
 
+def render_brief_for_person(brief: ProjectBrief, *, scope: str = "") -> str:
+    """The same facts, addressed to the person who typed the command.
+
+    `render_brief` is written for the model: it ends in instructions like
+    "Action: done". That is the first thing a new user sees, and to them it
+    reads as noise, so the command line uses this instead.
+    """
+    size = _kb(brief.bytes)
+    lines = [
+        f"{brief.files} Python and Markdown files, {size} in total."
+        + (f" Looking only at {scope}." if scope else ""),
+    ]
+    if brief.kind == "small":
+        lines.append(
+            "Small enough that python-vibe can read all of it, so you can "
+            "ask about any part."
+        )
+    else:
+        lines.append(
+            "Large, so python-vibe will search rather than read everything. "
+            "Add --scope <folder> to keep it in one place."
+        )
+    lines.append("")
+    if brief.kind == "small":
+        lines.append("Files:")
+        for rel, item_size in brief.listed:
+            lines.append(f"  {rel}  {_kb(item_size)}")
+    else:
+        lines.append("Top-level folders, by number of files:")
+        for name, count in brief.tops:
+            lines.append(f"  {name}  {count}")
+    return "\n".join(lines)
+
+
 def render_map(project: Path, scope: str = "", *, max_entries: int = MAP_MAX_ENTRIES) -> str:
     root = project.resolve()
     found = iter_text_files(project, scope)
