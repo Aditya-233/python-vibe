@@ -1,0 +1,27 @@
+# Everyday LoRA on a 7B-class coder. 0.5B config is configs/python-vibe.yaml.
+# Needs Apple Silicon + data/agent-loop from scripts/build_agent_data.py.
+model: mlx-community/Qwen2.5-Coder-7B-Instruct-4bit
+train: true
+fine_tune_type: lora
+optimizer: adamw
+data: data/agent-loop
+seed: 7
+num_layers: 16
+batch_size: 1
+iters: 200
+val_batches: 8
+learning_rate: 1.0e-5
+steps_per_report: 10
+steps_per_eval: 50
+grad_accumulation_steps: 4
+adapter_path: adapters/python-vibe-8b
+save_every: 50
+test: false
+max_seq_length: 2048
+grad_checkpoint: true
+mask_prompt: true
+lora_parameters:
+  keys: ["self_attn.q_proj", "self_attn.v_proj"]
+  rank: 16
+  scale: 20.0
+  dropout: 0.0

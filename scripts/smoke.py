@@ -67,11 +67,11 @@ def _live() -> None:
 
 
 def _mlx_python() -> str:
+    extra = os.environ.get("MLX_PYTHON", "")
     candidates = [
         sys.executable,
         str(ROOT / ".venv" / "bin" / "python"),
-        str(Path.home() / "DevBox/tracer-cloud/llm-finetunes/.venv/bin/python"),
-        str(Path.home() / "DevBox/molecare/skincare-qa/.venv/bin/python"),
+        *([extra] if extra else []),
     ]
     for exe in candidates:
         if not Path(exe).is_file():

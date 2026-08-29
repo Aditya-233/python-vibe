@@ -5,7 +5,7 @@ Loads the LoRA once. Each file is its own prompt — the 0.5B window cannot
 hold a repo.
 
   PYTHONPATH=src python scripts/batch_review.py \\
-    --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre --limit 100
+    --project /path/to/your/app --limit 100
 
   # rewrite only files whose review was not "no issues"
   PYTHONPATH=src python scripts/batch_review.py --project … --limit 100 --fix

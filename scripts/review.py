@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""Review one small first-party .py file in a project (default: OpenSRE).
+"""Review one small first-party .py file in a project.
 
-  PYTHONPATH=src python scripts/review.py \\
-    --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre
-
-  PYTHONPATH=src python scripts/review.py \\
-    --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre \\
-    --file tools/system/fleet_monitoring/provider_ids.py
-
-  PYTHONPATH=src python scripts/review.py --project … --file path.py --fix \\
-    "fix the NameError in provider_from_classified_name"
+  PYTHONPATH=src python scripts/review.py --project /path/to/your/app
+  PYTHONPATH=src python scripts/review.py --project /path/to/your/app \\
+    --file src/app.py --fix "add a type hint to main()"
 """
 
 from __future__ import annotations
@@ -27,11 +21,7 @@ from harness.project_scan import list_small_py_files  # noqa: E402
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--project",
-        type=Path,
-        default=Path("/Users/yauhenbichel/DevBox/tracer-cloud/opensre"),
-    )
+    parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--file")
     parser.add_argument(
         "--fix",

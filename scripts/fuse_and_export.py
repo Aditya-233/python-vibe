@@ -26,7 +26,7 @@ def main() -> None:
     parser.add_argument(
         "--hf",
         action="store_true",
-        help="upload fused weights to Hugging Face (YauhenBichel/…)",
+        help="upload fused weights to HF_REPO or HF_USER/<slug> (never implied official account)",
     )
     parser.add_argument(
         "--public",

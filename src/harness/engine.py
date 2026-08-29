@@ -14,13 +14,11 @@ from finetune.paths import PROJECT_ROOT
 
 
 def mlx_pythons() -> list[str]:
-    home = Path.home()
+    extra = os.environ.get("MLX_PYTHON", "")
     return [
         sys.executable,
         str(PROJECT_ROOT / ".venv" / "bin" / "python"),
-        str(home / "DevBox/python-vibe/.venv/bin/python"),
-        str(home / "DevBox/tracer-cloud/llm-finetunes/.venv/bin/python"),
-        str(home / "DevBox/molecare/skincare-qa/.venv/bin/python"),
+        *([extra] if extra else []),
     ]
 
 
@@ -64,15 +62,23 @@ def _stage_best(adapter_dir: Path) -> Path:
     return staging
 
 
-def make_generate(engine: str, max_tokens: int) -> tuple[str, Callable[[str], str]]:
+def make_generate(
+    engine: str,
+    max_tokens: int,
+    *,
+    model: str | None = None,
+    system: str | None = None,
+) -> tuple[str, Callable[[str], str]]:
     if engine == "auto":
         engine = "mlx" if any(has_mlx(p) for p in mlx_pythons()) else "ollama"
     if engine == "mlx":
-        return _mlx_generate(max_tokens)
-    return _ollama_generate()
+        return _mlx_generate(max_tokens, system=system)
+    return _ollama_generate(model=model, system=system)
 
 
-def _mlx_generate(max_tokens: int) -> tuple[str, Callable[[str], str]]:
+def _mlx_generate(
+    max_tokens: int, *, system: str | None = None
+) -> tuple[str, Callable[[str], str]]:
     reexec_for_mlx()
     from mlx_lm import generate, load
 
@@ -81,10 +87,11 @@ def _mlx_generate(max_tokens: int) -> tuple[str, Callable[[str], str]]:
     adapter = _stage_best(local) if (local / BEST_ADAPTER).is_file() else local
     model, tokenizer = load(spec.mlx_base, adapter_path=str(adapter))
     history: list[dict[str, str]] = []
+    sys_prompt = system or spec.system
 
     def generate_once(prompt: str) -> str:
         messages = (
-            [{"role": "system", "content": spec.system}]
+            [{"role": "system", "content": sys_prompt}]
             + history
             + [{"role": "user", "content": prompt}]
         )
@@ -97,11 +104,14 @@ def _mlx_generate(max_tokens: int) -> tuple[str, Callable[[str], str]]:
     return f"mlx-lora:{adapter.name}", generate_once
 
 
-def _ollama_generate() -> tuple[str, Callable[[str], str]]:
+def _ollama_generate(
+    *, model: str | None = None, system: str | None = None
+) -> tuple[str, Callable[[str], str]]:
     from harness.ollama_generate import OllamaGenerate
 
     spec = SPECS["python-vibe"]
-    backend = OllamaGenerate(spec.ollama_base, spec.system)
+    name = model or spec.ollama_base
+    backend = OllamaGenerate(name, system or spec.system)
     if not backend.healthy():
         sys.exit(f"ollama {backend.host} is down")
     history: list[dict[str, str]] = []
@@ -110,4 +120,4 @@ def _ollama_generate() -> tuple[str, Callable[[str], str]]:
         return backend(prompt, history)
 
     generate_once.history = history  # type: ignore[attr-defined]
-    return f"ollama:{spec.ollama_base}", generate_once
+    return f"ollama:{name}", generate_once

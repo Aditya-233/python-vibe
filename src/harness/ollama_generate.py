@@ -10,9 +10,16 @@ from collections.abc import Sequence
 
 
 class OllamaGenerate:
-    def __init__(self, model: str, system: str, host: str | None = None) -> None:
+    def __init__(
+        self,
+        model: str,
+        system: str,
+        host: str | None = None,
+        timeout: float = 180,
+    ) -> None:
         self.model = model
         self.system = system
+        self.timeout = timeout
         self.host = (host or os.environ.get("OLLAMA_HOST") or "http://127.0.0.1:11434").rstrip(
             "/"
         )
@@ -38,7 +45,7 @@ class OllamaGenerate:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise RuntimeError(f"ollama {self.host} unreachable: {exc}") from exc
