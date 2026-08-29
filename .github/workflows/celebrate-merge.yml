@@ -1,0 +1,94 @@
+name: Celebrate merge
+
+# After a human PR merges, comment with a G-rated Giphy GIF.
+# The search tag is picked from the PR title (fix / feat / docs / …).
+# Add org or user secret GIPHY_API_KEY (https://developers.giphy.com/dashboard).
+# pull_request_target so fork merges can be commented; do not check out the PR head.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  celebrate:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick a G-rated GIF
+        id: gif
+        env:
+          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import urllib.parse
+          import urllib.request
+
+          title = os.environ.get("PR_TITLE", "")
+          key = os.environ.get("GIPHY_API_KEY", "").strip()
+          out = os.environ["GITHUB_OUTPUT"]
+          low = title.lower()
+          if any(word in low for word in ("fix", "bug", "hotfix", "patch")):
+              tag = "nailed it"
+          elif any(word in low for word in ("feat", "add ", "added", "new ")):
+              tag = "ship it"
+          elif any(word in low for word in ("doc", "readme")):
+              tag = "nice work"
+          elif any(word in low for word in ("test", "ci")):
+              tag = "high five"
+          elif any(word in low for word in ("refactor", "clean")):
+              tag = "cleanup"
+          else:
+              tag = "celebration"
+          url = ""
+          if key:
+              qs = urllib.parse.urlencode(
+                  {"api_key": key, "tag": tag, "rating": "g"}
+              )
+              req = urllib.request.Request(
+                  f"https://api.giphy.com/v1/gifs/random?{qs}",
+                  headers={"User-Agent": "python-vibe-celebrate-merge"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      import json
+
+                      data = json.load(resp)
+                  images = (data.get("data") or {}).get("images") or {}
+                  url = (
+                      (images.get("downsized") or {}).get("url")
+                      or (images.get("original") or {}).get("url")
+                      or ""
+                  )
+              except Exception as exc:
+                  print(f"giphy skipped: {exc}")
+          with open(out, "a", encoding="utf-8") as fh:
+              fh.write(f"url={url}\n")
+              fh.write(f"tag={tag}\n")
+          PY
+
+      - uses: actions/github-script@v7
+        env:
+          GIF_URL: ${{ steps.gif.outputs.url }}
+          GIF_TAG: ${{ steps.gif.outputs.tag }}
+        with:
+          script: |
+            const login = context.payload.pull_request.user.login;
+            const gif = process.env.GIF_URL || "";
+            const tag = process.env.GIF_TAG || "celebration";
+            let body = `Merged — thank you @${login}.\n`;
+            if (gif) {
+              body += `\n![${tag}](${gif})\n`;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

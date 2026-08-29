@@ -67,6 +67,9 @@ Nineteen skills ship with python-vibe.
 | --- | --- | --- |
 | [`add-feature`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/add-feature/SKILL.md) | Add one requested function, then a test. One `Append:` patch. | Task starts with add, implement, or introduce. Not for questions or one-line bugs. |
 | [`write-script`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-script/SKILL.md) | One argparse module in `pkg/` with `if __name__`. | Script, CLI, argv, weekday-style helpers. |
+| [`walk-files`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/walk-files/SKILL.md) | Reach every file under a folder with `rglob`: find by suffix, total the sizes. | The task says under, inside, recursively, or every file in a folder. |
+| [`use-archive`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/use-archive/SKILL.md) | Pack a folder into a zip, or list what an archive holds. Standard library, no shell. | Zip, unzip, tar, archive, compress, extract. |
+| [`compare-things`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/compare-things/SKILL.md) | Report what differs between two files or two dicts, and return it rather than print it. | Compare, diff, changed, missing. |
 | [`call-http`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/call-http/SKILL.md) | One `urllib.request` JSON GET/POST. | HTTP API, REST, “like curl”. Never `curl\|sh`. |
 | [`analyze-data`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/analyze-data/SKILL.md) | One `Counter` / group-by over rows. | Analytics, tally, csv, histogram. |
 | [`write-algorithm`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-algorithm/SKILL.md) | One named algorithm (binary search, stack). | Data structures and algorithms. |

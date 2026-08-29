@@ -319,24 +319,9 @@ PYTHONPATH=src python3.13 scripts/push_hf.py python-vibe --what adapters --publi
 
 ## Contributors
 
-Thank you to everyone who has helped python-vibe. Your code, reviews, issues, and pull requests are appreciated.
+Thank you to everyone who has helped python-vibe.
 
-<p>
-  <a href="https://github.com/ItzSaurav"><img src="https://github.com/ItzSaurav.png?size=72" width="72" height="72" alt="ItzSaurav"/></a>
-  <a href="https://github.com/kkkhs"><img src="https://github.com/kkkhs.png?size=72" width="72" height="72" alt="kkkhs"/></a>
-  <a href="https://github.com/xianjianlf2"><img src="https://github.com/xianjianlf2.png?size=72" width="72" height="72" alt="xianjianlf2"/></a>
-  <a href="https://github.com/YauhenBichel"><img src="https://github.com/YauhenBichel.png?size=72" width="72" height="72" alt="YauhenBichel"/></a>
-</p>
+<!-- readme: contributors,bots/- -start -->
+<!-- readme: contributors,bots/- -end -->
 
-[![Contributors](https://contrib.rocks/image?repo=YauhenBichel/python-vibe)](https://github.com/YauhenBichel/python-vibe/graphs/contributors)
-
-| Person | GitHub |
-| --- | --- |
-| ItzSaurav | [@ItzSaurav](https://github.com/ItzSaurav) |
-| Huangshuo Kuang | [@kkkhs](https://github.com/kkkhs) |
-| Mark Xian | [@xianjianlf2](https://github.com/xianjianlf2) |
-| Yauhen Bichel | [@YauhenBichel](https://github.com/YauhenBichel) |
-
-The picture above updates from GitHub commits. The table also thanks people who opened pull requests.
-
-See the [full contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors). Want to be on this list? Start with a [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue).
+The list is filled by [Contributors](./.github/workflows/contributors.yml) from GitHub commits (bots omitted). [Contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors) · [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue)

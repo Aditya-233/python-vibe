@@ -1,0 +1,31 @@
+name: Contributors
+
+# Fills the README markers from the GitHub contributors API
+# (commit order, bots omitted). Do not hardcode names or counts.
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: contributors
+  cancel-in-progress: true
+
+jobs:
+  readme:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: akhilmhdh/contributors-readme-action@v2.3.11
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          image_size: 48
+          columns_per_row: 6

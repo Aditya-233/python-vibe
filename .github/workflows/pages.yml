@@ -7,10 +7,6 @@ name: Pages
 
 on:
   push:
-    branches:
-      # Default branch only. `deploy` has no guard of its own, so any branch
-      # listed here can replace the published site.
-      - main
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"
@@ -27,6 +23,11 @@ concurrency:
 
 jobs:
   build:
+    # Publish from the default branch, whatever it is called. `deploy` only
+    # needs `build`, so this is the single place that decides what may
+    # replace the published site. Naming the branch here meant the rename to
+    # main silently stopped the site updating.
+    if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
