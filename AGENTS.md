@@ -66,10 +66,11 @@ style prior, not a capability unlock. See investigation
 **HTTP sidecar.** Keep stdlib `http.server`. Cap POST bodies (`MAX_BODY`). New
 routes need a test in `tests/test_serve.py` that does not call Ollama.
 
-**Skills.** `skills/*/SKILL.md` (YAML frontmatter + body). The loop lists
-them in the brief, auto-picks `add-feature` / `write-tests` on “add …”
-tasks, and supports `Action: skill` + `Name:`. Add a new skill as a folder
-with `SKILL.md`; keep the body short. Do not name third-party products.
+**Skills.** `skills/*/SKILL.md` is written for the everyday 8B: one copy-paste
+`Action:` block, no essays. Measure with `scripts/skill_probe.py` before you
+publish a new skill. See [everyday-skills](docs/investigations/everyday-skills.md).
+The loop auto-picks skills; `Action: locate` is grep + auto-read. Do not name
+third-party products.
 
 **Agent loop.** `scripts/agent.py` defaults to `llama3.1:8b`. Small projects
 get a file list and comfortable daily explore / edit / run. Large projects

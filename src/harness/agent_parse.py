@@ -49,6 +49,10 @@ class AgentTurn:
     append: str = ""
 
 
+_PREFERRED_WRITE = ("patch", "edit", "run", "locate", "done")
+_PREFERRED_QUESTION = ("done", "locate", "grep", "read")
+
+
 def parse_turn(text: str) -> AgentTurn | None:
     match = _ACTION.search(text)
     if not match:
@@ -71,3 +75,23 @@ def parse_turn(text: str) -> AgentTurn | None:
         name=fields.get("name", ""),
         append=_block(text, "Append") or _block(text, "Add"),
     )
+
+
+def parse_turn_smart(text: str, *, question: bool = False) -> AgentTurn | None:
+    """Small models paste the Action menu. Pick one block by task kind."""
+    matches = list(_ACTION.finditer(text))
+    if len(matches) <= 1:
+        return parse_turn(text)
+    prefer = _PREFERRED_QUESTION if question else _PREFERRED_WRITE
+    chosen = matches[0]
+    for match in matches:
+        if match.group(1).lower() in prefer:
+            chosen = match
+            break
+    start = chosen.start()
+    end = len(text)
+    for match in matches:
+        if match.start() > start:
+            end = match.start()
+            break
+    return parse_turn(text[start:end])

@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_parse import parse_turn
+from harness.agent_parse import parse_turn, parse_turn_smart
 
 
 class AgentParseTest(unittest.TestCase):
@@ -58,6 +58,24 @@ class AgentParseTest(unittest.TestCase):
         assert plan is not None
         self.assertEqual(plan.action, "plan")
         self.assertEqual(plan.summary, "read then patch")
+
+    def test_smart_prefers_patch_in_a_menu_dump(self) -> None:
+        draft = (
+            "Action: skill\nName: add-feature\n\n"
+            "Action: patch\nPath: pkg/mathy.py\nAppend:\n"
+            "def multiply(a: int, b: int) -> int:\n    return a * b\n"
+        )
+        turn = parse_turn_smart(draft)
+        self.assertIsNotNone(turn)
+        assert turn is not None
+        self.assertEqual(turn.action, "patch")
+        self.assertIn("def multiply", turn.append)
+        q = parse_turn_smart(
+            "Action: patch\nPath: x.py\nAppend:\nz\n\nAction: done\nSummary: empty draft\n",
+            question=True,
+        )
+        assert q is not None
+        self.assertEqual(q.action, "done")
 
     def test_unparsed(self) -> None:
         self.assertIsNone(parse_turn("no issues"))
