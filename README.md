@@ -3,11 +3,22 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![CI](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml)
 
-LoRA on **Qwen2.5-Coder-0.5B** (~400 MB 4-bit) for short Python vibe-coding answers,
-plus a tiny `PythonVibeGuard` sidecar.
+Cheap **everyday Python vibe coding** — short scripts and first drafts — plus a
+deterministic harness. This is **not** Cursor Grok. The public 0.5B LoRA is a
+style prior. Everyday explore/edit on a laptop uses an **8B** Ollama model.
 
-Weights (public): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b).
+Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b).
 Skin-health Q&A is a separate repo: [MoleCare/skincare-qa](https://github.com/MoleCare/skincare-qa).
+
+| Track | What to run | Role |
+| --- | --- | --- |
+| Tiny (Hub / smoke) | `scripts/vibe.py`, `serve.py`, `--tiny` | 0.5B drafts through `PythonVibeGuard` |
+| Everyday (laptop) | `scripts/agent.py` (default `llama3.1:8b`) | grep / read / edit / run / done + jail |
+| Cursor chat | [docs/cursor-local.md](./docs/cursor-local.md) | Ollama OpenAI API, not cloud Grok |
+
+Join: [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue) ·
+[Discussions](https://github.com/YauhenBichel/python-vibe/discussions). You do
+not need a GPU to run tests.
 
 ## Download and use
 
@@ -85,8 +96,6 @@ PYTHONPATH=src python scripts/vibe.py --run --then \
 The 0.5B model can only hold **one small `.py` file**. It rewrites that file; it does not walk the repo.
 
 ```bash
-cd ~/DevBox/python-vibe
-source .venv/bin/activate
 PYTHONPATH=src python scripts/vibe.py --project /path/to/your/app
 ```
 
@@ -111,19 +120,31 @@ PYTHONPATH=src python scripts/vibe.py \
 The model still sees **one file per call**. `batch_review.py` loads the LoRA once and walks the smallest first-party `.py` files (skips `.venv`). Review first. `--fix` rewrites only when the review is not `no issues`, keeps a `.bak`, and refuses a tiny overwrite.
 
 ```bash
-cd ~/DevBox/molecare/python-vibe
 PYTHONPATH=src python scripts/batch_review.py \
-  --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre \
+  --project /path/to/your/app \
   --limit 100
 ```
 
 ```bash
 PYTHONPATH=src python scripts/batch_review.py \
-  --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre \
+  --project /path/to/your/app \
   --limit 100 --fix
 ```
 
 Report: `scratch/batch-review.jsonl`. A 100-file `--fix` on OpenSRE will invent edits. Read the report before you keep any write.
+
+### Everyday agent (8B, not the 0.5B LoRA)
+
+`scripts/agent.py` defaults to `llama3.1:8b`. The 0.5B LoRA is `--tiny` / Hub
+demo only. Cursor chat: [docs/cursor-local.md](./docs/cursor-local.md).
+
+```bash
+ollama pull llama3.1:8b
+PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
+  "find a real NameError and fix it"
+PYTHONPATH=src python scripts/eval_everyday.py
+PYTHONPATH=src python scripts/eval_everyday.py --live
+```
 
 Research write-up (what we measured, what we shipped):
 [docs/research-vibe-review.md](./docs/research-vibe-review.md). Same notes live on the

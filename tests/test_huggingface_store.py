@@ -7,14 +7,31 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from finetune.huggingface_store import stage_adapter_bundle, write_card
-from finetune.models import HF_USER, SPECS
+from finetune.models import OFFICIAL_HF_REPO, SPECS, publish_hf_repo
 
 
 class HuggingFaceStoreTest(unittest.TestCase):
-    def test_repo_lives_under_yauhenbichel(self) -> None:
-        self.assertEqual(HF_USER, "YauhenBichel")
-        self.assertEqual(SPECS["python-vibe"].hf_repo, "YauhenBichel/python-vibe-0.5b")
+    def test_official_download_repo_is_documented(self) -> None:
+        self.assertEqual(OFFICIAL_HF_REPO, "YauhenBichel/python-vibe-0.5b")
+        self.assertEqual(SPECS["python-vibe"].hf_repo, OFFICIAL_HF_REPO)
         self.assertEqual(list(SPECS), ["python-vibe"])
+
+    def test_publish_uses_hf_user_not_official_account(self) -> None:
+        import os
+
+        spec = SPECS["python-vibe"]
+        env = os.environ
+        old_repo, old_user = env.get("HF_REPO"), env.get("HF_USER")
+        env.pop("HF_REPO", None)
+        env["HF_USER"] = "alice"
+        try:
+            self.assertEqual(publish_hf_repo(spec), "alice/python-vibe-0.5b")
+        finally:
+            env.pop("HF_USER", None)
+            if old_user is not None:
+                env["HF_USER"] = old_user
+            if old_repo is not None:
+                env["HF_REPO"] = old_repo
 
     def test_write_card(self) -> None:
         spec = SPECS["python-vibe"]

@@ -1,4 +1,4 @@
-"""Save fused weights and adapters on https://huggingface.co/YauhenBichel."""
+"""Download official Hub weights; upload only to HF_USER / HF_REPO / whoami."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 import shutil
 from pathlib import Path
 
-from finetune.models import HF_USER, ModelSpec
+from finetune.models import ModelSpec, publish_hf_repo
 from finetune.paths import PROJECT_ROOT
 
 CARDS = PROJECT_ROOT / "cards"
@@ -27,8 +27,9 @@ def require_token() -> str:
         token = None
     if not token:
         raise SystemExit(
-            "No Hugging Face token. Run `huggingface-cli login` or export HF_TOKEN. "
-            f"Uploads go to https://huggingface.co/{HF_USER}"
+            "No Hugging Face token. Run `hf auth login` or export HF_TOKEN. "
+            "Uploads go to HF_REPO, or HF_USER/<slug>, or your logged-in account — "
+            "never to the official repo unless that is you."
         )
     return token
 
@@ -48,16 +49,17 @@ def push_folder(spec: ModelSpec, folder: Path, *, private: bool, token: str) -> 
         raise FileNotFoundError(f"nothing to upload in {folder}")
     from huggingface_hub import HfApi
 
+    repo_id = publish_hf_repo(spec)
     write_card(spec, folder)
     api = HfApi(token=token)
-    api.create_repo(spec.hf_repo, repo_type="model", private=private, exist_ok=True)
+    api.create_repo(repo_id, repo_type="model", private=private, exist_ok=True)
     api.upload_folder(
         folder_path=str(folder),
-        repo_id=spec.hf_repo,
+        repo_id=repo_id,
         repo_type="model",
         commit_message=f"save {spec.name} ({folder.name})",
     )
-    return f"https://huggingface.co/{spec.hf_repo}"
+    return f"https://huggingface.co/{repo_id}"
 
 
 def optional_token() -> str | None:

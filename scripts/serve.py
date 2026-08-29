@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Tiny HTTP sidecar: Ollama generates, PythonVibeGuard decides.
 
+Binds 127.0.0.1 by default. Set HARNESS_HOST=0.0.0.0 only if you accept LAN
+clients. POST bodies larger than MAX_BODY (32 KiB) are rejected.
+
   PYTHONPATH=src python scripts/serve.py
   curl -s localhost:8080/health
   curl -s localhost:8080/v1/python-vibe -d '{"prompt":"jsonl reader"}' -H 'content-type: application/json'
@@ -9,6 +12,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -30,6 +34,9 @@ def _route():
 
 
 GENERATE, GUARD, FALLBACK = _route()
+MAX_BODY = 32 * 1024
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8080
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -69,6 +76,9 @@ class Handler(BaseHTTPRequestHandler):
             self._json(404, {"error": "not found"})
             return
         length = int(self.headers.get("Content-Length") or "0")
+        if length > MAX_BODY:
+            self._json(413, {"error": "body too large"})
+            return
         try:
             body = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
@@ -98,11 +108,19 @@ class Handler(BaseHTTPRequestHandler):
         )
 
 
+def listen_host() -> str:
+    return os.environ.get("HARNESS_HOST") or DEFAULT_HOST
+
+
+def listen_port(argv: list[str]) -> int:
+    if len(argv) > 1:
+        return int(argv[1])
+    return int(os.environ.get("HARNESS_PORT") or DEFAULT_PORT)
+
+
 def main() -> None:
-    host = "0.0.0.0"
-    port = 8080
-    if len(sys.argv) > 1:
-        port = int(sys.argv[1])
+    host = listen_host()
+    port = listen_port(sys.argv)
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"harness listening on http://{host}:{port}", flush=True)
     server.serve_forever()

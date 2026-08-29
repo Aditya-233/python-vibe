@@ -60,8 +60,8 @@ def resolve_project_file(project: Path, rel: str) -> Path:
         raise ValueError(f"{path} is outside {root}") from exc
     if any(part in _SKIP_PARTS for part in path.parts):
         raise ValueError(f"refusing {path}")
-    if path.suffix not in {".py", ".pyi"}:
-        raise ValueError("only .py files")
+    if path.suffix not in {".py", ".pyi", ".md"}:
+        raise ValueError("only .py or .md files")
     return path
 
 
@@ -75,11 +75,13 @@ def read_project_file(path: Path, *, limit: int = MAX_FILE_CHARS) -> str:
 def apply_source(path: Path, source: str, *, original: str) -> None:
     if not source.strip():
         raise ValueError("empty draft")
-    if original and len(source) < max(40, len(original) // 5):
+    if original and len(source) < max(40, (len(original) * 2) // 3):
         raise ValueError(
-            f"draft is too short ({len(source)} chars vs {len(original)}) — not applying"
+            f"draft is too short ({len(source)} chars vs {len(original)}) — "
+            "use Action: patch for a small change"
         )
     bak = path.with_suffix(path.suffix + ".bak")
     if path.is_file():
         bak.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(source.rstrip() + "\n", encoding="utf-8")

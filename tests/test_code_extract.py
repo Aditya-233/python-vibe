@@ -54,6 +54,12 @@ class ExtractPythonTest(unittest.TestCase):
         self.assertLessEqual(len(files), 5)
         self.assertTrue(all(".venv" not in p.parts for p in files))
 
+    def test_apply_creates_parent_dirs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "tests" / "test_new.py"
+            apply_source(dest, "def test_ok():\n    assert True\n", original="")
+            self.assertTrue(dest.is_file())
+
     def test_apply_refuses_tiny_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "_apply.py"

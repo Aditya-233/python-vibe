@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .DS_Store
 data/_card_test/
+data/agent-loop/extra.jsonl
 adapters/
 fused/
 *.safetensors
@@ -12,5 +13,6 @@ fused/
 wandb/
 .env
 .env.*
+!.env.example
 hf_token
 *.pem

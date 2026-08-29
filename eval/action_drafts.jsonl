@@ -1,0 +1,6 @@
+{"action": "grep", "draft": "Action: grep\nQuery: def compute_total"}
+{"action": "read", "draft": "Action: read\nPath: pkg/util_stats.py"}
+{"action": "edit", "draft": "Action: edit\nPath: pkg/util_stats.py\n```python\ndef compute_total(rows):\n    return sum(rows)\n```"}
+{"action": "run", "draft": "Action: run\nArgv: -m unittest discover -s tests -q"}
+{"action": "done", "draft": "Action: done\nSummary: fixed NameError in compute_total"}
+{"action": "glob", "draft": "I will look around.\n\nAction: glob\nPattern: **/*.py"}

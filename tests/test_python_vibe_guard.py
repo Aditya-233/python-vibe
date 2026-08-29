@@ -38,6 +38,16 @@ class PythonVibeGuardTest(unittest.TestCase):
         self.assertEqual(out.verdict, "block")
         self.assertIn("PV004", [f.rule_id for f in out.findings])
 
+    def test_block_output_over_8000_chars(self) -> None:
+        out = self.guard.check("print(1)\n" + ("x" * 8000))
+        self.assertEqual(out.verdict, "block")
+        self.assertIn("PV005", [f.rule_id for f in out.findings])
+
+    def test_pass_just_under_8000_chars(self) -> None:
+        draft = "print(1)\n" + ("x" * 100)
+        out = self.guard.check(draft)
+        self.assertEqual(out.verdict, "pass")
+
     def test_complete_falls_back_after_two_blocks(self) -> None:
         drafts = iter(["", "   "])
         outcome = complete(

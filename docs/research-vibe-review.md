@@ -34,7 +34,7 @@ is a thin style prior, not a pair that finishes a new script in one shot.
 
 ## Reviewing a real project (OpenSRE)
 
-OpenSRE (`~/DevBox/tracer-cloud/opensre`) has thousands of files. The 0.5B
+A large first-party Python repo (thousands of files) does not fit. The 0.5B
 window holds **one small `.py` file** (~200–2500 bytes).
 
 - `scripts/review.py` — one file, review-only by default; `--fix` writes a `.bak`.
@@ -64,7 +64,7 @@ edits**. Run review first; read the report; then `--fix` only if you accept that
 
 ```bash
 PYTHONPATH=src python scripts/batch_review.py \
-  --project /Users/yauhenbichel/DevBox/tracer-cloud/opensre \
+  --project /path/to/your/app \
   --limit 100
 ```
 
