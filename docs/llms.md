@@ -14,6 +14,7 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 
 - [Home]({{ '/' | absolute_url }}): What the project is, when to use it, honest limits.
 - [Start]({{ '/start/' | absolute_url }}): Install the 8B loop, run tests without a model, optional 0.5B sidecar.
+- [Skills]({{ '/skills/' | absolute_url }}): The fourteen kit skills and when the harness loads each one.
 - [Architecture]({{ '/architecture/' | absolute_url }}): Bottom-up harness layers. Imports only point downward.
 - [Local editor]({{ '/local-editor/' | absolute_url }}): Point an OpenAI-compatible editor at local Ollama. This changes the brain, not the tools.
 - [Research index]({{ '/investigations/' | absolute_url }}): Measurements and design notes.

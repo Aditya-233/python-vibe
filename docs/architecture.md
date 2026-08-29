@@ -27,7 +27,8 @@ ship/      git and PR helpers            openai_compat / git_ship  (leaves)
 ```
 
 Read a layer top-down and you learn what the harness does. Read it
-bottom-up and you learn what it refuses.
+bottom-up and you learn what it refuses. The kit skills `skillkit/` loads
+are listed on [Skills]({{ '/skills/' | relative_url }}).
 
 ## Why `task.py` is the bottom
 
