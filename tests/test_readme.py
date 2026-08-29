@@ -26,10 +26,13 @@ class ReadmeContributorsTest(unittest.TestCase):
 
     def test_workflow_reads_github_api(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("akhilmhdh/contributors-readme-action@", text)
+        self.assertIn("fill_contributors.py", text)
         self.assertIn("github-actions[bot]", text)
+        self.assertNotIn("akhilmhdh/contributors-readme-action", text)
         self.assertNotIn("YauhenBichel", text)
         self.assertNotIn("ItzSaurav", text)
+        script = ROOT / ".github" / "scripts" / "fill_contributors.py"
+        self.assertTrue(script.is_file())
 
     def test_celebrate_merge_uses_giphy_not_hardcoded_gifs(self) -> None:
         text = CELEBRATE.read_text(encoding="utf-8")
@@ -37,5 +40,36 @@ class ReadmeContributorsTest(unittest.TestCase):
         self.assertIn("api.giphy.com", text)
         self.assertIn("rating", text)
         self.assertIn("GIPHY_API_KEY", text)
+        self.assertIn(".github/celebrate/", text)
         self.assertNotIn("media.giphy.com/media/", text)
         self.assertNotIn("YauhenBichel", text)
+        gifs = sorted((ROOT / ".github" / "celebrate").glob("*.gif"))
+        names = {path.name for path in gifs}
+        self.assertTrue(gifs, "owned fallback GIFs belong in .github/celebrate/")
+        self.assertIn("celebration.gif", names)
+        self.assertIn("ship-it.gif", names)
+        notice = (ROOT / ".github" / "celebrate" / "NOTICE").read_text(encoding="utf-8")
+        self.assertIn("cultofthepartyparrot.com", notice)
+
+    def test_contributor_markers_are_not_an_empty_pair(self) -> None:
+        text = README.read_text(encoding="utf-8")
+        start = text.index(_START) + len(_START)
+        end = text.index(_END)
+        body = text[start:end]
+        self.assertIn("<table>", body)
+        self.assertIn("avatars.githubusercontent.com", body)
+
+    def test_fill_script_renders_a_table_without_bots(self) -> None:
+        import importlib.util
+
+        path = ROOT / ".github" / "scripts" / "fill_contributors.py"
+        spec = importlib.util.spec_from_file_location("fill_contributors", path)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        html = module.render_table(
+            [{"login": "alice", "name": "Alice Example"}]
+        )
+        self.assertIn("github.com/alice", html)
+        self.assertIn("Alice Example", html)
+        self.assertIn("<table>", html)
