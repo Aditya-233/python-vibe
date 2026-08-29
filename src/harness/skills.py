@@ -73,10 +73,21 @@ def list_skills(project: Path | None = None, extra: Path | None = None) -> list[
 
 def get_skill(name: str, project: Path | None = None) -> Skill | None:
     key = name.strip().lower()
+    if not key:
+        return None
     for skill in list_skills(project):
         if skill.name.lower() == key:
             return skill
     return None
+
+
+def skill_from_action(
+    action: str, name: str = "", path: str = "", project: Path | None = None
+) -> Skill | None:
+    """Action: skill + Name:, or Action: write-tests as a shortcut."""
+    if action == "skill":
+        return get_skill(name or path, project)
+    return get_skill(action, project)
 
 
 def looks_like_add_feature(task: str) -> bool:

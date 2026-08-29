@@ -45,6 +45,7 @@ from harness.skills import (  # noqa: E402
     pick_skills,
     render_catalog,
     render_skill,
+    skill_from_action,
 )
 from harness.trace_record import append_turn  # noqa: E402
 
@@ -62,14 +63,15 @@ def _remember(generate_once, prompt: str, draft: str) -> None:
 def _tool(project: Path, turn, last_path: str, scope: str) -> tuple[str, str]:
     path = turn.path or last_path
     used_scope = turn.scope or scope
-    if turn.action == "skill":
-        key = turn.name or turn.path
-        if not key:
-            return "skill needs Name: (add-feature, write-tests, stay-scoped)", last_path
-        loaded = get_skill(key, project)
-        if loaded is None:
-            return f"unknown skill {key}. {render_catalog(list_skills(project))}", last_path
+    loaded = skill_from_action(turn.action, turn.name, turn.path, project)
+    if loaded is not None:
         return render_skill(loaded), last_path
+    if turn.action == "skill":
+        return (
+            f"skill needs Name: (add-feature, write-tests, stay-scoped). "
+            f"{render_catalog(list_skills(project))}",
+            last_path,
+        )
     if turn.action == "map":
         return map_py(project, used_scope), last_path
     if turn.action == "plan":

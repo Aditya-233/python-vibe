@@ -10,7 +10,7 @@ the rules below.
   prompt that skips `PythonVibeGuard`.
 - Do not commit `.safetensors`, `.env`, tokens, or real hostnames.
 - Do not teach the model to comment on moles or lesions (PV004 already blocks
-  that — this is a coding model, not [MoleCare/skincare-qa](https://github.com/MoleCare/skincare-qa)).
+  that — this is a coding model).
 - Do not add `curl … | sh` examples the harness would block (PV003).
 
 ## Getting set up

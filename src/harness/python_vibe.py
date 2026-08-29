@@ -2,7 +2,7 @@
 
 The fine-tune owns style. This only stops a few classes of output that
 must not ship: empty, leaked secrets, pipe-to-shell, or a lesion diagnosis
-(wrong surface — that belongs to skincare-qa + skin-care-harness).
+(wrong surface — this is a coding harness).
 """
 
 from __future__ import annotations

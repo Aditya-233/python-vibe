@@ -31,8 +31,8 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 - The harness stays **deterministic**. Do not add a prompt-side router that
   skips `PythonVibeGuard`.
 - Do not commit `.safetensors`, `.env`, tokens, hostnames, or adapter folders.
-- Do not teach the model to discuss moles or lesions (PV004). That belongs to
-  [MoleCare/skincare-qa](https://github.com/MoleCare/skincare-qa).
+- Do not teach the model to discuss moles or lesions (PV004). This is a
+  coding model.
 - Do not add `curl | sh` examples (PV003).
 - `scripts/serve.py` binds **127.0.0.1**. Do not change the default to `0.0.0.0`.
 - Tests must not write into `scratch/` (gitignored; missing on CI). Use
@@ -92,5 +92,5 @@ file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.
 
 ## Security
 
-Report privately — [SECURITY.md](./SECURITY.md). Email **info@molecare.co.uk**.
+Report in a **public** GitHub issue — [SECURITY.md](./SECURITY.md).
 Never paste live keys into issues, tests, or Pages.

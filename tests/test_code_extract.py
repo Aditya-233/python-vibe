@@ -34,7 +34,7 @@ class ExtractPythonTest(unittest.TestCase):
         path = resolve_project_file(root, "src/harness/code.py")
         self.assertTrue(path.is_file())
         with self.assertRaises(ValueError):
-            resolve_project_file(root, "../skincare-qa/README.md")
+            resolve_project_file(root, "../other-repo/README.md")
 
     def test_report_md_counts_no_issues(self) -> None:
         text = render_markdown(

@@ -2,17 +2,16 @@
 
 ## Reporting a vulnerability
 
-**Please do not open a public GitHub issue for security problems.**
+Open a **public** GitHub issue on this repo. Label it `security` if you can.
 
-Email **info@molecare.co.uk** with:
+Include:
 
 - what the issue is and where in the code it lives
 - how to reproduce it
 - what an attacker could do with it
 
-You should get an acknowledgement within **3 working days**.
-
-The Security tab "Report a vulnerability" button is also fine if enabled.
+Do **not** paste live API keys, tokens, or `.env` contents into the issue.
+Redact secrets and describe them instead.
 
 ## Scope
 
@@ -25,7 +24,7 @@ In scope:
 - secrets committed to the repository
 - dependency issues reachable from `scripts/serve.py` or the harness
 
-Out of scope (open a normal issue instead):
+Out of scope (still a normal issue is fine):
 
 - paraphrase evasion of string rules
 - model quality / ugly Python

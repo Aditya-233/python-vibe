@@ -1,6 +1,6 @@
 """Generate → guard → regenerate once → fixed fallback.
 
-Matches MoleCare example 02: the guard never edits its way out of a block.
+The guard never edits its way out of a block.
 """
 
 from __future__ import annotations
