@@ -1,23 +1,34 @@
-# Cursor: local MCP (easy) vs Chat override (usually hard)
+# Cursor
 
-## Easy — stays on this machine
-
-```bash
-python -m harness editors cursor --project /path/to/your/app
-```
-
-That writes `.cursor/mcp.json` with an absolute `--project`. Reload the window. Settings → MCP should show `python-vibe` with tools `ask` (read-only) and `run` (writes only if you add `--allow-writes` to the args).
-
-The VS Code task file also works here (Cursor is a VS Code fork):
+Three steps. No tunnel. No Override OpenAI Base URL.
 
 ```bash
-python -m harness editors vscode --project /path/to/your/app
+pip install -e .          # from a python-vibe clone, once
+ollama pull llama3.1:8b
+python-vibe editors cursor --allow-writes
 ```
 
-Command Palette → Run Task → `python-vibe: ask` or `python-vibe: run`.
+That writes `.cursor/mcp.json` and `.vscode/tasks.json` in the folder you
+are in. `${workspaceFolder}` is filled by Cursor, so the file has no
+machine path and you can commit it.
 
-## Hard — Override OpenAI Base URL
+Then:
 
-`http://127.0.0.1:8081/v1` often fails because the request is sent from a remote backend, not from this laptop. A public tunnel would expose the jail. Do not do that.
+1. Command Palette → **Developer: Reload Window**
+2. **Customize → MCP** → enable `python-vibe`
+3. In chat: “ask python-vibe what compute_total returns”
 
-Use MCP or Run Task instead.
+Tools: `ask` (never writes) and `run` (writes only with `--allow-writes`).
+
+Every workspace on this machine:
+
+```bash
+python-vibe editors cursor --global --allow-writes
+```
+
+That merges into `~/.cursor/mcp.json` and leaves your other servers alone.
+
+Do not set Models → Override OpenAI Base URL to `http://127.0.0.1:…`.
+Many builds send that request from another machine, which cannot see
+your loopback. A public tunnel would expose the jail. Use MCP or
+**Tasks: Run Task → python-vibe: ask**.

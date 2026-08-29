@@ -9,11 +9,8 @@ on:
   push:
     branches:
       # Default branch only. `deploy` has no guard of its own, so any branch
-      # listed here can replace the published site. Both names are listed
-      # while the default is being renamed to main; drop the old one once
-      # that is done.
+      # listed here can replace the published site.
       - main
-      - feat/initial-python-vibe
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"

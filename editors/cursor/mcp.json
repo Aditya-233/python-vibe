@@ -1,8 +1,12 @@
 {
   "mcpServers": {
     "python-vibe": {
-      "command": "__PYTHON__",
-      "args": ["-m", "harness", "mcp", "--project", "__PROJECT__"]
+      "type": "stdio",
+      "command": "python3",
+      "args": ["-m", "harness", "mcp", "--project", "${workspaceFolder}"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     }
   }
 }

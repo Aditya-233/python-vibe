@@ -145,7 +145,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="write ready-made editor settings into a project",
     )
     editors.add_argument("kind", choices=("vscode", "continue", "cursor", "zed"))
-    editors.add_argument("--project", type=Path, required=True)
+    editors.add_argument(
+        "--project",
+        type=Path,
+        default=Path("."),
+        help="folder to jail (default: current directory)",
+    )
+    editors.add_argument(
+        "--allow-writes",
+        action="store_true",
+        help="let the editor's run tool change files (cursor MCP only)",
+    )
+    editors.add_argument(
+        "--global",
+        dest="user_wide",
+        action="store_true",
+        help="merge into ~/.cursor/mcp.json so every workspace can call it",
+    )
     return parser
 
 
@@ -199,11 +215,24 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.command == "editors":
-        from harness.editor_kit import install_editors
+        from harness.editor_kit import install_editors, next_steps
 
-        written = install_editors(args.project, args.kind)
+        written = install_editors(
+            args.project,
+            args.kind,
+            allow_writes=getattr(args, "allow_writes", False),
+            user_wide=getattr(args, "user_wide", False),
+        )
         for path in written:
             print(path)
+        print()
+        print(
+            next_steps(
+                args.kind,
+                allow_writes=getattr(args, "allow_writes", False),
+                user_wide=getattr(args, "user_wide", False),
+            )
+        )
         return 0
 
     interactive = sys.stdin.isatty()

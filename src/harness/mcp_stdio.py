@@ -14,6 +14,23 @@ from typing import Any, TextIO
 from harness.agent import Agent, AgentOptions
 
 PROTOCOL = "2024-11-05"
+PROMPTS = (
+    {
+        "name": "ask",
+        "description": "Read-only question. python-vibe does not change files.",
+        "arguments": [
+            {"name": "task", "description": "The question", "required": True}
+        ],
+    },
+    {
+        "name": "run",
+        "description": "Explore, edit and run inside the project jail.",
+        "arguments": [
+            {"name": "task", "description": "What to do", "required": True}
+        ],
+    },
+)
+
 TOOLS = (
     {
         "name": "ask",
@@ -61,7 +78,7 @@ def handle_rpc(
             "id": rpc_id,
             "result": {
                 "protocolVersion": PROTOCOL,
-                "capabilities": {"tools": {}},
+                "capabilities": {"tools": {}, "prompts": {}},
                 "serverInfo": {"name": "python-vibe", "version": "0.1.0"},
             },
         }
@@ -69,6 +86,32 @@ def handle_rpc(
         return None
     if method == "tools/list":
         return {"jsonrpc": "2.0", "id": rpc_id, "result": {"tools": list(TOOLS)}}
+    if method == "prompts/list":
+        return {"jsonrpc": "2.0", "id": rpc_id, "result": {"prompts": list(PROMPTS)}}
+    if method == "prompts/get":
+        params = message.get("params") or {}
+        name = str(params.get("name") or "")
+        args = params.get("arguments") or {}
+        task = str(args.get("task") or "").strip() or "what does this project do?"
+        if name not in {"ask", "run"}:
+            return _error(rpc_id, f"unknown prompt {name}")
+        verb = "ask" if name == "ask" else "run"
+        return {
+            "jsonrpc": "2.0",
+            "id": rpc_id,
+            "result": {
+                "description": f"Call the python-vibe {verb} tool",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": {
+                            "type": "text",
+                            "text": f"Use the python-vibe {verb} tool with task: {task}",
+                        },
+                    }
+                ],
+            },
+        }
     if method == "tools/call":
         params = message.get("params") or {}
         name = str(params.get("name") or "")

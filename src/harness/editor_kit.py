@@ -20,17 +20,30 @@ def kit_dir() -> Path:
     return REPO_ROOT / "editors"
 
 
-def install_editors(project: Path, kind: str) -> list[Path]:
-    """Write the drop-in files for `kind` into `project`. Returns written paths."""
+def looks_like_vibe_checkout(project: Path) -> bool:
+    return (project / "src" / "harness" / "cli.py").is_file()
+
+
+def install_editors(
+    project: Path,
+    kind: str,
+    *,
+    allow_writes: bool = False,
+    user_wide: bool = False,
+) -> list[Path]:
+    """Write the drop-in files for `kind`. Returns written paths."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {', '.join(KINDS)}")
+    if user_wide and kind != "cursor":
+        raise ValueError("--global is only for kind cursor")
     root = project.expanduser().resolve()
-    root.mkdir(parents=True, exist_ok=True)
+    if not user_wide:
+        root.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
     if kind == "vscode":
         dest = root / ".vscode" / "tasks.json"
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(_vscode_tasks(), encoding="utf-8")
+        dest.write_text(_merge_vscode_tasks(dest), encoding="utf-8")
         written.append(dest)
         return written
     if kind == "continue":
@@ -48,14 +61,53 @@ def install_editors(project: Path, kind: str) -> list[Path]:
         dest.write_text(_zed_settings(root, dest), encoding="utf-8")
         written.append(dest)
         return written
-    dest = root / ".cursor" / "mcp.json"
+    mcp_root = Path.home() if user_wide else root
+    dest = mcp_root / ".cursor" / "mcp.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_mcp_json(root, kit_dir() / "cursor" / "mcp.json"), encoding="utf-8")
+    dest.write_text(
+        _merge_mcp(
+            dest,
+            _cursor_server(
+                root, allow_writes=allow_writes, user_wide=user_wide
+            ),
+        ),
+        encoding="utf-8",
+    )
     written.append(dest)
+    if not user_wide:
+        tasks = root / ".vscode" / "tasks.json"
+        tasks.parent.mkdir(parents=True, exist_ok=True)
+        tasks.write_text(_merge_vscode_tasks(tasks), encoding="utf-8")
+        written.append(tasks)
     return written
 
 
-def _vscode_tasks() -> str:
+def next_steps(kind: str, *, allow_writes: bool = False, user_wide: bool = False) -> str:
+    """What a person does after the files are written. Printed by the CLI."""
+    if kind != "cursor":
+        return (
+            "Reload the window, then Command Palette → Tasks: Run Task → "
+            "python-vibe: ask"
+        )
+    writes = (
+        "read-write"
+        if allow_writes
+        else "read-only — re-run with --allow-writes to edit files"
+    )
+    where = "every workspace (~/.cursor/mcp.json)" if user_wide else "this folder"
+    return (
+        f"python-vibe is set up for {where} ({writes}).\n"
+        "1. ollama pull llama3.1:8b\n"
+        "2. Command Palette → Developer: Reload Window\n"
+        "3. Open Customize → MCP → enable python-vibe\n"
+        "4. In chat: ask python-vibe what compute_total returns\n"
+        "   or Tasks: Run Task → python-vibe: ask\n"
+        "Do not point Override OpenAI Base URL at 127.0.0.1. "
+        "That request often leaves this machine."
+    )
+
+
+def _vscode_tasks() -> dict:
     """Task file that runs whichever interpreter has python-vibe installed.
 
     The tasks used to call a bare `python-vibe`. An editor runs a task in a
@@ -74,7 +126,37 @@ def _vscode_tasks() -> str:
         task["command"] = task["command"].replace("__RUNNER__", runner)
         if env:
             task["options"] = {"env": env}
-    return json.dumps(template, indent=2) + "\n"
+    return template
+
+
+def _merge_vscode_tasks(dest: Path) -> str:
+    incoming = _vscode_tasks()
+    if not dest.is_file():
+        return json.dumps(incoming, indent=2) + "\n"
+    try:
+        data = json.loads(dest.read_text(encoding="utf-8") or "{}")
+    except json.JSONDecodeError:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    labels = {task.get("label") for task in incoming.get("tasks", [])}
+    kept = [
+        task
+        for task in data.get("tasks", [])
+        if isinstance(task, dict) and task.get("label") not in labels
+    ]
+    data["version"] = incoming.get("version", data.get("version", "2.0.0"))
+    data["tasks"] = kept + incoming["tasks"]
+    incoming_inputs = incoming.get("inputs", [])
+    incoming_ids = {item.get("id") for item in incoming_inputs}
+    kept_inputs = [
+        item
+        for item in data.get("inputs", [])
+        if isinstance(item, dict) and item.get("id") not in incoming_ids
+    ]
+    if incoming_inputs or kept_inputs:
+        data["inputs"] = kept_inputs + incoming_inputs
+    return json.dumps(data, indent=2) + "\n"
 
 
 def _harness_is_importable() -> bool:
@@ -103,22 +185,65 @@ def _stdio_server(project: Path) -> dict:
     return server
 
 
-def _fill_server(server: dict, project: Path) -> dict:
-    server["command"] = Path(sys.executable).as_posix()
-    server["args"] = [
-        project.as_posix() if arg == "__PROJECT__" else arg
-        for arg in server["args"]
-    ]
-    if not _harness_is_importable():
-        server["env"] = {"PYTHONPATH": (REPO_ROOT / "src").as_posix()}
+def _cursor_server(
+    project: Path, *, allow_writes: bool, user_wide: bool = False
+) -> dict:
+    """Portable Cursor MCP. Uses ${workspaceFolder} so the file can be shared.
+
+    Cursor interpolates that variable to the folder the person has open.
+    An absolute --project would bake in one machine and one folder.
+    """
+    args = ["-m", "harness", "mcp", "--project", "${workspaceFolder}"]
+    if allow_writes:
+        args.append("--allow-writes")
+    server: dict = {
+        "type": "stdio",
+        "command": _cursor_command(project, user_wide=user_wide),
+        "args": args,
+    }
+    env = _cursor_env(project, user_wide=user_wide)
+    if env:
+        server["env"] = env
     return server
 
 
-def _mcp_json(project: Path, template_path: Path) -> str:
-    template = json.loads(template_path.read_text(encoding="utf-8"))
-    server = template["mcpServers"]["python-vibe"]
-    template["mcpServers"]["python-vibe"] = _fill_server(server, project)
-    return json.dumps(template, indent=2) + "\n"
+def _cursor_command(project: Path, *, user_wide: bool = False) -> str:
+    """A name on PATH when that is enough. Else this process's interpreter."""
+    if user_wide:
+        return Path(sys.executable).as_posix()
+    if _harness_is_importable() or looks_like_vibe_checkout(project):
+        return "python3"
+    return Path(sys.executable).as_posix()
+
+
+def _cursor_env(project: Path, *, user_wide: bool = False) -> dict[str, str]:
+    if user_wide:
+        if _harness_is_importable():
+            return {}
+        return {"PYTHONPATH": (REPO_ROOT / "src").as_posix()}
+    if looks_like_vibe_checkout(project):
+        return {"PYTHONPATH": "${workspaceFolder}/src"}
+    if not _harness_is_importable():
+        return {"PYTHONPATH": (REPO_ROOT / "src").as_posix()}
+    return {}
+
+
+def _merge_mcp(dest: Path, server: dict) -> str:
+    """Put python-vibe in mcp.json. Keep every other server."""
+    data: dict = {}
+    if dest.is_file():
+        try:
+            loaded = json.loads(dest.read_text(encoding="utf-8") or "{}")
+        except json.JSONDecodeError:
+            loaded = {}
+        if isinstance(loaded, dict):
+            data = loaded
+    servers = data.setdefault("mcpServers", {})
+    if not isinstance(servers, dict):
+        servers = {}
+        data["mcpServers"] = servers
+    servers["python-vibe"] = server
+    return json.dumps(data, indent=2) + "\n"
 
 
 def _zed_settings(project: Path, dest: Path) -> str:
