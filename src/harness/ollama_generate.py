@@ -6,6 +6,7 @@ import json
 import os
 import urllib.error
 import urllib.request
+from collections.abc import Sequence
 
 
 class OllamaGenerate:
@@ -16,15 +17,18 @@ class OllamaGenerate:
             "/"
         )
 
-    def __call__(self, prompt: str) -> str:
+    def __call__(
+        self, prompt: str, history: Sequence[dict[str, str]] | None = None
+    ) -> str:
+        messages: list[dict[str, str]] = [{"role": "system", "content": self.system}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": prompt})
         body = json.dumps(
             {
                 "model": self.model,
                 "stream": False,
-                "messages": [
-                    {"role": "system", "content": self.system},
-                    {"role": "user", "content": prompt},
-                ],
+                "messages": messages,
             }
         ).encode("utf-8")
         req = urllib.request.Request(

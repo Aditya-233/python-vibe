@@ -30,7 +30,12 @@ def main() -> None:
     )
     args = parser.parse_args()
     spec = SPECS[args.model]
-    folder = spec.fused_path if args.what == "fused" else spec.adapter_path
+    if args.what == "adapters":
+        from finetune.huggingface_store import stage_adapter_bundle
+
+        folder = stage_adapter_bundle(spec)
+    else:
+        folder = spec.fused_path
     url = push_folder(spec, folder, private=not args.public, token=require_token())
     print(url)
 

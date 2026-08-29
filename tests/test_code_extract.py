@@ -1,0 +1,63 @@
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from harness.code import apply_source, extract_python, resolve_project_file, write_and_run
+from harness.project_scan import list_small_py_files
+from harness.report_md import render_markdown
+
+
+class ExtractPythonTest(unittest.TestCase):
+    def test_fenced_block(self) -> None:
+        text = "Note.\n\n```python\nprint(1)\n```\n"
+        self.assertEqual(extract_python(text), "print(1)")
+
+    def test_longest_block_wins(self) -> None:
+        text = "```python\nx=1\n```\n```python\nprint(2)\nprint(3)\n```"
+        self.assertIn("print(2)", extract_python(text) or "")
+
+    def test_bare_import(self) -> None:
+        self.assertEqual(extract_python("import json\nprint(1)"), "import json\nprint(1)")
+
+    def test_run_print(self) -> None:
+        dest = Path(__file__).resolve().parents[1] / "scratch" / "_test_run.py"
+        result = write_and_run("print('ok')", dest)
+        self.assertEqual(result.code, 0)
+        self.assertEqual(result.stdout.strip(), "ok")
+
+    def test_resolve_stays_in_project(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        path = resolve_project_file(root, "src/harness/code.py")
+        self.assertTrue(path.is_file())
+        with self.assertRaises(ValueError):
+            resolve_project_file(root, "../skincare-qa/README.md")
+
+    def test_report_md_counts_no_issues(self) -> None:
+        text = render_markdown(
+            [
+                {"file": "a.py", "bytes": 200, "review": "no issues", "applied": False},
+                {"file": "b.py", "bytes": 300, "review": "NameError in main", "applied": False},
+            ],
+            project="/tmp/app",
+        )
+        self.assertIn("Said no issues: **1**", text)
+        self.assertIn("`a.py`", text)
+        self.assertIn("NameError", text)
+
+    def test_scan_skips_venv_and_respects_limit(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        files = list_small_py_files(root, limit=5, max_bytes=4000)
+        self.assertLessEqual(len(files), 5)
+        self.assertTrue(all(".venv" not in p.parts for p in files))
+
+    def test_apply_refuses_tiny_overwrite(self) -> None:
+        dest = Path(__file__).resolve().parents[1] / "scratch" / "_apply.py"
+        dest.write_text("x = 1\n" * 20, encoding="utf-8")
+        with self.assertRaises(ValueError):
+            apply_source(dest, "x=1\n", original=dest.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()

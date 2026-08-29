@@ -1,0 +1,46 @@
+name: Research / eval
+description: Held-out eval, data size, or guard measurement — not a drive-by feature
+title: "Research: "
+labels: ["research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for measurement, not a missing `if`. The harness stays
+        **deterministic** — do not propose an LLM-as-judge in `serve.py`.
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane
+      options:
+        - Guard precision / recall / evasion
+        - Training data size vs style prior
+        - Held-out coding eval (runs / type-check / harness)
+        - Train on Linux without MLX
+        - Weights / export / Ollama
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What would we know after this that we do not know now?
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Cheap method
+      description: Prefer 10–20 prompts and a laptop. No real API keys.
+      placeholder: Held-out list, base model as control, metrics…
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: Fixtures use documented fake key prefixes, not live secrets
+          required: true
+        - label: This does not add a second model on the serving path
+          required: true

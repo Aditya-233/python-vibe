@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose a harness rule, training pair, or serve change
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep the harness deterministic. Changes that skip PythonVibeGuard on
+        the user prompt will be declined.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What can't you do today?
+      description: Describe the gap, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you add?
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Training pair / dataset
+        - Harness rule
+        - Serve / export / Hugging Face
+        - Docs / CI
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: This does not add live keys, curl|sh, or a lesion diagnosis
+          required: true
+        - label: This does not skip the harness on the user prompt
+          required: true
