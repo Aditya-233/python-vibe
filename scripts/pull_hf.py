@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download a saved model from https://huggingface.co/YauhenBichel into fused/."""
+"""Download public weights from https://huggingface.co/YauhenBichel."""
 
 from __future__ import annotations
 
@@ -10,16 +10,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from finetune.huggingface_store import pull_folder, require_token  # noqa: E402
+from finetune.huggingface_store import ensure_adapters, optional_token, pull_folder  # noqa: E402
 from finetune.models import SPECS  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("model", choices=sorted(SPECS))
+    parser.add_argument(
+        "--what",
+        choices=("adapters", "fused"),
+        default="adapters",
+    )
     args = parser.parse_args()
     spec = SPECS[args.model]
-    dest = pull_folder(spec, spec.fused_path, token=require_token())
+    if args.what == "adapters":
+        dest = ensure_adapters(spec)
+    else:
+        dest = pull_folder(spec, spec.fused_path, token=optional_token())
     print(dest)
 
 
