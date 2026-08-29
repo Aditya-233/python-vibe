@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenAI-compatible proxy in front of Ollama for Cursor.
+"""OpenAI-compatible proxy in front of Ollama for a local editor.
 
 Ollama already serves http://127.0.0.1:11434/v1/chat/completions.
 This process binds 127.0.0.1:8081, forwards that API, and refuses to
@@ -8,8 +8,8 @@ advertise the 0.5B sidecar as the everyday model.
   ollama pull llama3.1:8b
   PYTHONPATH=src python scripts/openai_compat.py
 
-Cursor: OpenAI Base URL http://127.0.0.1:8081/v1  — API key `ollama`
-Model: llama3.1:8b  (see docs/cursor-local.md)
+Editor: OpenAI Base URL http://127.0.0.1:8081/v1  — API key `ollama`
+Model: llama3.1:8b  (see docs/local-editor.md)
 """
 
 from __future__ import annotations

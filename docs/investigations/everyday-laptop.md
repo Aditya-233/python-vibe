@@ -1,18 +1,18 @@
-# Investigation: can python-vibe be everyday Cursor Grok?
+# Investigation: can python-vibe be everyday laptop work?
 
-**Answer:** no — not this 0.5B LoRA. Everyday Grok-like use needs a larger
-model, tool-use training, and Cursor wiring. Keep python-vibe-0.5b as a
-cheap draft + harness.
+**Answer:** no — not this 0.5B LoRA. Comfortable daily explore / edit / run
+needs a larger model, tool-use training, and a local editor wired to Ollama.
+Keep python-vibe-0.5b as a cheap draft + harness.
 
 Related: [research-vibe-review](../research-vibe-review.md) · issues
 [#8](https://github.com/YauhenBichel/python-vibe/issues/8),
 [#9](https://github.com/YauhenBichel/python-vibe/issues/9).
 
-## What “every day as Grok” means
+## What everyday laptop work means
 
-In Cursor you open a repo and talk. The model explores, edits many files,
-runs tests, uses MCP, and keeps a plan. That is the product. The weights
-are large and trained to emit tool calls.
+You open a repo and talk. The model explores, edits files, runs tests, and
+keeps a short plan. That is comfortable daily work. The weights need to be
+large enough to emit tool calls.
 
 python-vibe today is a **400 MB style prior** plus scripts:
 
@@ -20,9 +20,9 @@ python-vibe today is a **400 MB style prior** plus scripts:
 | --- | --- |
 | `vibe.py` | One prompt → one small Python draft → `/run` |
 | `batch_review.py` | One small file at a time, up to 100 |
-| `agent.py` | Text protocol: glob / grep / read / edit / run / done |
+| `agent.py` | Text protocol: map / plan / glob / grep / read / edit / patch / run / done |
 
-The 0.5B model misses `Action:` lines. `agent.py` only feels Grok-like when
+The 0.5B model misses `Action:` lines. `agent.py` only feels daily-usable when
 `--model` is something like `llama3.1:8b`.
 
 ## Measured gap
@@ -43,16 +43,16 @@ issues”**, 0 applied. That is not a review.
 
 ## What to do
 
-1. **This week.** `scripts/agent.py` defaults to `llama3.1:8b`. Cursor:
-   [cursor-local.md](../cursor-local.md). `scripts/openai_compat.py` proxies
+1. **This week.** `scripts/agent.py` defaults to `llama3.1:8b`. Local editor:
+   [local-editor.md](../local-editor.md). `scripts/openai_compat.py` proxies
    `/v1/chat/completions`. `scripts/export_ollama.py --create` names
    `python-vibe-everyday`.
 2. **Your model.** `scripts/build_agent_data.py` writes seed tool traces
    (`data/agent-loop`). `scripts/train.py --everyday` is the 7B-class LoRA.
-   Append redacted Cursor sessions before claiming 2k traces. Fuse/GGUF:
-   `export_ollama.py --from-gguf`.
+   Append redacted explore / edit / run sessions before claiming 2k traces.
+   Fuse/GGUF: `export_ollama.py --from-gguf`.
 3. **Eval.** `scripts/eval_everyday.py` (offline in CI). `--live` must beat
-   untuned 8B on parse rate before anyone says daily Grok.
+   untuned 8B on parse rate before anyone says everyday-ready.
 
 0.5B stays public for download, CI, and the harness demo. It is not the
 everyday brain.
@@ -60,15 +60,16 @@ everyday brain.
 ## Shipped in this repo (laptop path)
 
 - `scripts/agent.py` defaults to `llama3.1:8b`. `--tiny` is the sidecar.
-- `scripts/openai_compat.py` + [cursor-local.md](../cursor-local.md) for Cursor.
+- `scripts/openai_compat.py` + [local-editor.md](../local-editor.md) for a
+  local OpenAI-compatible editor.
 - Seed tool traces + `--record` → `data/agent-loop/extra.jsonl` (gitignored).
 - `scripts/train.py --everyday` (7B-class MLX). `export_ollama.py --create`
   names the stand-in; GGUF of *your* LoRA is `--from-gguf`.
 - `scripts/eval_everyday.py`: gold weekday + count-md `/run`, ≥1 KB NameError
   fixture, Action: parse fixtures. `--live` on this machine (29 Aug 2026):
   `llama3.1:8b` parsed **2 / 3** prompts (above the 50% floor). That is not
-  Grok. Do not ship “daily Grok” until live beats a clean 8B baseline on a
-  real ≥1 KB fix *and* parse rate.
+  everyday-ready. Do not ship that claim until live beats a clean 8B baseline
+  on a real ≥1 KB fix *and* parse rate.
 
 Live `agent.py` + `llama3.1:8b` loops on this machine (29 Aug 2026):
 
@@ -79,4 +80,18 @@ Live `agent.py` + `llama3.1:8b` loops on this machine (29 Aug 2026):
 4. This repo: patched `resolve_project_file` to allow `.md`.
 5. This repo: patched README agent example to `python3.13`.
 
-We still do not call this Grok. The loop works on **scoped patch tasks**.
+The loop works on **scoped patch tasks**. It is comfortable daily work on
+small, well-scoped jobs — not a full-repo rewrite.
+
+## Small vs large (29 Aug 2026)
+
+Same CLI, two briefs (no extra model):
+
+- **Small** (≤40 first-party `.py`/`.md`, ≤200 KB): inject the file list.
+  Questions → read → `Action: done`. Bugs → patch → run. This is the
+  everyday laptop path.
+- **Large**: inject top-level counts, require `Action: map`, `--scope`,
+  and truncated grep. Do not ask the 8B to read the whole tree.
+
+`PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/app --brief`
+prints the mode without calling Ollama.

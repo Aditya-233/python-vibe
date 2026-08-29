@@ -2,9 +2,9 @@
 
 Guidance for humans and coding agents working in **python-vibe**.
 
-This repo is a **0.5B LoRA + a deterministic harness**, not a Cursor/Grok
-replacement. Treat the model as a style prior. Treat `PythonVibeGuard` as the
-safety boundary.
+This repo is a **0.5B LoRA + a deterministic harness** for everyday laptop
+work. Treat the 0.5B model as a style prior. Treat `PythonVibeGuard` as the
+safety boundary. Daily explore / edit / run uses 8B + tools.
 
 ## Commands
 
@@ -47,7 +47,7 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 | `src/finetune/` | Specs, splits, Hub card, agent system prompt |
 | `scripts/vibe.py` | Laptop REPL (`/run`, `--then`, `--project`) |
 | `scripts/serve.py` | Local HTTP sidecar |
-| `scripts/agent.py` | Cursor-like loop (use a **larger** Ollama model) |
+| `scripts/agent.py` | Everyday explore / edit / run (use a **larger** Ollama model) |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
 | `data/python-vibe/` | Short stdlib train/valid/test JSONL |
 | `docs/` | GitHub Pages + investigations |
@@ -66,12 +66,19 @@ style prior, not a capability unlock. See investigation
 **HTTP sidecar.** Keep stdlib `http.server`. Cap POST bodies (`MAX_BODY`). New
 routes need a test in `tests/test_serve.py` that does not call Ollama.
 
-**Agent loop.** `scripts/agent.py` defaults to `llama3.1:8b`. `--tiny` / mlx
-0.5B is smoke only. Cursor wiring: [docs/cursor-local.md](./docs/cursor-local.md).
+**Skills.** `skills/*/SKILL.md` (YAML frontmatter + body). The loop lists
+them in the brief, auto-picks `add-feature` / `write-tests` on “add …”
+tasks, and supports `Action: skill` + `Name:`. Add a new skill as a folder
+with `SKILL.md`; keep the body short. Do not name third-party products.
+
+**Agent loop.** `scripts/agent.py` defaults to `llama3.1:8b`. Small projects
+get a file list and comfortable daily explore / edit / run. Large projects
+get a harness: `Action: map`, `--scope`, truncated grep. `--tiny` / mlx 0.5B
+is smoke only. Local editor: [docs/local-editor.md](./docs/local-editor.md).
 Train the 7B-class tool LoRA with `scripts/agent.py --record data/agent-loop/extra.jsonl`,
 then `scripts/build_agent_data.py` and `scripts/train.py --everyday`. Name it in
 Ollama with `scripts/export_ollama.py --create`. Do not spend more 0.5B train
-steps expecting Grok quality.
+steps expecting everyday-agent quality.
 
 **Investigations.** New measurement pages go in `docs/investigations/`. Add the
 file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.

@@ -1,10 +1,10 @@
-"""Everyday (Grok-like) brain vs the public 0.5B sidecar."""
+"""Everyday laptop brain vs the public 0.5B sidecar."""
 
 from __future__ import annotations
 
 import os
 
-# 0.5B stays on the Hub and in smoke. This is what agent.py / Cursor should use.
+# 0.5B stays on the Hub and in smoke. This is what agent.py should use daily.
 DEFAULT_EVERYDAY_OLLAMA = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 TINY_OLLAMA = "qwen2.5-coder:0.5b"
 EVERYDAY_OLLAMA_CHOICES = (

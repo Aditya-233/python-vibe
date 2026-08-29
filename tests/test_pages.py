@@ -8,8 +8,8 @@ DOCS = ROOT / "docs"
 class PagesInvestigationsTest(unittest.TestCase):
     def test_site_files_exist(self) -> None:
         required = (
-            "cursor-local.md",
-            "investigations/everyday-grok.md",
+            "local-editor.md",
+            "investigations/everyday-laptop.md",
             "research-vibe-review.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]

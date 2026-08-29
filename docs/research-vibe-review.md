@@ -80,7 +80,7 @@ PYTHONPATH=src python scripts/batch_review.py \
 
 ## What we did not claim
 
-- The LoRA is not a drop-in Cursor / OpenSRE reviewer.
+- The LoRA is not a drop-in OpenSRE reviewer or a full-repo daily agent.
 - Serve-on-AWS / GGUF of the LoRA is still a separate path (Linux serve today is
   Ollama **base** + harness).
 - We did not run a 100-file `--fix` against OpenSRE.

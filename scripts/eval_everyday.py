@@ -4,7 +4,7 @@
   PYTHONPATH=src python scripts/eval_everyday.py
   PYTHONPATH=src python scripts/eval_everyday.py --live --model llama3.1:8b
 
-Do not claim 'daily Grok' until --live parse rate and /run pass beat the
+Do not claim everyday-ready until --live parse rate and /run pass beat the
 same numbers for an untuned 8B on this machine.
 """
 

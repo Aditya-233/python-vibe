@@ -1,7 +1,8 @@
-# Use a local everyday model in Cursor (not cloud Grok)
+# Use a local everyday model in an OpenAI-compatible editor
 
-The 0.5B LoRA is not a Cursor model. Point Cursor at **Ollama 8B+** on this
-machine. The write jail in `scripts/agent.py` is a separate CLI loop.
+The 0.5B LoRA is a style prior, not a daily coding brain. Point your editor
+at **Ollama 8B+** on this machine. The write jail in `scripts/agent.py` is a
+separate CLI loop for comfortable explore / edit / run.
 
 ## 1. Pull the everyday brain
 
@@ -32,26 +33,32 @@ PYTHONPATH=src python scripts/openai_compat.py
 # http://127.0.0.1:8081/v1/chat/completions
 ```
 
-## 3. Cursor model override
+## 3. Editor model override
 
-In Cursor Settings → Models:
+In your editor’s OpenAI-compatible settings:
 
-- Enable **OpenAI** API
-- Override **OpenAI Base URL**: `http://127.0.0.1:8081/v1` (proxy) or
+- Enable the OpenAI-compatible API
+- Base URL: `http://127.0.0.1:8081/v1` (proxy) or
   `http://127.0.0.1:11434/v1` (Ollama direct)
 - API key: `ollama` (any non-empty string; Ollama ignores it)
 - Model: `llama3.1:8b` or `python-vibe-everyday`
 
-Cursor then uses **its** tools (read/edit/terminal). That is everyday Grok-like
-use. `scripts/agent.py` is the same job with **our** jail if you stay in the
-terminal.
+The editor then uses **its** tools (read / edit / terminal). `scripts/agent.py`
+is the same job with **our** jail if you stay in the terminal.
 
 ## 4. CLI agent (guarded writes)
 
 ```bash
-PYTHONPATH=src python scripts/agent.py --project /path/to/your/app \
+PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
   "find a real NameError and fix it"
+# large repo
+PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
+  --scope src "what does apply_source refuse?"
 ```
+
+Small projects get a file list and can answer questions (`Action: done`)
+without editing. Large projects start with `Action: map` and stay inside
+`--scope`. That is the harness; the model does not load the whole tree.
 
 `--tiny` / `--engine mlx` is smoke only.
 
@@ -77,5 +84,5 @@ After you fuse a 7B-class MLX adapter to a folder:
 1. Convert with [llama.cpp](https://github.com/ggml-org/llama.cpp) `convert_hf_to_gguf.py` (not in this repo).
 2. `PYTHONPATH=src python scripts/export_ollama.py --from-gguf fused/everyday.gguf --create`
 
-Do not claim everyday Grok until `scripts/eval_everyday.py --live` beats untuned
-8B on Action: parse rate.
+Do not call this everyday-ready until `scripts/eval_everyday.py --live` beats
+untuned 8B on Action: parse rate.

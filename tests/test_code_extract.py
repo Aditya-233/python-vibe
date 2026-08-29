@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.code import apply_source, extract_python, resolve_project_file, write_and_run
+from harness.code import apply_source, extract_python, read_project_file, resolve_project_file, write_and_run
 from harness.project_scan import list_small_py_files
 from harness.report_md import render_markdown
 
@@ -59,6 +59,26 @@ class ExtractPythonTest(unittest.TestCase):
             dest = Path(tmp) / "tests" / "test_new.py"
             apply_source(dest, "def test_ok():\n    assert True\n", original="")
             self.assertTrue(dest.is_file())
+
+    def test_read_keeps_a_tail_when_truncated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "long.py"
+            dest.write_text("HEAD\n" + ("x\n" * 4000) + "return tota\n", encoding="utf-8")
+            shown = read_project_file(dest, limit=200)
+            self.assertIn("HEAD", shown)
+            self.assertIn("return tota", shown)
+            self.assertIn("truncated", shown)
+
+    def test_apply_refuses_syntax_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "ok.py"
+            good = "def add(left: int, right: int) -> int:\n    return left + right\n"
+            dest.write_text(good, encoding="utf-8")
+            broken = "def multiply(a: int, b: int) -> int:: int, right: int) -> int:\n    return a * b\n"
+            with self.assertRaises(ValueError) as ctx:
+                apply_source(dest, broken, original=good)
+            self.assertIn("syntax error", str(ctx.exception).lower())
+            self.assertEqual(dest.read_text(encoding="utf-8"), good)
 
     def test_apply_refuses_tiny_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

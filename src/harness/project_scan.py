@@ -14,6 +14,7 @@ SKIP_DIR = {
     ".mlx_cache",
     "adapters",
     "fused",
+    "scratch",
 }
 MAX_REVIEW_BYTES = 2500
 

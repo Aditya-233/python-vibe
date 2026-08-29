@@ -27,7 +27,7 @@ PYTHONPATH=src python -m unittest discover -s tests -q
 You do **not** need a Hugging Face token, Ollama, or a GPU to run the harness
 tests. Training the tiny LoRA uses MLX on Apple Silicon (Homebrew Python 3.13).
 Everyday agent work uses Ollama 8B+ — see [AGENTS.md](./AGENTS.md) and
-[docs/cursor-local.md](./docs/cursor-local.md).
+[docs/local-editor.md](./docs/local-editor.md).
 
 Uploads go to **your** Hub namespace (`HF_USER=yourname` or `HF_REPO=…`), never
 to the official weights repo unless you are a maintainer. Anyone can download
