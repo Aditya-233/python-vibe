@@ -88,6 +88,16 @@ class SmartHarnessTest(unittest.TestCase):
             refuse_question_write("review the project structure", "edit"),
             "",
         )
+        from harness.locate import refuse_question_ask
+
+        self.assertIn(
+            "already located",
+            refuse_question_ask("what does add return?", "ask", "pkg/mathy.py"),
+        )
+        self.assertEqual(
+            refuse_question_ask("what does add return?", "ask", ""),
+            "",
+        )
         self.assertIn(
             "auto-read",
             refuse_redundant_explore(

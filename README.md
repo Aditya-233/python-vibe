@@ -273,3 +273,15 @@ namespace — set `HF_USER` / `HF_REPO`, never implied as the official account):
 ```bash
 PYTHONPATH=src python3.13 scripts/push_hf.py python-vibe --what adapters --public
 ```
+
+---
+
+## Contributors
+
+Thank you to everyone who has helped this project. Your code, reviews, issues, and pull requests are appreciated.
+
+- [@kkkhs](https://github.com/kkkhs)
+- [@xianjianlf2](https://github.com/xianjianlf2)
+- [@YauhenBichel](https://github.com/YauhenBichel)
+
+See the [full contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors).

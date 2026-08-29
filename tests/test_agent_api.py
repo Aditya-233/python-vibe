@@ -160,20 +160,47 @@ class AskTest(unittest.TestCase):
             return "the second one"
 
         with tempfile.TemporaryDirectory() as tmp:
+            # A change task: asking is allowed, because the harness has not
+            # already found the answer the way it does for a question.
             options = AgentOptions(
                 project=_project(tmp),
-                task="what does compute_total return?",
+                task="add multiply(a, b) and a unit test",
                 on_question=answer,
             )
             with mock.patch(
                 "harness.agent.loop.make_generate",
                 _scripted(
                     "Action: ask\nQuery: which module?\nAppend:\n- src/app.py\n- other.py",
-                    "Action: done\nSummary: compute_total returns int",
+                    "Action: patch\nPath: src/app.py\nAppend:\n"
+                    "def multiply(a: int, b: int) -> int:\n    return a * b\n",
+                    "Action: run\nArgv: -m unittest discover -s tests -q",
+                    "Action: done\nSummary: added multiply",
                 ),
             ):
                 result = Agent(options).run()
         self.assertEqual(seen, ["which module?"])
+        self.assertTrue(result.ok, result.refusals)
+
+    def test_a_question_the_harness_already_answered_is_not_asked_about(self) -> None:
+        """If the symbol was located, stalling to ask the user is wrong."""
+        asked = []
+
+        with tempfile.TemporaryDirectory() as tmp:
+            options = AgentOptions(
+                project=_project(tmp),
+                task="what does compute_total return?",
+                on_question=lambda q: (asked.append(q.text), "x")[1],
+            )
+            with mock.patch(
+                "harness.agent.loop.make_generate",
+                _scripted(
+                    "Action: ask\nQuery: which module?",
+                    "Action: done\nSummary: compute_total returns int",
+                ),
+            ):
+                result = Agent(options).run()
+        self.assertEqual(asked, [])
+        self.assertTrue(any("already located" in r for r in result.refusals))
         self.assertTrue(result.ok, result.refusals)
 
     def test_with_nobody_to_answer_the_loop_hands_the_question_back(self) -> None:
@@ -324,3 +351,42 @@ class OpeningQuestionTest(unittest.TestCase):
         self.assertEqual(result.stopped, "question")
         self.assertEqual(result.steps, ())
         self.assertEqual(result.writes, ())
+
+
+class TestsPassedTest(unittest.TestCase):
+    """Passing tests end the task only when the task changed something."""
+
+    def _state(self, task: str, project):
+        from harness.agent.policy import LoopState
+
+        return LoopState(task=task, project=project)
+
+    def _run_turn(self):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(action="run", path="")
+
+    def test_a_green_suite_before_any_change_says_nothing(self) -> None:
+        from harness.agent.policy import next_prompt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state = self._state("add multiply(a, b) and a test", _project(tmp))
+            self.assertEqual(next_prompt(state, self._run_turn(), "exit 0\nOK"), "")
+
+    def test_a_green_suite_after_a_change_ends_the_task(self) -> None:
+        from harness.agent.policy import next_prompt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state = self._state("add multiply(a, b) and a test", _project(tmp))
+            state.wrote_something = True
+            self.assertIn(
+                "Action: done", next_prompt(state, self._run_turn(), "exit 0\nOK")
+            )
+
+    def test_a_failing_suite_never_ends_the_task(self) -> None:
+        from harness.agent.policy import next_prompt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state = self._state("add multiply(a, b) and a test", _project(tmp))
+            state.wrote_something = True
+            self.assertEqual(next_prompt(state, self._run_turn(), "exit 1\nE"), "")

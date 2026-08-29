@@ -101,5 +101,25 @@ class DesignLoopTest(unittest.TestCase):
         )
 
 
+class LiveFixesTest(unittest.TestCase):
+    def test_after_tests_pass_the_next_step_is_done(self) -> None:
+        from harness.agent.policy import LoopState, next_prompt, refuse_before
+
+        state = LoopState(
+            task="find a NameError and fix it",
+            project=Path("."),
+            ran_tests=True,
+            wrote_something=True,
+        )
+        self.assertIn(
+            "done",
+            next_prompt(state, _Turn("run"), "exit 0\n.").lower(),
+        )
+        self.assertIn(
+            "already passed",
+            refuse_before(state, _Turn("ask", summary="which?")).lower(),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
