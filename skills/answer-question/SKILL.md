@@ -4,4 +4,4 @@ description: Answers a what/why/how question from the harness locate block. Use 
 ---
 
 Action: done
-Summary: quote what the function refuses or returns from the # auto-read file
+Summary: quote the -> type from the def line (example: tuple[str, int])

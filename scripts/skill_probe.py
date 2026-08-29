@@ -25,6 +25,7 @@ from harness.project_brief import (  # noqa: E402
     render_brief,
     start_hint,
 )
+from harness.skill_target import pick_target  # noqa: E402
 from harness.skills import get_skill, list_skills, pick_skills, render_catalog, render_skill  # noqa: E402
 from harness.smart import prelude  # noqa: E402
 
@@ -52,10 +53,18 @@ def main() -> None:
     prompt = (
         f"{render_brief(brief, scope=args.scope)}\n\n"
         f"{render_catalog(catalog)}\n\n"
-        + ("\n\n".join(render_skill(item) for item in preloaded) + "\n\n" if preloaded else "")
+        + (
+            "\n\n".join(
+                render_skill(item, pick_target(project, args.task, args.scope, _path), project)
+                for item in preloaded
+            )
+            + "\n\n"
+            if preloaded
+            else ""
+        )
         + (f"{pre_text}\n\n" if pre_text else "")
         + f"Task: {args.task}\n"
-        + start_hint(brief, args.task)
+        + start_hint(brief, args.task, located=bool(_path))
     )
     _label, generate_once = make_generate(
         "ollama", args.max_tokens, model=args.model, system=AGENT_SYSTEM

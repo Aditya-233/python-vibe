@@ -31,14 +31,42 @@ Tiny skills + harness prelude + short system prompt
 Then: if the model still dumps a menu, `parse_turn_smart` keeps **one**
 block — `done`/`locate` on a question, `patch`/`edit` on an add.
 
+Third-party small tree (33 `.py`/`.md`, Mode: small, `src/harness` scope),
+same day, after locate shipped:
+
+| Task | First action | Result |
+| --- | --- | --- |
+| `what does listen_addr return?` | `read` the already auto-read file | Correct tuple answer after a wasted step. `start_hint` still said grep/read. |
+| `what does complete do after two blocked drafts?` (probe) | `read` + `Append:` body | Would have edited a question if applied. |
+
+Harness now: `start_hint(..., located=True)` says done only; questions
+refuse `patch`/`edit`/`run`; a second `read` of the auto-read file is
+refused. `File:` is an alias for `Path:`. A `done` that omits the `->`
+type (for example `tuple[str, int]`) is refused once so the 8B quotes
+the signature instead of “a tuple”.
+
+Add-feature on the kit fixture (29 Aug 2026): `multiply` landed, but the
+test was `Append:` after `if __name__` with no import, so unittest ran
+**1** test. Harness now inserts `def test_` before `if __name__`, adds
+the import, refuses a second `locate` after prelude, and injects the
+write-tests skill after the implementation patch.
+
 ## What to publish
 
-These four kit skills, each a **single copy-paste Action** (no essays):
+These kit skills, each a **single copy-paste Action** (no essays):
 
 - `skills/answer-question/SKILL.md`
 - `skills/add-feature/SKILL.md`
 - `skills/write-tests/SKILL.md`
 - `skills/stay-scoped/SKILL.md`
+- `skills/new-package/SKILL.md` — `pkg/__init__.py` exports only, then
+  `pkg/<noun>.py`. SoC, not a SOLID lecture.
+- `skills/fix-smell/SKILL.md` — one `Find:` / `Replace:` to a readable
+  snake_case name (`total_price`, not `calc`).
+
+Harness: `refuse_opaque_names` (`calc`/`tmp`/`x`, CamelCase functions,
+snake_case classes) and `refuse_layout` (no impl in `__init__.py` or
+`scripts/`; split a module with 4+ functions).
 
 Plus harness: `prelude()` locate before the model, `Action: locate`,
 `parse_turn_smart`, syntax reject, skill-name-as-action.

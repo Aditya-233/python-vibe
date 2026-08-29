@@ -37,21 +37,44 @@ from harness.agent_tools import (  # noqa: E402
     run_python,
 )
 from harness.engine import make_generate  # noqa: E402
+from harness.loop_guard import LoopGuard  # noqa: E402
+from harness.project_docs import render_house_rules  # noqa: E402
 from harness.project_brief import (  # noqa: E402
     classify_project,
     looks_like_question,
+    question_symbol,
     render_brief,
     start_hint,
 )
-from harness.smart import locate_py, prelude, refuse_early_done  # noqa: E402
+from harness.smart import (  # noqa: E402
+    locate_py,
+    prelude,
+    refuse_early_done,
+    refuse_question_write,
+    refuse_redundant_explore,
+    refuse_redundant_locate,
+    refuse_shallow_done,
+    signature_line,
+)
 from harness.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.skill_target import pick_target  # noqa: E402
 from harness.skills import (  # noqa: E402
     get_skill,
     list_skills,
+    looks_like_add_feature,
     pick_skills,
     render_catalog,
     render_skill,
     skill_from_action,
+)
+from harness.style import (  # noqa: E402
+    looks_like_fix_smell,
+    looks_like_new_package,
+    refuse_layout,
+    refuse_opaque_names,
+    refuse_smell_wrong_file,
+    rename_target,
+    smell_symbol,
 )
 from harness.trace_record import append_turn  # noqa: E402
 
@@ -66,15 +89,18 @@ def _remember(generate_once, prompt: str, draft: str) -> None:
     history.append({"role": "assistant", "content": draft})
 
 
-def _tool(project: Path, turn, last_path: str, scope: str) -> tuple[str, str]:
+def _tool(
+    project: Path, turn, last_path: str, scope: str, target=None
+) -> tuple[str, str]:
     path = turn.path or last_path
     used_scope = turn.scope or scope
     loaded = skill_from_action(turn.action, turn.name, turn.path, project)
     if loaded is not None:
-        return render_skill(loaded), last_path
+        return render_skill(loaded, target, project), last_path
     if turn.action == "skill":
         return (
-            f"skill needs Name: (add-feature, write-tests, stay-scoped). "
+            f"skill needs Name: (add-feature, write-tests, stay-scoped, "
+            f"new-package, fix-smell). "
             f"{render_catalog(list_skills(project))}",
             last_path,
         )
@@ -105,10 +131,31 @@ def _tool(project: Path, turn, last_path: str, scope: str) -> tuple[str, str]:
         blocked = PythonVibeGuard().check(turn.source)
         if blocked.verdict != "pass":
             return f"harness blocked: {[f.rule_id for f in blocked.findings]}", path
+        named = refuse_opaque_names(turn.source)
+        if named:
+            return named, path
+        try:
+            original = read_py(project, path)
+        except (OSError, ValueError):
+            original = ""
+        layout = refuse_layout(path, original, turn.source)
+        if layout:
+            return layout, path
         return edit_py(project, path, turn.source), path
     if turn.action == "patch":
         if not path:
             return "patch needs Path: (or read that file first)", last_path
+        draft = "\n".join(part for part in (turn.replace, turn.append) if part)
+        named = refuse_opaque_names(draft)
+        if named:
+            return named, path
+        try:
+            original = read_py(project, path)
+        except (OSError, ValueError):
+            original = ""
+        layout = refuse_layout(path, original, draft)
+        if layout:
+            return layout, path
         return patch_py(project, path, turn.find, turn.replace, turn.append), path
     if turn.action == "run":
         return run_python(project, turn.argv), last_path
@@ -139,7 +186,7 @@ def main() -> None:
         action="append",
         default=[],
         metavar="NAME",
-        help="preload a SKILL.md (repeatable). Kit: add-feature, write-tests, stay-scoped",
+        help="preload a SKILL.md (repeatable). Kit: add-feature, write-tests, stay-scoped, new-package, fix-smell",
     )
     parser.add_argument("--engine", default="ollama")
     parser.add_argument(
@@ -195,6 +242,7 @@ def main() -> None:
     last_path = ""
     located_path = ""
     pre_text, located_path = prelude(project, args.task, args.scope)
+    located_sig = signature_line(pre_text, question_symbol(args.task)) if pre_text else ""
     if pre_text:
         last_path = located_path
         print(pre_text[:2000], file=sys.stderr)
@@ -210,19 +258,26 @@ def main() -> None:
             extra = get_skill("stay-scoped", project)
             if extra and extra.name not in {item.name for item in preloaded}:
                 preloaded.append(extra)
+    target = pick_target(project, args.task, args.scope, located_path)
     skill_block = ""
     if preloaded:
-        skill_block = "\n\n".join(render_skill(item) for item in preloaded) + "\n\n"
+        skill_block = (
+            "\n\n".join(render_skill(item, target, project) for item in preloaded)
+            + "\n\n"
+        )
+    house = render_house_rules(project)
     prompt = (
         f"{render_brief(brief, scope=args.scope)}\n\n"
-        f"{render_catalog(catalog)}\n\n"
+        + (f"{house}\n\n" if house else "")
+        + f"{render_catalog(catalog)}\n\n"
         f"{skill_block}"
         + (f"{pre_text}\n\n" if pre_text else "")
         + f"Project root: {project}\n"
         + (f"Scope: {args.scope}\n" if args.scope else "")
         + f"Task: {args.task}\n"
-        + start_hint(brief, args.task)
+        + start_hint(brief, args.task, located=bool(located_path))
     )
+    loop_guard = LoopGuard()
     for step in range(1, args.steps + 1):
         draft = generate_once(prompt)
         _remember(generate_once, prompt, draft)
@@ -238,18 +293,91 @@ def main() -> None:
             continue
         if turn.action == "done":
             blocked = refuse_early_done(args.task, last_path, located_path)
+            if not blocked:
+                blocked = refuse_shallow_done(
+                    args.task, turn.summary, located_sig
+                )
             if blocked:
                 prompt = blocked
                 print(blocked[:500], file=sys.stderr)
                 continue
             print(turn.summary or "done")
             return
+        blocked = refuse_question_write(args.task, turn.action)
+        if not blocked:
+            blocked = refuse_redundant_explore(
+                args.task, turn.action, turn.path, located_path
+            )
+        if not blocked:
+            blocked = refuse_redundant_locate(
+                args.task, turn.action, bool(pre_text)
+            )
+        if not blocked:
+            located_body = ""
+            if located_path:
+                try:
+                    located_body = read_py(project, located_path)
+                except (OSError, ValueError):
+                    located_body = ""
+            blocked = refuse_smell_wrong_file(
+                args.task,
+                turn.action,
+                turn.path,
+                located_path,
+                located_body,
+            )
+        if not blocked:
+            blocked = loop_guard.check(turn)
+        if blocked:
+            prompt = blocked
+            print(blocked[:500], file=sys.stderr)
+            continue
         try:
-            result, last_path = _tool(project, turn, last_path, args.scope)
+            result, last_path = _tool(project, turn, last_path, args.scope, target)
         except (ValueError, OSError) as exc:
             result = str(exc)
         print(result[:2000], file=sys.stderr)
         prompt = f"Tool result:\n{result}\n\nNext Action:"
+        if (
+            looks_like_add_feature(args.task)
+            and turn.action == "patch"
+            and "test" not in (turn.path or last_path).lower()
+            and result.startswith("patched")
+        ):
+            loaded = get_skill("write-tests", project)
+            if loaded is not None:
+                prompt = (
+                    f"Tool result:\n{result}\n\n"
+                    f"{render_skill(loaded, target, project)}\n"
+                    "Next Action must be this write-tests patch. "
+                    "Do not Append after if __name__.\n"
+                )
+        if (
+            looks_like_new_package(args.task)
+            and turn.action == "edit"
+            and result.startswith("wrote")
+            and "__init__" in (turn.path or last_path)
+        ):
+            noun = question_symbol(args.task) or "service"
+            prompt = (
+                f"Tool result:\n{result}\n\n"
+                f"Next Action must be edit Path: pkg/{noun}.py with one "
+                f"function def {noun}(...). snake_case. Not in __init__.py.\n"
+            )
+        if (
+            looks_like_fix_smell(args.task)
+            and turn.action == "patch"
+            and "test" not in (turn.path or last_path).lower()
+            and result.startswith("patched")
+        ):
+            old = smell_symbol(args.task)
+            new = rename_target(args.task)
+            if old and new:
+                prompt = (
+                    f"Tool result:\n{result}\n\n"
+                    f"Next Action: patch tests to replace {old} with {new}, "
+                    "then Action: run.\n"
+                )
     sys.exit(f"stopped after {args.steps} steps")
 
 

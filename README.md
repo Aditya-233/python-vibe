@@ -55,9 +55,16 @@ Writes stay under `--project` and go through `PythonVibeGuard` + `.bak`.
 One action per turn: `map` · `plan` · `skill` · `glob` · `grep` · `read` ·
 `edit` · `patch` · `run` · `done`.
 
+`map` returns a signature outline, not just sizes. A `Find:` that misses by
+whitespace is retried and re-indented; one that misses outright comes back
+with the closest real lines. A repeated read-only action is refused once.
+Your project's own `AGENTS.md` is read first and outranks the kit skills.
+Why each of those: [harness-comparison](./docs/investigations/harness-comparison.md).
+
 Best-practice skills live in `skills/` (`add-feature`, `write-tests`,
-`stay-scoped`). The agent preloads them when the task says “add” / “test”,
-or you pass `--skill add-feature`. `Action: skill` + `Name:` loads one mid-loop.
+`stay-scoped`, `new-package`, `fix-smell`). The agent preloads them when
+the task says “add” / “test” / “create a package” / “rename”, or you pass
+`--skill`. `Action: skill` + `Name:` loads one mid-loop.
 
 ```bash
 PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \

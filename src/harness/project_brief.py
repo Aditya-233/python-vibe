@@ -145,7 +145,7 @@ def render_brief(brief: ProjectBrief, *, scope: str = "") -> str:
             header,
             "Small project — explore, edit, and run on this laptop.",
             "You can read every listed file. Prefer Action: patch for one-line fixes.",
-            "Questions: read, then Action: done with the answer. Do not edit unless asked.",
+            "Questions: if you see # auto-read, Action: done. Else read one file, then done. Do not edit.",
             "Files:",
         ]
         for rel, size in brief.listed:
@@ -179,7 +179,13 @@ def render_map(project: Path, scope: str = "", *, max_entries: int = MAP_MAX_ENT
     return "\n".join(lines)
 
 
-def start_hint(brief: ProjectBrief, task: str) -> str:
+def start_hint(brief: ProjectBrief, task: str, *, located: bool = False) -> str:
+    if looks_like_question(task) and located:
+        return (
+            "The harness already located the symbol. "
+            "Action: done Summary: quote the -> type from the def line. "
+            "Do not read, locate, grep, or edit."
+        )
     if brief.kind == "large":
         return "Start with Action: map, then grep. Do not Action: done yet."
     if looks_like_question(task):
@@ -195,10 +201,23 @@ def start_hint(brief: ProjectBrief, task: str) -> str:
             "Do not edit unless asked."
         )
     from harness.skills import looks_like_add_feature
+    from harness.style import looks_like_fix_smell, looks_like_new_package
 
+    if looks_like_new_package(task):
+        return (
+            "This is a new-package task. First Action: edit Path: pkg/__init__.py "
+            "(exports only). Then edit pkg/<noun>.py with one snake_case function. "
+            "Then tests/test_<noun>.py. Do not put logic in scripts/."
+        )
+    if looks_like_fix_smell(task):
+        return (
+            "This is a smell/rename task. Patch one opaque name to readable "
+            "snake_case. Do not add features."
+        )
     if looks_like_add_feature(task):
         return (
             "This is an add-feature task. Grep first. If it is missing, add the "
-            "smallest change plus a test, then run. Do not invent extras."
+            "smallest change plus a test, then run. Do not invent extras. "
+            "Put new logic in pkg/<noun>.py, not __init__.py."
         )
     return "Start with Action: grep or Action: read. Prefer patch for one-line bugs."

@@ -9,11 +9,11 @@ from harness.code import extract_python
 
 _ACTION = re.compile(r"^Action:\s*(\w+)\s*$", re.MULTILINE | re.IGNORECASE)
 _FIELD = re.compile(
-    r"^(Path|Query|Pattern|Argv|Summary|Scope|Name):\s*(.+)$",
+    r"^(Path|File|Query|Pattern|Argv|Summary|Scope|Name):\s*(.+)$",
     re.MULTILINE,
 )
 _STOP = re.compile(
-    r"^(Action|Path|Query|Pattern|Argv|Summary|Scope|Name|Find|Replace|Append|Add):\s*",
+    r"^(Action|Path|File|Query|Pattern|Argv|Summary|Scope|Name|Find|Replace|Append|Add):\s*",
     re.IGNORECASE,
 )
 
@@ -61,9 +61,13 @@ def parse_turn(text: str) -> AgentTurn | None:
     fields = {m.group(1).lower(): m.group(2).strip() for m in _FIELD.finditer(text)}
     argv = tuple(part for part in fields.get("argv", "").split() if part)
     source = extract_python(text) if action == "edit" else None
+    if action == "edit" and not source:
+        extra = _block(text, "Append") or _block(text, "Add")
+        if extra:
+            source = extra
     return AgentTurn(
         action=action,
-        path=fields.get("path", ""),
+        path=fields.get("path") or fields.get("file", ""),
         query=fields.get("query", ""),
         pattern=fields.get("pattern", ""),
         argv=argv,

@@ -93,8 +93,11 @@ def skill_from_action(
 def looks_like_add_feature(task: str) -> bool:
     text = task.strip().lower()
     from harness.project_brief import looks_like_question
+    from harness.style import looks_like_fix_smell, looks_like_new_package
 
     if looks_like_question(text):
+        return False
+    if looks_like_new_package(text) or looks_like_fix_smell(text):
         return False
     return bool(_ADD_START.search(text))
 
@@ -102,9 +105,16 @@ def looks_like_add_feature(task: str) -> bool:
 def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
     picked: list[Skill] = []
     from harness.project_brief import looks_like_question
+    from harness.style import looks_like_fix_smell, looks_like_new_package
 
     if looks_like_question(task):
         picked.extend(s for s in catalog if s.name == "answer-question")
+    if looks_like_new_package(task):
+        picked.extend(s for s in catalog if s.name == "new-package")
+        return picked
+    if looks_like_fix_smell(task):
+        picked.extend(s for s in catalog if s.name == "fix-smell")
+        return picked
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")
         picked.extend(s for s in catalog if s.name == "write-tests")
@@ -123,8 +133,17 @@ def render_catalog(catalog: list[Skill]) -> str:
     return "\n".join(lines)
 
 
-def render_skill(skill: Skill) -> str:
+def render_skill(skill: Skill, target=None, project: Path | None = None) -> str:
+    """Render one skill, repointed at `project` when a target is given.
+
+    Without a target the kit paths stay literal, which is only right for the
+    eval fixtures. See harness.skill_target.
+    """
     body = skill.body
+    if target is not None:
+        from harness.skill_target import retarget
+
+        body = retarget(body, target, project)
     if len(body) > MAX_SKILL_CHARS:
         body = body[:MAX_SKILL_CHARS] + "\n# … skill truncated\n"
     return f"# skill {skill.name}\n{skill.description}\n\n{body}"

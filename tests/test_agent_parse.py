@@ -77,6 +77,22 @@ class AgentParseTest(unittest.TestCase):
         assert q is not None
         self.assertEqual(q.action, "done")
 
+    def test_edit_append_is_source(self) -> None:
+        turn = parse_turn(
+            "Action: edit\nPath: pkg/__init__.py\n"
+            'Append:\n"""Public exports only."""\n'
+        )
+        assert turn is not None
+        self.assertEqual(turn.action, "edit")
+        self.assertIn("Public exports", turn.source or "")
+
+    def test_file_alias_is_path(self) -> None:
+        turn = parse_turn("Action: read\nFile: src/harness/http.py")
+        self.assertIsNotNone(turn)
+        assert turn is not None
+        self.assertEqual(turn.action, "read")
+        self.assertEqual(turn.path, "src/harness/http.py")
+
     def test_unparsed(self) -> None:
         self.assertIsNone(parse_turn("no issues"))
 
