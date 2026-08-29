@@ -269,6 +269,25 @@ def everyday_example_path(task: str) -> str:
     return _EVERYDAY_PATH.get(everyday_skill_name(task), "pkg/<noun>.py")
 
 
+_WRITE_TESTS = re.compile(r"\bwrite tests?\b|\badd tests?\b|\bunit tests?\b", re.I)
+_COVERED = re.compile(r"\b(?:for|cover)\s+([a-z_][a-z0-9_]{3,})\b", re.I)
+
+
+def looks_like_write_tests(task: str) -> bool:
+    """Cover an existing function. Not “add X and a test” (that is add-feature)."""
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    if looks_like_add_feature(task):
+        return False
+    return bool(_WRITE_TESTS.search(task))
+
+
+def covered_symbol(task: str) -> str:
+    """`write tests for apply_discount` → apply_discount."""
+    match = _COVERED.search(task)
+    return match.group(1) if match else ""
+
+
 def looks_like_add_feature(task: str) -> bool:
     text = task.strip().lower()
     if looks_like_question(text):

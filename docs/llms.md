@@ -26,6 +26,7 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 - [Local loop vs hosted agents]({{ '/investigations/local-vs-cloud/' | absolute_url }}): Every shipped path against a hosted IDE agent. Same jobs. 29 Aug 2026.
 - [What to improve]({{ '/investigations/what-to-improve/' | absolute_url }}): Harness work that can close a gap, and work that cannot.
 - [Small models, classic development]({{ '/investigations/small-llm-harness/' | absolute_url }}): Oracles and refuses that make an 8B finish like a careful review.
+- [Fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | absolute_url }}): When new weights help. Not another 0.5B run. Not 30 seed traces.
 - [Platform engineering]({{ '/investigations/platform-engineering/' | absolute_url }}): pathlib, both venv layouts, config files, every OS.
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | absolute_url }}): Why the 0.5B LoRA is not daily work.
 - [Everyday skills]({{ '/investigations/everyday-skills/' | absolute_url }}): Skills are one copy-paste Action, written for an 8B.

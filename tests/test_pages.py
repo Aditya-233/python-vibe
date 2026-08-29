@@ -35,6 +35,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "investigations/what-to-improve.md",
             "investigations/small-llm-harness.md",
             "investigations/platform-engineering.md",
+            "investigations/fine-tune-or-harness.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]
         self.assertEqual(missing, [])

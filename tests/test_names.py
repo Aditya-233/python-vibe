@@ -118,6 +118,28 @@ class StyleOracleTest(unittest.TestCase):
                 "",
             )
 
+    def test_write_tests_done_requires_the_named_function(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "tests").mkdir()
+            (root / "src" / "orders.py").write_text(FIXED, encoding="utf-8")
+            (root / "tests" / "test_orders.py").write_text(
+                "def test_compute_total_sums_the_prices(self) -> None:\n    pass\n",
+                encoding="utf-8",
+            )
+            task = "write tests for apply_discount in src/orders.py"
+            self.assertIn(
+                "apply_discount",
+                refuse_done_oracle(task, root, "src/orders.py"),
+            )
+            (root / "tests" / "test_orders.py").write_text(
+                "def test_apply_discount_reduces_the_total(self) -> None:\n"
+                "    got = apply_discount(10, 0.2)\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(refuse_done_oracle(task, root, "src/orders.py"), "")
+
     def test_patch_refuses_a_test_in_the_impl_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -298,6 +298,9 @@ def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
         and state.wrote_something
         and not looks_like_design_loop(state.task)
     ):
+        leftover = refuse_done_oracle(state.task, state.project, state.last_path)
+        if leftover:
+            return leftover + "\n"
         return "Tests passed. Action: done Summary: say what you changed.\n"
     wrote = result.startswith(("patched", "wrote"))
     if wrote:

@@ -107,7 +107,7 @@ A free bash tool does not transfer to an 8B on a laptop working tree.
 3. Refuse done on add / rename until a passing unittest (new-package already does).
 4. Quote more of a small file so answers include nearby constants.
 5. Measure 7B and any 30B coder already on disk before changing the default.
-6. Expand live parse prompts. Then record ~2k redacted --record traces before train.py --everyday.
+6. Expand live parse prompts. Then record ~2k redacted --record traces before train.py --everyday. Decision: investigations/fine-tune-or-harness.
 
 ## Do not
 
