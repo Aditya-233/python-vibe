@@ -8,5 +8,8 @@ python-vibe does on ordinary daily tasks. Every problem here is planted:
 - `src/util.py` has `calc`, a name that says nothing.
 - `src/report.py` and `src/render.py` import each other.
 - Nothing tests `apply_discount`.
+- `src/orders_service.py` (`OrderService`) and `src/orders_controller.py`
+  (`OrdersController`) have no tests. The controller has an opaque `fn`
+  and a `NameError` in `status` (`stauts`).
 
 The demo copies this directory before each case, so a run never changes it.

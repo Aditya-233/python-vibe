@@ -107,7 +107,11 @@ def looks_like_new_package(task: str) -> bool:
 def looks_like_fix_smell(task: str) -> bool:
     if looks_like_question(task):
         return False
-    return bool(_SMELL.search(task.strip().lower()))
+    text = task.strip().lower()
+    # "find code smells" is a report. "fix the code smell" / rename is a write.
+    if re.search(r"\b(find|report|list|show)\b", text) and "smell" in text:
+        return False
+    return bool(_SMELL.search(text))
 
 
 _SHIP = re.compile(
@@ -140,7 +144,18 @@ def looks_like_refactor(task: str) -> bool:
 
 
 def looks_like_design_loop(task: str) -> bool:
-    """Review, then one-split, then review again until the scan is clean."""
+    """Review, then one-split, then review again until the scan is clean.
+
+    "review src/orders.py for bugs" is a report on one file. That is not
+    this loop. Live 8B on main spent eight turns fighting review-design
+    after a named-file review.
+    """
+    if (
+        task_paths(task)
+        and looks_like_review_code(task)
+        and not looks_like_refactor(task)
+    ):
+        return False
     return looks_like_review(task) or looks_like_refactor(task)
 
 
@@ -270,7 +285,13 @@ def everyday_example_path(task: str) -> str:
 
 
 _WRITE_TESTS = re.compile(r"\bwrite tests?\b|\badd tests?\b|\bunit tests?\b", re.I)
-_COVERED = re.compile(r"\b(?:for|cover)\s+([a-z_][a-z0-9_]{3,})\b", re.I)
+_COVERED = re.compile(
+    r"\b(?:for|cover)\s+(?:the\s+)?"
+    r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\b"
+)
+_COVERED_SKIP = frozenset(
+    {"file", "module", "some", "that", "this", "unit", "tests", "test"}
+)
 
 
 def looks_like_write_tests(task: str) -> bool:
@@ -283,9 +304,15 @@ def looks_like_write_tests(task: str) -> bool:
 
 
 def covered_symbol(task: str) -> str:
-    """`write tests for apply_discount` → apply_discount."""
+    """`write tests for apply_discount` → apply_discount.
+
+    Also `OrderService`, `OrdersController.handle`.
+    """
     match = _COVERED.search(task)
-    return match.group(1) if match else ""
+    if not match:
+        return ""
+    name = match.group(1)
+    return "" if name.lower() in _COVERED_SKIP else name
 
 
 def looks_like_add_feature(task: str) -> bool:
@@ -346,7 +373,10 @@ def rename_target(task: str) -> str:
     return rename_pair(task)[1]
 
 
-_REVIEW_CODE = re.compile(r"\b(review|check|find bugs?|defects?|audit)\b")
+_REVIEW_CODE = re.compile(
+    r"\b(review|check|find bugs?|find errors?|defects?|audit|"
+    r"code smells?)\b"
+)
 
 
 def looks_like_review_code(task: str) -> bool:
@@ -355,6 +385,8 @@ def looks_like_review_code(task: str) -> bool:
     if looks_like_new_package(text) or looks_like_ship(text):
         return False
     if looks_like_add_feature(text) or looks_like_fix_smell(text):
+        return False
+    if looks_like_write_tests(text):
         return False
     return bool(_REVIEW_CODE.search(text))
 

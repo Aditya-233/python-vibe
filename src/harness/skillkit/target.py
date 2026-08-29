@@ -34,7 +34,9 @@ _SCOPE_LINE = re.compile(r"^Scope:\s*(\S+)\s*$", re.MULTILINE)
 _SYMBOL_TOKEN = "the_symbol_from_the_task"
 # Scaffolding a package legitimately names a file that does not exist yet.
 _KEEP_NAMES = frozenset({"__init__.py"})
+# Used only in documentation and error text, never handed to the model.
 FALLBACK_MODULE = "path/to/module.py"
+DEFAULT_NEW_MODULE = "src/main.py"
 FALLBACK_TEST = "tests/test_module.py"
 
 
@@ -69,8 +71,14 @@ def _rels(project: Path, suffix: str = ".py") -> list[tuple[str, int]]:
     ]
 
 
-def pick_module(project: Path, located_path: str = "") -> str:
-    """The file a new function most likely belongs in."""
+def pick_module(project: Path, located_path: str = "", task: str = "") -> str:
+    """The file a new function most likely belongs in.
+
+    A project with no Python file in it still needs a real path. The
+    placeholder used to be handed straight to the model, which then created
+    a file literally at `path/to/module.py` — the same fault as shipping a
+    fixture path, arriving by a different route.
+    """
     if located_path:
         rel = located_path.replace("\\", "/").lstrip("./")
         if rel.endswith(".py") and not _is_test(rel):
@@ -81,9 +89,17 @@ def pick_module(project: Path, located_path: str = "") -> str:
         if not _is_test(rel) and Path(rel).name != "__init__.py"
     ]
     if not usable:
-        return FALLBACK_MODULE
+        return _new_module_name(task)
     usable.sort(key=lambda item: (-item[1], item[0]))
     return usable[0][0]
+
+
+def _new_module_name(task: str) -> str:
+    """Where the first module of an empty project should go."""
+    symbol = question_symbol(task)
+    if symbol and symbol != _SYMBOL_TOKEN:
+        return f"src/{symbol}.py"
+    return DEFAULT_NEW_MODULE
 
 
 def pick_test(project: Path, module: str) -> str:
@@ -108,7 +124,7 @@ def pick_scope(scope: str, module: str) -> str:
 def pick_target(
     project: Path, task: str = "", scope: str = "", located_path: str = ""
 ) -> Target:
-    module = pick_module(project, located_path)
+    module = pick_module(project, located_path, task)
     return Target(
         module=module,
         test=pick_test(project, module),
