@@ -161,3 +161,87 @@ class McpHandshakeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StdioFramingTest(unittest.TestCase):
+    """The stdio transport delimits messages by newlines.
+
+    The specification says messages are delimited by newlines and must not
+    contain embedded newlines. Content-Length headers belong to the Language
+    Server Protocol; a client expecting lines cannot read them.
+    """
+
+    def _written(self, payload: dict) -> str:
+        import io
+
+        from harness.mcp_stdio import _write_message
+
+        buffer = io.StringIO()
+        _write_message(buffer, payload)
+        return buffer.getvalue()
+
+    def test_a_message_is_one_line(self) -> None:
+        written = self._written({"jsonrpc": "2.0", "id": 1, "result": {"ok": True}})
+        self.assertEqual(len(written.splitlines()), 1)
+        self.assertTrue(written.endswith("\n"))
+
+    def test_no_content_length_header_is_written(self) -> None:
+        written = self._written({"jsonrpc": "2.0", "id": 1, "result": {}})
+        self.assertNotIn("Content-Length", written)
+
+    def test_the_line_is_valid_json(self) -> None:
+        import json
+
+        payload = {"jsonrpc": "2.0", "id": 7, "result": {"content": "a b"}}
+        self.assertEqual(json.loads(self._written(payload)), payload)
+
+    def test_a_newline_inside_a_value_does_not_split_the_message(self) -> None:
+        import json
+
+        written = self._written({"jsonrpc": "2.0", "id": 1, "result": {"t": "a\nb"}})
+        self.assertEqual(len(written.splitlines()), 1)
+        # The newline survives as an escape, so the value is unchanged.
+        self.assertEqual(json.loads(written)["result"]["t"], "a\nb")
+
+    def test_what_is_written_can_be_read_back(self) -> None:
+        import io
+
+        from harness.mcp_stdio import _read_message
+
+        payload = {"jsonrpc": "2.0", "id": 3, "method": "tools/list"}
+        self.assertEqual(_read_message(io.StringIO(self._written(payload))), payload)
+
+
+class CursorConfigTest(unittest.TestCase):
+    """An editor starts the server as a plain subprocess, with no PYTHONPATH."""
+
+    def _config(self, project: Path) -> dict:
+        import json
+
+        from harness.editor_kit import install_editors
+
+        install_editors(project, "cursor")
+        return json.loads((project / ".cursor" / "mcp.json").read_text(encoding="utf-8"))
+
+    def test_the_project_path_is_filled_in(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            server = self._config(project)["mcpServers"]["python-vibe"]
+        self.assertIn(project.resolve().as_posix(), server["args"])
+        self.assertNotIn("__PROJECT__", server["args"])
+
+    def test_a_source_checkout_carries_the_import_path(self) -> None:
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch("harness.editor_kit._harness_is_importable", return_value=False):
+                server = self._config(Path(tmp))["mcpServers"]["python-vibe"]
+        self.assertIn("PYTHONPATH", server["env"])
+
+    def test_an_installed_package_needs_no_import_path(self) -> None:
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch("harness.editor_kit._harness_is_importable", return_value=True):
+                server = self._config(Path(tmp))["mcpServers"]["python-vibe"]
+        self.assertNotIn("env", server)

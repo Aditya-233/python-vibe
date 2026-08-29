@@ -124,6 +124,7 @@ def _error(rpc_id: Any, text: str) -> dict[str, Any]:
 
 
 def _read_message(stdin: TextIO) -> dict[str, Any] | None:
+    """Read one message. Lines are the transport; headers are tolerated."""
     first = stdin.readline()
     if first == "":
         return None
@@ -143,8 +144,16 @@ def _read_message(stdin: TextIO) -> dict[str, Any] | None:
 
 
 def _write_message(stdout: TextIO, payload: dict[str, Any]) -> None:
-    raw = json.dumps(payload, separators=(",", ":"))
-    stdout.write(f"Content-Length: {len(raw.encode('utf-8'))}\r\n\r\n{raw}")
+    """One message per line, as the stdio transport requires.
+
+    The specification says messages are delimited by newlines and must not
+    contain embedded newlines. Content-Length headers are the convention in
+    the Language Server Protocol, not this one, and a client that expects
+    lines cannot read them.
+    """
+    # json.dumps escapes a newline inside a value, so the serialized form is
+    # already a single line.
+    stdout.write(json.dumps(payload, separators=(",", ":")) + "\n")
     stdout.flush()
 
 

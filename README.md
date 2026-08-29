@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![CI](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-2F6FED)](https://yauhenbichel.github.io/python-vibe/)
+[![Pages](https://github.com/YauhenBichel/python-vibe/actions/workflows/pages.yml/badge.svg)](https://yauhenbichel.github.io/python-vibe/)
 
 Everyday Python vibe coding on a laptop. Small repos: explore, edit, run.
 Large repos: a scoped harness so the model never loads the whole tree.
@@ -52,7 +54,9 @@ Layers and the rule that keeps them: [docs/architecture.md](./docs/architecture.
 
 `scripts/agent.py` defaults to `llama3.1:8b`. Pass `--tiny` only for smoke.
 
-**Small** (≤40 first-party `.py`/`.md`, ≤200 KB): the agent gets a file list.
+**Small** (≤40 first-party text files, ≤200 KB): the agent gets a file list.
+The jail is Python plus a few config suffixes (`.toml`, `.yml`, `.json`);
+secret names are refused. Path helpers use `pathlib` on every OS.
 Questions → read → `Action: done`. Bugs → `Action: patch` → run.
 
 **Large**: the agent gets top-level counts. Start with `Action: map`. Stay
@@ -87,7 +91,7 @@ Your project's own `AGENTS.md` is read first and outranks the kit skills.
 Why each of those: [harness-comparison](./docs/investigations/harness-comparison.md).
 
 Best-practice skills live in `skills/`. The agent preloads them when the
-task says “add” / “test” / “create a package” / “rename” / “issue” / “PR”,
+task says “add” / “test” / “path” / “venv” / “create a package” / “rename” / “issue” / “PR”,
 or you pass `--skill`. `Action: skill` + `Name:` loads one mid-loop. Ship
 actions (`issue`, `branch`, `commit`, `push`, `pr`, `merge`) are jailed:
 no force, not `main`/`master`, no secret filenames. Full catalog and when
