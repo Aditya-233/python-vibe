@@ -9,24 +9,86 @@ tags:
   - qwen2.5-coder
   - python
   - code-generation
+  - coding-agent
 language:
   - en
 ---
 
 # python-vibe-0.5b
 
-Public **LoRA adapters** (step 100) on **Qwen2.5-Coder-0.5B-Instruct** (4-bit MLX)
-for short Python vibe-coding drafts. Owned by
-[YauhenBichel](https://huggingface.co/YauhenBichel).
+LoRA adapters (step 100) on Qwen2.5-Coder-0.5B-Instruct, 4-bit MLX, for short
+Python drafts. Owned by [YauhenBichel](https://huggingface.co/YauhenBichel).
 
-This repo is the weights. The harness, `vibe.py`, and training code live in
+**These weights are a style prior, not a coding agent.** They shape how a
+draft is written. They do not plan, explore a repository, or use tools well.
+Read the measurements below before choosing them for anything.
+
+The code is at
 [github.com/YauhenBichel/python-vibe](https://github.com/YauhenBichel/python-vibe).
-Serve drafts through `PythonVibeGuard` (empty / leaked keys / `curl|sh`).
 
-A longer train run overfit after this checkpoint. `adapters.safetensors` here
-**is** step 100, not the last step.
+## What python-vibe is
 
-## Download and use (Mac / MLX)
+A deterministic harness around a small local model. The model proposes; the
+harness decides what is allowed to happen. Everything except the model call
+is ordinary Python with no third-party dependencies, so the same behaviour is
+reproducible and testable without a GPU, a token, or a network.
+
+What the harness does on its own, before and around any model output:
+
+- **Restricts writes.** Every change is resolved inside the project directory,
+  is checked for syntax, and leaves a `.bak`. A rewrite that shrinks a file by
+  more than a third is refused.
+- **Finds the file first.** When a task names a file, that file is opened and
+  the model is told to change it and no other. When it names a symbol, the
+  symbol is searched for before the model's first turn.
+- **Refuses the common failure.** A question that tries to edit, a repeated
+  search that cannot teach it anything, an answer that repeats an instruction
+  back instead of answering, a task finished with nothing changed.
+- **Asks when the task is unclear.** A request that names no file and no
+  function is put back to the user rather than guessed at.
+- **Reports structure.** Import cycles, ungrouped packages, oversized modules
+  and missing tests, worst first, with one change named.
+
+## Which model to use
+
+| Model | Role |
+| --- | --- |
+| An 8B such as `llama3.1:8b` through Ollama | Everyday explore, edit and run |
+| These 0.5B adapters | Short single-file drafts, and harness smoke tests |
+
+The 0.5B adapters are published so the harness can be demonstrated and tested
+by anyone, at no cost and with no GPU. They are not the everyday model.
+
+## Install
+
+Works the same on macOS, Linux and Windows. The harness needs only the
+standard library.
+
+```bash
+git clone https://github.com/YauhenBichel/python-vibe.git
+cd python-vibe
+pip install -e .
+```
+
+```bash
+python-vibe brief  ./your-project      # summary, no model
+python-vibe layout ./your-project      # structure report, no model
+python-vibe ask    ./your-project "what does compute_total return?"
+python-vibe run    ./your-project "add multiply(a, b) and a unit test"
+```
+
+```python
+from pathlib import Path
+from harness import Agent, AgentOptions
+
+result = Agent(AgentOptions(project=Path("~/app"))).run("fix the NameError")
+result.summary, result.writes, result.refusals
+```
+
+`AgentOptions(allow_writes=False)` makes a run read-only: no file is changed
+and the model is told so.
+
+## Using these adapters
 
 ```bash
 hf download YauhenBichel/python-vibe-0.5b --local-dir adapters/python-vibe
@@ -41,30 +103,40 @@ model, tokenizer = load(
 )
 ```
 
-Or clone the GitHub repo and run the harnessed REPL (it pulls this repo if
-`adapters/python-vibe` is missing):
+MLX is macOS only. Elsewhere, `ollama pull qwen2.5-coder:0.5b` runs the
+**base** model through the same harness, not these adapters.
 
-```bash
-git clone https://github.com/YauhenBichel/python-vibe.git
-cd python-vibe
-python3.13 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-PYTHONPATH=src python scripts/vibe.py
-```
+`adapters.safetensors` is step 100, not the last step: a longer run overfit
+after that checkpoint.
 
-Linux / Windows without MLX: `ollama pull qwen2.5-coder:0.5b` and
-`PYTHONPATH=src python scripts/serve.py` — that is the **base** coder plus the
-harness, not these adapters.
+Base weights: `Qwen/Qwen2.5-Coder-0.5B-Instruct`, Apache-2.0.
 
-Base weights: `Qwen/Qwen2.5-Coder-0.5B-Instruct` (Apache-2.0).
+## What was measured
 
-## Research notes (2026-08-29)
+Full write-up:
+[research-vibe-review](https://github.com/YauhenBichel/python-vibe/blob/feat/initial-python-vibe/docs/research-vibe-review.md).
 
-Write-up: [docs/research-vibe-review.md](https://github.com/YauhenBichel/python-vibe/blob/feat/initial-python-vibe/docs/research-vibe-review.md).
+- About 45 training pairs. Validation was best near step 100, which is what
+  this repository ships.
+- Held-out tasks (print a weekday, count `.md` files, add a docstring) run
+  through the harness, but the Python is often wrong. A style prior, not a
+  reliable one.
+- A real repository does not fit in the context window. Review is one small
+  file at a time, roughly 200 to 2500 bytes.
+- One hundred files reviewed as "no issues" is not a review. Read
+  `scratch/batch-review.jsonl` before keeping any `--fix` write.
 
-- ~45 train pairs. Val was best around **step 100**; this repo ships that checkpoint.
-- Held-out vibe tasks (weekday, count `.md`, apply a docstring) **run through the harness** but the Python is often wrong. The adapter is a style prior, not a reliable pair.
-- A real repo (OpenSRE) does not fit in context. Review is **one small `.py` file** (about 200–2500 bytes). `batch_review.py` loads the LoRA once and can walk **100** such files; `--fix` rewrites only when the review is not `no issues`, keeps a `.bak`, and refuses a tiny overwrite.
-- Do not treat a 100-file `--fix` as a safe OpenSRE refactor. Read `scratch/batch-review.jsonl` first.
+Faults found by pointing the harness at its own repository, and fixed in it:
 
-Issues: [45 pairs vs style prior](https://github.com/YauhenBichel/python-vibe/issues/9) · [guard evasion](https://github.com/YauhenBichel/python-vibe/issues/8).
+- A fixture path in the system prompt made an 8B create `pkg/mathy.py` inside
+  unrelated projects.
+- A question was "answered" by pasting the instruction back; the check that
+  should have caught it matched a type name inside the instruction's own
+  example.
+- Told to fix a named file, the model patched a different one, because the
+  harness searched for a word taken from the directory path instead of
+  opening the file it had been given.
+
+Open questions:
+[45 pairs vs style prior](https://github.com/YauhenBichel/python-vibe/issues/9) ·
+[guard evasion](https://github.com/YauhenBichel/python-vibe/issues/8).

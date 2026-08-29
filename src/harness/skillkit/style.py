@@ -5,8 +5,12 @@ from __future__ import annotations
 import re
 
 from harness.task import (
+    looks_like_add_feature,
+    looks_like_bugfix,
+    looks_like_design_loop,
     looks_like_fix_smell,
     looks_like_new_package,
+    looks_like_refactor,
     smell_symbol,
 )
 
@@ -126,10 +130,32 @@ def refuse_layout(rel: str, original: str, draft: str) -> str:
     return ""
 
 
-def refuse_package_done(task: str, ran_tests: bool) -> str:
-    if looks_like_new_package(task) and not ran_tests:
+def refuse_write_done(task: str, ran_tests: bool, *, wrote: bool = True) -> str:
+    """Write tasks are not finished until a passing unittest has run.
+
+    A task that has not written yet is handled by the empty-done refuse.
+    New-package still needs a run even if the model claims it is done.
+    """
+    if ran_tests:
+        return ""
+    if looks_like_new_package(task):
         return "not done. Action: run Argv: -m unittest discover -s tests -q"
-    return ""
+    if not wrote:
+        return ""
+    needs_run = (
+        looks_like_add_feature(task)
+        or looks_like_fix_smell(task)
+        or looks_like_bugfix(task)
+        or looks_like_refactor(task)
+        or looks_like_design_loop(task)
+    )
+    if not needs_run:
+        return ""
+    return "not done. Action: run Argv: -m unittest discover -s tests -q"
+
+
+def refuse_package_done(task: str, ran_tests: bool, wrote: bool = True) -> str:
+    return refuse_write_done(task, ran_tests, wrote=wrote)
 
 
 def wrap_bare_unittest(source: str, symbol: str) -> str:

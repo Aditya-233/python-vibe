@@ -56,10 +56,15 @@ class LoopTest(unittest.TestCase):
             options = AgentOptions(project=project, task="add multiply(a, b)")
             with mock.patch(
                 "harness.agent.loop.make_generate",
-                _scripted("Action: done\nSummary: added multiply"),
+                _scripted(
+                    "Action: patch\nPath: src/app.py\nAppend:\n"
+                    "def multiply(a: int, b: int) -> int:\n    return a * b\n",
+                    "Action: run\nArgv: -m unittest discover -s tests -q",
+                    "Action: done\nSummary: added multiply",
+                ),
             ):
                 result = Agent(options).run()
-        self.assertTrue(result.ok)
+        self.assertTrue(result.ok, result.refusals)
         self.assertEqual(result.stopped, "done")
         self.assertIn("multiply", result.summary)
 
@@ -124,15 +129,21 @@ class LoopTest(unittest.TestCase):
 
     def test_an_unparsable_draft_is_a_step_not_a_crash(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            options = AgentOptions(project=_project(tmp), task="add multiply", steps=2)
+            options = AgentOptions(
+                project=_project(tmp),
+                task="what does compute_total return?",
+                steps=3,
+            )
             with mock.patch(
                 "harness.agent.loop.make_generate",
-                _scripted("I think I should look around.",
-                          "Action: done\nSummary: ok"),
+                _scripted(
+                    "I think I should look around.",
+                    "Action: done\nSummary: compute_total returns int",
+                ),
             ):
                 result = Agent(options).run()
         self.assertEqual(result.steps[0].refused, "unparsed")
-        self.assertTrue(result.ok)
+        self.assertTrue(result.ok, result.refusals)
 
     def test_empty_task_is_refused_before_any_model_call(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -150,18 +161,20 @@ class AskTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             options = AgentOptions(
-                project=_project(tmp), task="add multiply", on_question=answer
+                project=_project(tmp),
+                task="what does compute_total return?",
+                on_question=answer,
             )
             with mock.patch(
                 "harness.agent.loop.make_generate",
                 _scripted(
                     "Action: ask\nQuery: which module?\nAppend:\n- src/app.py\n- other.py",
-                    "Action: done\nSummary: used the second one",
+                    "Action: done\nSummary: compute_total returns int",
                 ),
             ):
                 result = Agent(options).run()
         self.assertEqual(seen, ["which module?"])
-        self.assertTrue(result.ok)
+        self.assertTrue(result.ok, result.refusals)
 
     def test_with_nobody_to_answer_the_loop_hands_the_question_back(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

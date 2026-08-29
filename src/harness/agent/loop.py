@@ -21,7 +21,13 @@ from harness.agent.policy import LoopState, next_prompt, refuse_before, refuse_d
 from harness.agent.prompt import Preamble, build_preamble
 from harness.model.engine import make_generate
 from harness.observe.trace_record import append_turn
-from harness.task import looks_like_question, looks_like_ship, looks_unclear
+from harness.scan.design import render_design_review
+from harness.task import (
+    looks_like_design_loop,
+    looks_like_question,
+    looks_like_ship,
+    looks_unclear,
+)
 
 
 @dataclass(frozen=True)
@@ -103,6 +109,12 @@ class Agent:
             allow_writes=options.allow_writes,
             last_path=pre.located_path,
             instructions=_instruction_lines(pre),
+            scope=options.scope,
+            design_report=(
+                render_design_review(self.project, options.scope)
+                if looks_like_design_loop(options.task)
+                else ""
+            ),
         )
         prompt = pre.prompt
         steps: list[Step] = []
@@ -188,6 +200,7 @@ class Agent:
                 state.ran_tests = True
             if result.startswith(("patched", "wrote")):
                 writes.append(turn.path or state.last_path)
+                state.wrote_something = True
             steps.append(
                 Step(number, turn.action, state.last_path, result=result, draft=draft)
             )

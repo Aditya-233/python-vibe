@@ -1,3 +1,10 @@
 {"action": "grep", "prompt": "Project root: /tmp/app\nTask: find compute_total\nStart with Action: grep or Action: read. Do not Action: done yet."}
 {"action": "read", "prompt": "Tool result:\npkg/util_stats.py:80:def compute_total\n\nNext Action:"}
 {"action": "done", "prompt": "Tool result:\nexit 0\nOK\n\nNext Action:"}
+{"action": "locate", "prompt": "Task: what does listen_addr return?\nHarness locate (question) Query: listen_addr\nNext Action must be done. Do not locate, grep, or read.\nStart with one Action."}
+{"action": "patch", "prompt": "Task: add a function multiply(a, b) and a unit test\nHarness locate (add-feature)\nNext Action must be patch with Append: (see the skill).\nDo not grep."}
+{"action": "map", "prompt": "Task: show the repo map of signatures\nStart with Action: map. Do not Action: done yet."}
+{"action": "edit", "prompt": "Harness design review (review)\nNext Action must be edit Path: pkg/<new_concern>.py with one function.\n- god module: pkg/kitchen.py has 4 top-level functions"}
+{"action": "run", "prompt": "Tool result:\nwrote tests/test_multiply.py\n\nNext Action must be run Argv: -m unittest discover -s tests -q"}
+{"action": "done", "prompt": "Harness locate (question) Query: listen_addr\n# auto-read src/harness/server.py\ndef listen_addr(argv: list[str] | None = None) -> tuple[str, int]:\nNext Action must be done. Summary must quote the -> type."}
+{"action": "layout", "prompt": "Task: review the project layout\n# skill readable-layout\nLook before you move anything.\nAction: layout"}

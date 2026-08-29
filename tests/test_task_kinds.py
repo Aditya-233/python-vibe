@@ -9,6 +9,8 @@ import unittest
 from harness.skillkit.catalog import list_skills, pick_skills
 from harness.task import (
     looks_like_add_feature,
+    looks_like_bugfix,
+    looks_like_design_loop,
     looks_like_question,
     looks_like_review_code,
     looks_unclear,
@@ -32,8 +34,13 @@ class ConcreteTest(unittest.TestCase):
 
 class UnclearTest(unittest.TestCase):
     def test_a_vague_short_task_is_unclear(self) -> None:
-        for task in ("clean this up", "make it better", "fix the thing"):
+        for task in ("clean this up", "make it better", "tidy"):
             self.assertTrue(looks_unclear(task), task)
+
+    def test_a_recognised_kind_is_workable_even_when_short(self) -> None:
+        """A kind the harness has a first action for does not need a question."""
+        for task in ("fix the thing", "add a helper", "create a package"):
+            self.assertFalse(looks_unclear(task), task)
 
     def test_a_task_naming_a_symbol_is_clear(self) -> None:
         self.assertFalse(looks_unclear("add multiply(a, b) and a test"))
@@ -70,7 +77,18 @@ class SkillChoiceTest(unittest.TestCase):
         self.assertIn("ask-when-unclear", self._names("clean this up"))
 
     def test_review_task_offers_the_review_skill(self) -> None:
-        self.assertIn("review-code", self._names("review src/app.py for bugs"))
+        self.assertIn("review-code", self._names("find bugs in src/app.py"))
+
+    def test_design_loop_offers_review_and_split(self) -> None:
+        names = self._names("review the project structure")
+        self.assertIn("review-design", names)
+        self.assertIn("refactor-split", names)
+        self.assertIn("readable-layout", names)
+
+    def test_nameerror_is_a_bugfix(self) -> None:
+        self.assertTrue(looks_like_bugfix("find a real NameError and fix it"))
+        self.assertFalse(looks_like_bugfix("fix the code smell in calc"))
+        self.assertTrue(looks_like_design_loop("review the design then one-split"))
 
     def test_add_task_still_offers_add_and_tests(self) -> None:
         names = self._names("add multiply(a, b) and a unit test")

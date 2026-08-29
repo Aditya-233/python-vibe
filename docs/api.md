@@ -71,6 +71,31 @@ result.summary   # the question and the options
 result.writes    # ()
 ```
 
+## Install
+
+The harness uses only the standard library, so there is nothing to build and
+the same three commands work on macOS, Linux and Windows.
+
+```bash
+git clone https://github.com/YauhenBichel/python-vibe.git
+cd python-vibe
+pip install -e .
+```
+
+That gives you a `python-vibe` command. No `PYTHONPATH`, no version-pinned
+interpreter, no script paths:
+
+| | Before | After |
+| --- | --- | --- |
+| macOS / Linux | `PYTHONPATH=src python3.13 scripts/agent.py --project ~/app "..."` | `python-vibe run ~/app "..."` |
+| Windows | did not work: `PYTHONPATH=src` is not valid in cmd or PowerShell | `python-vibe run C:\app "..."` |
+
+Training on Apple Silicon needs extras: `pip install -e ".[train]"`.
+Publishing to the Hub needs `pip install -e ".[hub]"`.
+
+Paths are always written with forward slashes, on every platform, because
+the model is shown them and copies them back.
+
 ## Command line
 
 ```bash

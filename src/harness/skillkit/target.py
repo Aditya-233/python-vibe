@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from harness.task import question_symbol
+from harness.paths import rel_posix
 from harness.scan.project_brief import iter_text_files
 
 _PLACEHOLDER = re.compile(r"\{\{(module|test|scope|symbol)\}\}")
@@ -62,7 +63,7 @@ def _is_test(rel: str) -> bool:
 def _rels(project: Path, suffix: str = ".py") -> list[tuple[str, int]]:
     root = project.resolve()
     return [
-        (str(path.relative_to(root)), size)
+        (rel_posix(path, root), size)
         for path, size in iter_text_files(project)
         if path.suffix == suffix
     ]

@@ -10,10 +10,12 @@ from harness.locate import (
     locate_py,
     prelude,
     refuse_early_done,
+    refuse_design_dirty,
     refuse_question_write,
     refuse_redundant_explore,
     refuse_redundant_locate,
     refuse_shallow_done,
+    refuse_thin_review,
     return_annotation,
     signature_line,
 )
@@ -82,6 +84,10 @@ class SmartHarnessTest(unittest.TestCase):
             refuse_question_write("what does complete do?", "patch").lower(),
         )
         self.assertEqual(refuse_question_write("add a function multiply", "patch"), "")
+        self.assertEqual(
+            refuse_question_write("review the project structure", "edit"),
+            "",
+        )
         self.assertIn(
             "auto-read",
             refuse_redundant_explore(
@@ -138,6 +144,30 @@ class SmartHarnessTest(unittest.TestCase):
         self.assertEqual(
             refuse_redundant_locate(
                 "add a function multiply(a, b) and a unit test", "locate", False
+            ),
+            "",
+        )
+
+    def test_design_loop_refuses_done_while_dirty(self) -> None:
+        dirty = "design review\n- god module: pkg/kitchen.py has 4 top-level functions"
+        self.assertIn(
+            "findings remain",
+            refuse_design_dirty("review the project structure", dirty),
+        )
+        clean = "no structure findings in scope — pkg/ and tests/ look split"
+        self.assertEqual(
+            refuse_design_dirty("review the project structure", clean),
+            "",
+        )
+        self.assertIn(
+            "no structure findings",
+            refuse_thin_review("review the project structure", "looks fine", clean),
+        )
+        self.assertEqual(
+            refuse_thin_review(
+                "review the project structure",
+                "no structure findings",
+                clean,
             ),
             "",
         )

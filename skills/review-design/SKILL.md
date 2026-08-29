@@ -1,7 +1,18 @@
 ---
 name: review-design
-description: Reviews project structure and SoC from the harness design block. Use when the task is review, structure, or system design. Do not edit.
+description: Reviews project structure from the harness design block, then one-split until the scan is clean. Use when the task is review, structure, or system design.
 ---
 
+If the design review lists findings:
+
+Action: edit
+Path: pkg/<new_concern>.py
+```python
+def one_concern(...) -> ...:
+    ...
+```
+
+If it says no structure findings:
+
 Action: done
-Summary: quote one finding (SoC, god module, or missing tests) from the design review
+Summary: quote no structure findings

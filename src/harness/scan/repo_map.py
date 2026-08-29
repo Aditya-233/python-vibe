@@ -13,6 +13,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from harness.paths import rel_posix
 from harness.scan.project_brief import iter_text_files
 
 MAX_OUTLINE_FILES = 24
@@ -85,7 +86,7 @@ def render_outline(
         if not sigs:
             continue
         shown += 1
-        lines.append(f"{path.relative_to(root)}")
+        lines.append(rel_posix(path, root))
         for sig in sigs:
             lines.append(f"  {sig}")
             body += 1

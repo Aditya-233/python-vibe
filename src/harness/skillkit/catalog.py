@@ -13,6 +13,7 @@ from pathlib import Path
 from harness.paths import KIT_SKILLS_DIR
 from harness.task import (
     looks_like_add_feature,
+    looks_like_design_loop,
     looks_like_fix_smell,
     looks_like_new_package,
     looks_like_question,
@@ -114,6 +115,20 @@ def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
         return picked
     if looks_like_fix_smell(task):
         picked.extend(s for s in catalog if s.name == "fix-smell")
+        return picked
+    if looks_like_design_loop(task):
+        from harness.task import looks_like_review_code, task_paths
+
+        # "review src/app.py" is a review of one file; "review the project
+        # structure" is a review of the tree. The named path decides.
+        if task_paths(task) and looks_like_review_code(task):
+            picked.extend(s for s in catalog if s.name == "review-code")
+            return picked
+        picked.extend(
+            s
+            for s in catalog
+            if s.name in {"review-design", "refactor-split", "readable-layout"}
+        )
         return picked
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")

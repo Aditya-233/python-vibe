@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from harness.paths import rel_posix
 from harness.scan.project_scan import SKIP_DIR
 from harness.task import (
     looks_like_add_feature,
@@ -73,7 +74,7 @@ def iter_text_files(project: Path, scope: str = "") -> list[tuple[Path, int]]:
             except OSError:
                 continue
             found.append((path, size))
-    found.sort(key=lambda item: str(item[0].relative_to(root)))
+    found.sort(key=lambda item: rel_posix(item[0], root))
     return found
 
 
@@ -82,7 +83,7 @@ def classify_project(project: Path, scope: str = "") -> ProjectBrief:
     found = iter_text_files(project, scope)
     total = sum(size for _path, size in found)
     listed = tuple(
-        (str(path.relative_to(root)), size) for path, size in found[:SMALL_MAX_FILES]
+        (rel_posix(path, root), size) for path, size in found[:SMALL_MAX_FILES]
     )
     counts: dict[str, int] = {}
     for path, _size in found:
@@ -142,7 +143,7 @@ def render_map(project: Path, scope: str = "", *, max_entries: int = MAP_MAX_ENT
         return "(no .py/.md files in scope)"
     lines = [f"map {scope or '.'}  {len(found)} files  {_kb(sum(s for _p, s in found))}"]
     for path, size in found[:max_entries]:
-        lines.append(f"  {path.relative_to(root)}  {_kb(size)}")
+        lines.append(f"  {rel_posix(path, root)}  {_kb(size)}")
     if len(found) > max_entries:
         lines.append(
             f"# … {len(found) - max_entries} more. Narrow Scope: or pass --scope"

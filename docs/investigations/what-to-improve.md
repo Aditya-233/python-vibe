@@ -31,9 +31,9 @@ Published harness notes in this repo already said the quiet part: **edit format 
 
 | Hosted-agent behavior | Copy into python-vibe? | Local lever | Status (29 Aug 2026) |
 | --- | --- | --- | --- |
-| Read the defining file before answering | Yes | `prelude()` locate + refuse a shallow `done` (must quote the `->` type) | Wired. `listen_addr` finishes in one step after the hint fix. Still omits env + argv. |
-| Patch one function, then add a test, then run | Yes, scoped — not a stranger’s full suite | `pick_skills` + write-tests inject + refuse `done` before a passing run | Wired for add-feature and new-package. Not for every bugfix or refactor. |
-| Review structure, then one split, then review again | Yes | Design scan + refuse `done` while findings remain | Predicate and scan exist. Review-only still blocks edits. The loop is not wired. |
+| Read the defining file before answering | Yes | `prelude()` locate + refuse a shallow `done` (must quote the `->` type) | Wired. Files under 12 KB are read whole so nearby constants stay in the quote. |
+| Patch one function, then add a test, then run | Yes, scoped — not a stranger’s full suite | `pick_skills` + write-tests inject + refuse `done` before a passing run | Wired for add-feature, new-package, bugfix, refactor, and a design-loop write. |
+| Review structure, then one split, then review again | Yes | Design scan + refuse `done` while findings remain | Wired. Prelude allows a one-split edit. After each write the harness re-scans. `done` is refused while findings remain. |
 | Show a repo map of signatures | Yes | `Action: map` (120-line outline) | Wired. Large trees still need `--scope`. |
 | Recover a near-miss edit | Yes | `Find:` whitespace retry + closest-line hint | Wired. Keep exact `Find:` (fails loud). Do not add fuzzy patches. |
 | Extra tools, browser, any language, 100k–1M context | No | None. Jail and step budget stay. | Out of scope on purpose. `openai_compat.py` does not add these. |
@@ -49,7 +49,7 @@ Score is “would a daily user get the same outcome,” not model size. 0–5. �
 | Typed question | 4 | 4 | 5 |
 | Add a function + test | 3 | 4 | 5 |
 | Rename / smell | 3 | 4 | 5 |
-| One-split refactor | 1 | 3 | 5 |
+| One-split refactor | 3 | 3 | 5 |
 | 100-file review | 1 | 2 | 5 |
 | Extra tools / browser / any language | 0 | 0 | 5 |
 
@@ -57,12 +57,12 @@ Score is “would a daily user get the same outcome,” not model size. 0–5. �
 
 Ship these before training another model.
 
-1. **Design loop.** After each one-split edit, re-run the deterministic design scan. Refuse `Action: done` while findings remain. Allow edits on review tasks (today a review-only task blocks `patch` / `edit` / `run`).
-2. **Auto-pick** `review-design`, `refactor-split`, and `readable-layout`. Wire the thin-review refuse in the `done` handler.
-3. **Verify writes.** On add / bug / rename: after a successful impl patch, inject tests or `run`. Refuse `done` until a passing unittest on those task kinds. New-package already does this.
-4. **Deeper small-file reads.** On small projects, raise the 3500-character read cap or include nearby constants so a question quotes env and argv, not “a tuple.”
-5. **Measure bigger local models.** Same three probes on `qwen2.5-coder:7b` (pull) and any 30B coder already on disk. Do not change the default until 8B is still the best laptop tradeoff.
-6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has three rows. Live parse is 2/3. Everyday-ready means beating an untuned 8B on parse **and** a real ≥1 KB fix.
+1. **Design loop.** Wired. After each one-split edit the harness re-scans. `done` is refused while findings remain. Review tasks may edit.
+2. **Auto-pick** `review-design`, `refactor-split`, and `readable-layout`. Thin-review refuse is in the `done` handler.
+3. **Verify writes.** Add / bug / rename / refactor / a design-loop write: inject tests or `run`. `done` is refused until a passing unittest.
+4. **Deeper small-file reads.** Files under 12 KB are read whole. Larger files still truncate at 3500 characters plus a tail.
+5. **Measure bigger local models.** 29 Aug 2026, this laptop: 8B first Action was `done` on `complete` (thin summary), `patch` on add-multiply (tests file first, not impl), `read` on a dirty design review (skills were auto-picked; prelude asked for `edit`). The on-disk 30B coder timed out at the 180s Ollama cap. 7B coder is not pulled. Default stays 8B.
+6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has more than three rows. Everyday-ready still means beating an untuned 8B on parse **and** a real ≥1 KB fix.
 7. **Traces, then a 7B LoRA.** Only after the loop is stable. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
 
 ## What not to spend a week on

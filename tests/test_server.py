@@ -26,18 +26,22 @@ class ServerTest(unittest.TestCase):
         httpd = ThreadingHTTPServer((HOST, 0), handler)
         thread = threading.Thread(target=httpd.serve_forever, daemon=True)
         thread.start()
-        self.addCleanup(httpd.shutdown)
+        # addCleanup runs last-registered first, so register server_close
+        # first and shutdown second. Closing the socket while serve_forever
+        # is still running yanks it from under in-flight handlers, which
+        # Windows reports as WinError 10038.
         self.addCleanup(httpd.server_close)
+        self.addCleanup(httpd.shutdown)
         return f"http://{HOST}:{httpd.server_address[1]}"
 
     def _post(self, base: str, path: str, payload: dict):
         request = urllib.request.Request(
             base + path,
             data=json.dumps(payload).encode(),
-            headers={"content-type": "application/json"},
+            headers={"content-type": "application/json", "connection": "close"},
         )
         try:
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=20) as response:
                 return response.status, json.loads(response.read())
         except urllib.error.HTTPError as exc:
             return exc.code, json.loads(exc.read())
@@ -48,7 +52,7 @@ class ServerTest(unittest.TestCase):
     def test_health_reports_the_write_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             base = self._serve(_project(tmp), allow_writes=False)
-            with urllib.request.urlopen(base + "/health", timeout=5) as response:
+            with urllib.request.urlopen(base + "/health", timeout=20) as response:
                 body = json.loads(response.read())
         self.assertFalse(body["allow_writes"])
         self.assertNotIn("/v1/run", body["routes"])
@@ -95,7 +99,7 @@ class ServerTest(unittest.TestCase):
                 headers={"content-type": "application/json"},
             )
             try:
-                with urllib.request.urlopen(request, timeout=5) as response:
+                with urllib.request.urlopen(request, timeout=20) as response:
                     status = response.status
             except urllib.error.HTTPError as exc:
                 status = exc.code

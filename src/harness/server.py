@@ -30,14 +30,20 @@ WRITE_ROUTES = ("/v1/run",)
 def make_handler(project: Path, *, allow_writes: bool, model: str):
     class Handler(BaseHTTPRequestHandler):
         server_version = "python-vibe"
+        protocol_version = "HTTP/1.1"
 
         def _send(self, code: int, payload: dict) -> None:
             body = json.dumps(payload).encode("utf-8")
             self.send_response(code)
             self.send_header("content-type", "application/json")
             self.send_header("content-length", str(len(body)))
+            # Say the connection is finished. A client left waiting for more
+            # blocks until its own timeout, which is what happened on Windows.
+            self.send_header("connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
+            self.close_connection = True
 
         def _body(self) -> dict | None:
             length = int(self.headers.get("content-length") or 0)

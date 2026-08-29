@@ -131,6 +131,24 @@ def looks_like_review(task: str) -> bool:
     return bool(_REVIEW.search(task.lower()))
 
 
+_BUG = re.compile(r"\b(fix|bug|nameerror|crash|defect)\b", re.I)
+
+
+def looks_like_bugfix(task: str) -> bool:
+    """A concrete fix that is not a rename, package, review, or ship."""
+    if looks_like_question(task):
+        return False
+    if (
+        looks_like_new_package(task)
+        or looks_like_fix_smell(task)
+        or looks_like_ship(task)
+        or looks_like_review(task)
+        or looks_like_refactor(task)
+    ):
+        return False
+    return bool(_BUG.search(task))
+
+
 def looks_like_add_feature(task: str) -> bool:
     text = task.strip().lower()
     if looks_like_question(text):
@@ -233,7 +251,40 @@ def looks_unclear(task: str) -> bool:
         looks_like_fix_smell,
         looks_like_new_package,
         looks_like_review_code,
+        looks_like_design_loop,
+        looks_like_bugfix,
     )
     if any(check(text) for check in known):
         return False
     return len(text.split()) <= 6
+
+
+_TASK_PATH = re.compile(r"[\w./\\-]+\.(?:py|pyi|md)\b")
+
+
+def task_paths(task: str) -> tuple[str, ...]:
+    """File paths named in the task, with forward slashes, in order.
+
+    A task that says "in src/harness/model/engine.py ..." has already told
+    the agent which file to open. Searching for a word out of that path
+    instead finds every file in the project.
+    """
+    seen: list[str] = []
+    for hit in _TASK_PATH.findall(task):
+        cleaned = hit.replace("\\", "/").strip("./,;:()[]'\"")
+        if cleaned and cleaned not in seen:
+            seen.append(cleaned)
+    return tuple(seen)
+
+
+def named_project_file(task: str, project) -> str:
+    """The one file the task names that exists in the project, or "".
+
+    Empty when the task names none, or names more than one, because then
+    there is nothing unambiguous to act on.
+    """
+    from pathlib import Path as _Path
+
+    root = _Path(project).resolve()
+    found = [rel for rel in task_paths(task) if (root / rel).is_file()]
+    return found[0] if len(found) == 1 else ""
