@@ -87,9 +87,15 @@ The agent loads kit [skills]({{ '/skills/' | relative_url }}) from the wording
 of the task (`add-feature`, `write-tests`, `answer-question`, and the rest),
 or you pass `--skill`. `--brief` prints the pick with no model.
 
-Add the same jail to VS Code and other editors in one command:
-`python-vibe editors vscode --project /path/to/your/app`.
-Details: [local editor]({{ '/local-editor/' | relative_url }}) ·
+Add the same jail to Cursor in one command (defaults to this folder):
+
+```bash
+python-vibe editors cursor --allow-writes
+```
+
+Then reload the window and enable `python-vibe` under Customize → MCP.
+Details: [Cursor]({{ '/cursor/' | relative_url }}) ·
+[local editor]({{ '/local-editor/' | relative_url }}) ·
 [IDE plugins]({{ '/ide-plugins/' | relative_url }}).
 
 ## Tests (no model)

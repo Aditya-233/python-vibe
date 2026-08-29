@@ -104,12 +104,11 @@ class EditorInstallTest(unittest.TestCase):
             self.assertIn("python-vibe: ask", vscode[0].read_text(encoding="utf-8"))
             self.assertIn("127.0.0.1:8081", cont[0].read_text(encoding="utf-8"))
             mcp = json.loads(cursor[0].read_text(encoding="utf-8"))
-            self.assertIn("mcp", mcp["mcpServers"]["python-vibe"]["args"])
-            self.assertIn(root.resolve().as_posix(), json.dumps(mcp))
-            self.assertEqual(
-                mcp["mcpServers"]["python-vibe"]["command"],
-                Path(__import__("sys").executable).as_posix(),
-            )
+            server = mcp["mcpServers"]["python-vibe"]
+            self.assertIn("mcp", server["args"])
+            self.assertIn("${workspaceFolder}", server["args"])
+            self.assertEqual(server["type"], "stdio")
+            self.assertTrue((root / ".vscode" / "tasks.json").is_file())
 
     def test_unknown_kind_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -133,10 +132,21 @@ class McpHandshakeTest(unittest.TestCase):
                 allow_writes=False,
                 model="none",
             )
+            prompts = handle_rpc(
+                {"jsonrpc": "2.0", "id": 4, "method": "prompts/list"},
+                project=project,
+                allow_writes=False,
+                model="none",
+            )
         assert init is not None and listed is not None
         self.assertEqual(init["result"]["serverInfo"]["name"], "python-vibe")
         names = {tool["name"] for tool in listed["result"]["tools"]}
         self.assertEqual(names, {"ask", "run"})
+        assert prompts is not None
+        self.assertEqual(
+            {item["name"] for item in prompts["result"]["prompts"]},
+            {"ask", "run"},
+        )
 
     def test_run_is_refused_when_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -223,12 +233,36 @@ class CursorConfigTest(unittest.TestCase):
         install_editors(project, "cursor")
         return json.loads((project / ".cursor" / "mcp.json").read_text(encoding="utf-8"))
 
-    def test_the_project_path_is_filled_in(self) -> None:
+    def test_the_project_path_is_portable(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp)
             server = self._config(project)["mcpServers"]["python-vibe"]
-        self.assertIn(project.resolve().as_posix(), server["args"])
+        self.assertIn("${workspaceFolder}", server["args"])
         self.assertNotIn("__PROJECT__", server["args"])
+        self.assertEqual(server["type"], "stdio")
+
+    def test_allow_writes_is_opt_in(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            install_editors(project, "cursor", allow_writes=True)
+            server = json.loads(
+                (project / ".cursor" / "mcp.json").read_text(encoding="utf-8")
+            )["mcpServers"]["python-vibe"]
+        self.assertIn("--allow-writes", server["args"])
+
+    def test_other_servers_are_kept(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp)
+            dest = project / ".cursor" / "mcp.json"
+            dest.parent.mkdir()
+            dest.write_text(
+                '{"mcpServers": {"other": {"command": "x"}}}',
+                encoding="utf-8",
+            )
+            install_editors(project, "cursor")
+            data = json.loads(dest.read_text(encoding="utf-8"))
+        self.assertEqual(data["mcpServers"]["other"]["command"], "x")
+        self.assertIn("python-vibe", data["mcpServers"])
 
     def test_a_source_checkout_carries_the_import_path(self) -> None:
         from unittest import mock

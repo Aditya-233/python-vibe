@@ -9,7 +9,7 @@ One command with subcommands, so a user does not have to know which file in
     python -m harness run    ~/app "add multiply(a, b) and a test"
     python -m harness serve    --project ~/app
     python -m harness mcp      --project ~/app
-    python -m harness editors  vscode --project ~/app
+    python -m harness editors  cursor --allow-writes
     python -m harness route    "what does compute_total return?"
 """
 
@@ -217,12 +217,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "editors":
         from harness.editor_kit import install_editors, next_steps
 
-        written = install_editors(
-            args.project,
-            args.kind,
-            allow_writes=getattr(args, "allow_writes", False),
-            user_wide=getattr(args, "user_wide", False),
-        )
+        try:
+            written = install_editors(
+                args.project,
+                args.kind,
+                allow_writes=getattr(args, "allow_writes", False),
+                user_wide=getattr(args, "user_wide", False),
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
         for path in written:
             print(path)
         print()

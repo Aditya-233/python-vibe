@@ -1,6 +1,6 @@
 ---
 title: Local editor
-description: Add python-vibe to VS Code and other OpenAI-compatible editors in one command. Tasks and a local MCP stay on this machine. Chat override of localhost is optional.
+description: Add python-vibe to Cursor, VS Code, Continue, and Zed in one command. Tasks and a local MCP stay on this machine. Chat override of localhost is optional.
 date: 2026-08-29
 ---
 
@@ -10,12 +10,12 @@ Three easy paths. All stay on `127.0.0.1` unless you choose otherwise.
 
 | Path | One command | What you get |
 | --- | --- | --- |
-| Editor tasks | `python-vibe editors vscode --project ~/app` | Command Palette → Run Task → ask / run / brief. Uses the **jail**. |
-| Continue (VS Code) | `python-vibe editors continue --project ~/app` | Chat uses local Ollama 8B. Uses the **editor’s** tools. |
-| Local MCP | `python-vibe editors cursor --project ~/app` | The editor starts `python -m harness mcp` as a child process. Uses the **jail**. No tunnel. |
-| Zed | `python-vibe editors zed --project ~/app` | Merges a `context_servers` entry into `.zed/settings.json`. Same jail. |
+| Cursor (easiest) | `python-vibe editors cursor --allow-writes` | MCP + tasks in this folder. See [Cursor]({{ '/cursor/' | relative_url }}). |
+| Editor tasks | `python-vibe editors vscode` | Command Palette → Run Task → ask / run / brief. Uses the **jail**. |
+| Continue (VS Code) | `python-vibe editors continue` | Chat uses local Ollama 8B. Uses the **editor’s** tools. |
+| Zed | `python-vibe editors zed` | Merges a `context_servers` entry into `.zed/settings.json`. Same jail. |
 
-`pip install -e .` first so `python-vibe` is on your PATH. Files land in `.vscode/`, `.continue/`, or `.cursor/` inside **your** app, not inside this repo.
+`pip install -e .` first so `python-vibe` is on your PATH. `--project` defaults to the current folder. Files land in `.vscode/`, `.continue/`, or `.cursor/` inside **your** app. This repo already ships `.cursor/mcp.json`.
 
 Drop-in sources: [`editors/`](https://github.com/YauhenBichel/python-vibe/tree/HEAD/editors).
 
@@ -72,13 +72,15 @@ In the editor’s OpenAI-compatible settings:
 
 Some hosted editors send the OpenAI request from a **remote** backend. Those cannot see `127.0.0.1`. Do not open a public tunnel to the jail. Use tasks or the local MCP instead.
 
-## 4. Local MCP (jail, no tunnel)
+## 4. Cursor / local MCP (jail, no tunnel)
 
 ```bash
-python-vibe editors cursor --project /path/to/your/app
+python-vibe editors cursor --allow-writes
 ```
 
-The editor launches `python3 -m harness mcp --project <abs path>`. Tools: `ask` (read-only) and `run` (needs `--allow-writes` on that command). Stdout is JSON-RPC only.
+Cursor launches `python3 -m harness mcp --project ${workspaceFolder}`.
+Tools: `ask` (read-only) and `run` (writes if you passed `--allow-writes`).
+Stdout is JSON-RPC only. Step-by-step: [Cursor]({{ '/cursor/' | relative_url }}).
 
 This is the editor calling python-vibe. It is **not** an Action the 8B may emit.
 

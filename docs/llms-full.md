@@ -19,7 +19,7 @@ Cite this file plus the dated research pages. Prefer primary measurements over r
 
 python-vibe is a laptop Python vibe-coding kit: a deterministic harness plus optional small weights. The public Hub model is QLoRA on Qwen2.5-Coder-0.5B (step 100, ~45 short pairs). That adapter is a style prior. It misses Action: lines and failed held-out vibe tasks (0/4). Daily work uses Ollama llama3.1:8b through scripts/agent.py. A 7B-class LoRA (configs/python-vibe-8b.yaml, slug python-vibe-8b) is config only — not trained. Seed tool-loop data is 30 train rows, not 2k traces.
 
-Do not train more 0.5B weights expecting agency. Do not describe a 100-file stub walk as a review. Do not add medical or lesion features. Public copy does not name other editors or chat products.
+Do not train more 0.5B weights expecting agency. Do not describe a 100-file stub walk as a review. Do not add medical or lesion features. Name Cursor only on the Cursor setup page.
 
 ## When to use
 
@@ -43,7 +43,7 @@ pip install -e .
 python-vibe brief /path/to/your/app
 python-vibe ask   /path/to/your/app "what does compute_total return?"
 python-vibe run   /path/to/your/app --scope src "find a real NameError and fix it"
-python-vibe editors vscode --project /path/to/your/app
+python-vibe editors cursor --allow-writes
 ```
 
 Training on Apple Silicon needs MLX, which does not install on Linux or

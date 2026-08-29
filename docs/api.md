@@ -119,8 +119,8 @@ python -m harness run    ~/app "add multiply(a, b) and a test"
 python -m harness run    ~/app "..." --dry-run --scope src
 python -m harness serve    --project ~/app
 python -m harness mcp      --project ~/app          # stdio, for an editor
-python -m harness editors  vscode --project ~/app   # drop-in tasks.json
-python -m harness editors  zed     --project ~/app   # merge .zed/settings.json
+python -m harness editors  cursor --allow-writes    # Cursor MCP + tasks
+python -m harness editors  zed                      # merge .zed/settings.json
 ```
 
 `brief`, `layout`, and `route` never call a model. `ask` is always read-only. `run`
@@ -158,7 +158,8 @@ curl -s localhost:8090/v1/models
 returns an OpenAI-shaped reply. `stream` is refused. A write task on a
 read-only server is `403`. Point VS Code and other OpenAI-compatible
 editors at `http://127.0.0.1:8090/v1`, or copy drop-in files with
-`python-vibe editors vscode --project ~/app`. Details:
+`python-vibe editors cursor --allow-writes`. Details:
+[Cursor]({{ '/cursor/' | relative_url }}) ·
 [local editor]({{ '/local-editor/' | relative_url }}).
 
 

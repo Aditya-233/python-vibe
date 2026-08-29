@@ -1,5 +1,4 @@
 import re
-import re
 import unittest
 from pathlib import Path
 
@@ -9,7 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 _PERSONAL_PATH = re.compile(r"/Users/[^/\s`'\"]+/|DevBox/[^\s`'\"]")
 DOCS = ROOT / "docs"
 
-_BANNED_PRODUCTS = re.compile(r"\b(Cursor|ChatGPT|Claude|Grok)\b")
+_CHAT_PRODUCTS = re.compile(r"\b(ChatGPT|Claude|Grok)\b")
+_CURSOR = re.compile(r"\bCursor\b")
 
 
 class PagesInvestigationsTest(unittest.TestCase):
@@ -27,6 +27,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "demo.md",
             "local-editor.md",
             "ide-plugins.md",
+            "cursor.md",
             "research-vibe-review.md",
             "investigations/index.md",
             "investigations/everyday-laptop.md",
@@ -116,8 +117,12 @@ class PagesInvestigationsTest(unittest.TestCase):
         for path in DOCS.rglob("*"):
             if not path.is_file() or path.suffix not in {".md", ".html", ".css"}:
                 continue
+            rel = path.relative_to(DOCS)
+            allow_cursor = rel.parts[0] != "investigations"
             for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                if _BANNED_PRODUCTS.search(line):
+                if _CHAT_PRODUCTS.search(line):
+                    hits.append(f"{path.relative_to(ROOT)}:{i}")
+                elif _CURSOR.search(line) and not allow_cursor:
                     hits.append(f"{path.relative_to(ROOT)}:{i}")
         self.assertEqual(hits, [])
 
@@ -209,7 +214,7 @@ class CrossPlatformDocsTest(unittest.TestCase):
     Apple Silicon. A page that offers only those shuts Windows out.
     """
 
-    RUN_PAGES = ("start.md", "api.md", "skills.md", "ide-plugins.md")
+    RUN_PAGES = ("start.md", "api.md", "skills.md", "ide-plugins.md", "cursor.md")
 
     def test_each_page_shows_the_installed_command(self) -> None:
         missing = [

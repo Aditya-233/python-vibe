@@ -18,6 +18,7 @@ read everything at once.
 
 <p class="cta">
   <a href="{{ '/start/' | relative_url }}">Install and run</a>
+  <a href="{{ '/cursor/' | relative_url }}">Add to Cursor</a>
   <a href="https://github.com/YauhenBichel/python-vibe" rel="noreferrer">Source on GitHub</a>
 </p>
 
@@ -41,7 +42,7 @@ python-vibe run   ./my-project "find the NameError and fix it"
   <section class="track">
     <h2>Everyday</h2>
     <p>Ask a question, fix a bug, add a function with a test. It finds the right file for you, may only change files inside your folder, and runs your tests afterwards. Best on a project of up to about forty of your own Python files.</p>
-    <p><a href="{{ '/start/' | relative_url }}">Full install</a> · <a href="{{ '/skills/' | relative_url }}">Skills the agent uses</a></p>
+    <p><a href="{{ '/start/' | relative_url }}">Full install</a> · <a href="{{ '/cursor/' | relative_url }}">Add to Cursor</a> · <a href="{{ '/skills/' | relative_url }}">Skills the agent uses</a></p>
   </section>
   <section class="track">
     <h2>Tiny sidecar</h2>

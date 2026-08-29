@@ -19,14 +19,18 @@ Related: [local editor]({{ '/local-editor/' | relative_url }}) ·
 ```bash
 pip install -e .
 ollama pull llama3.1:8b
-python-vibe editors vscode --project ~/app
+python-vibe editors cursor --allow-writes
 ```
+
+Cursor: [use python-vibe in Cursor]({{ '/cursor/' | relative_url }}).
+`--project` defaults to this folder.
 
 | You want | Command | Package to install |
 | --- | --- | --- |
-| Tasks in the editor | `editors vscode` | none (uses `.vscode/tasks.json`) |
+| Cursor chat + tasks | `editors cursor` | none. Writes `.cursor/mcp.json` and `.vscode/tasks.json` |
+| Tasks only | `editors vscode` | none (uses `.vscode/tasks.json`) |
 | Chat that hits Ollama | `editors continue` | the Continue extension, already on the marketplace |
-| Jail as a local tool server | `editors cursor` or `editors zed` | none. The editor starts our stdio MCP |
+| Zed | `editors zed` | none. Merges `context_servers` |
 | HTTP OpenAI shape | `python-vibe serve --project ~/app` | any OpenAI-compatible client |
 
 Do not add the official MCP Python SDK to *this* repo. The jail stays

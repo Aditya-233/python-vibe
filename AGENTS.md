@@ -55,7 +55,7 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 | `scripts/serve.py` | Local HTTP sidecar |
 | `scripts/agent.py` | Everyday explore / edit / run / ship (use a **larger** Ollama model) |
 | `src/harness/mcp_stdio.py` | Local MCP over stdio (editor child process, not an 8B Action) |
-| `src/harness/editor_kit.py` | `python -m harness editors vscode|continue|cursor` |
+| `src/harness/editor_kit.py` | `python -m harness editors cursor` (MCP + tasks; `--global` merges `~/.cursor/mcp.json`) |
 | `editors/` | Drop-in tasks.json, Continue yaml, MCP json |
 | `src/harness/ship/` | Jailed `issue` `branch` `commit` `push` `pr` `merge` |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
