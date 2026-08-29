@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -22,8 +23,9 @@ class ExtractPythonTest(unittest.TestCase):
         self.assertEqual(extract_python("import json\nprint(1)"), "import json\nprint(1)")
 
     def test_run_print(self) -> None:
-        dest = Path(__file__).resolve().parents[1] / "scratch" / "_test_run.py"
-        result = write_and_run("print('ok')", dest)
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "_test_run.py"
+            result = write_and_run("print('ok')", dest)
         self.assertEqual(result.code, 0)
         self.assertEqual(result.stdout.strip(), "ok")
 
@@ -53,10 +55,11 @@ class ExtractPythonTest(unittest.TestCase):
         self.assertTrue(all(".venv" not in p.parts for p in files))
 
     def test_apply_refuses_tiny_overwrite(self) -> None:
-        dest = Path(__file__).resolve().parents[1] / "scratch" / "_apply.py"
-        dest.write_text("x = 1\n" * 20, encoding="utf-8")
-        with self.assertRaises(ValueError):
-            apply_source(dest, "x=1\n", original=dest.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "_apply.py"
+            dest.write_text("x = 1\n" * 20, encoding="utf-8")
+            with self.assertRaises(ValueError):
+                apply_source(dest, "x=1\n", original=dest.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
