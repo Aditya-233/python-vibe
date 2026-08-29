@@ -53,6 +53,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(raw)
+        self.wfile.flush()
         self.close_connection = True
 
     def do_GET(self) -> None:  # noqa: N802

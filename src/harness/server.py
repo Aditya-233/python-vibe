@@ -42,6 +42,7 @@ def make_handler(project: Path, *, allow_writes: bool, model: str):
             self.send_header("connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
             self.close_connection = True
 
         def _body(self) -> dict | None:

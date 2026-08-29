@@ -26,8 +26,12 @@ class ServerTest(unittest.TestCase):
         httpd = ThreadingHTTPServer((HOST, 0), handler)
         thread = threading.Thread(target=httpd.serve_forever, daemon=True)
         thread.start()
-        self.addCleanup(httpd.shutdown)
+        # addCleanup runs last-registered first, so register server_close
+        # first and shutdown second. Closing the socket while serve_forever
+        # is still running yanks it from under in-flight handlers, which
+        # Windows reports as WinError 10038.
         self.addCleanup(httpd.server_close)
+        self.addCleanup(httpd.shutdown)
         return f"http://{HOST}:{httpd.server_address[1]}"
 
     def _post(self, base: str, path: str, payload: dict):
