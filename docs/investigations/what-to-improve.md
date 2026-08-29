@@ -47,9 +47,9 @@ Score is “would a daily user get the same outcome,” not model size. 0–5. �
 | Job | 8B + harness today | After recommended harness | Hosted IDE agent |
 | --- | --- | --- | --- |
 | Typed question | 4 | 4 | 5 |
-| Add a function + test | 3 | 4 | 5 |
+| Add a function + test | 4 | 4 | 5 |
 | Rename / smell | 3 | 4 | 5 |
-| One-split refactor | 3 | 3 | 5 |
+| One-split refactor | 2 | 3 | 5 |
 | 100-file review | 1 | 2 | 5 |
 | Extra tools / browser / any language | 0 | 0 | 5 |
 
@@ -57,13 +57,14 @@ Score is “would a daily user get the same outcome,” not model size. 0–5. �
 
 Ship these before training another model.
 
-1. **Design loop.** Wired. After each one-split edit the harness re-scans. `done` is refused while findings remain. Review tasks may edit.
+1. **Design loop.** Wired. After each one-split edit the harness re-scans. `done` is refused while findings remain. Review tasks may edit. Live 8B still aims at the god module; `refuse_god_target` now blocks that path before the draft runs.
 2. **Auto-pick** `review-design`, `refactor-split`, and `readable-layout`. Thin-review refuse is in the `done` handler.
 3. **Verify writes.** Add / bug / rename / refactor / a design-loop write: inject tests or `run`. `done` is refused until a passing unittest.
 4. **Deeper small-file reads.** Files under 12 KB are read whole. Larger files still truncate at 3500 characters plus a tail.
 5. **Measure bigger local models.** 29 Aug 2026, this laptop: 8B first Action was `done` on `complete` (thin summary), `patch` on add-multiply (tests file first, not impl), `read` on a dirty design review (skills were auto-picked; prelude asked for `edit`). The on-disk 30B coder timed out at the 180s Ollama cap. 7B coder is not pulled. Default stays 8B.
-6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has more than three rows. Everyday-ready still means beating an untuned 8B on parse **and** a real ≥1 KB fix.
-7. **Traces, then a 7B LoRA.** Only after the loop is stable. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
+6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has ten rows. Live 8B parse is 7/10. Everyday-ready still means beating an untuned 8B on parse **and** a real ≥1 KB fix.
+7. **AAA tests.** `write-tests` now requires `test_<unit>_<result>` and `got = …`. One-line `assertEqual(fn(), n)` is refused.
+8. **Traces, then a 7B LoRA.** Only after a live design loop reaches no structure findings. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
 
 ## What not to spend a week on
 

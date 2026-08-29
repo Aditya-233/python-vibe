@@ -1,13 +1,16 @@
 ---
 name: write-tests
-description: Adds one unittest method for a new function. Use when adding a feature or when the user asks for tests.
+description: Adds one AAA unittest that names the behavior. Use when adding a feature or when the user asks for tests.
 ---
 
-Append: only. The harness inserts the method inside the class and adds the
-name to the existing import. Do not write a Find:.
+One unittest.TestCase method. Name `test_<unit>_<result>`. Arrange inputs, Act into `got`, Assert `got`.
+Do not write `test_multiply` or `assertEqual(multiply(2, 3), 6)` on one line.
+Do not write a Find:.
 
 Action: patch
 Path: {{test}}
 Append:
-    def test_multiply(self) -> None:
-        self.assertEqual(multiply(2, 3), 6)
+    def test_multiply_returns_the_product(self) -> None:
+        left, right = 2, 3
+        got = multiply(left, right)
+        self.assertEqual(got, 6)
