@@ -190,7 +190,9 @@ _SCRIPT = re.compile(
 )
 _HTTP = re.compile(
     r"\b(http api|rest api|fetch json|urllib|call the api|"
-    r"get json|post json|\bcurl\b|http get|http post)\b",
+    r"get json|post json|\bcurl\b|http get|http post|"
+    # A job that names a url and json is an HTTP call however it is worded.
+    r"gets? an? url|download the json|read json from|from a url)\b",
     re.I,
 )
 _ANALYTICS = re.compile(
@@ -222,7 +224,10 @@ def looks_like_script(task: str) -> bool:
 def looks_like_http_client(task: str) -> bool:
     if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
         return False
-    return bool(_HTTP.search(task))
+    if _HTTP.search(task):
+        return True
+    lowered = task.lower()
+    return "url" in lowered and "json" in lowered
 
 
 def looks_like_analytics(task: str) -> bool:
@@ -460,3 +465,35 @@ def named_project_file(task: str, project) -> str:
     root = _Path(project).resolve()
     found = [rel for rel in task_paths(task) if (root / rel).is_file()]
     return found[0] if len(found) == 1 else ""
+
+
+_WALK_FILES = re.compile(
+    r"\b(under|inside|recursively|every file|all files|folder|directory|"
+    r"file size|newest|oldest)\b"
+)
+_ARCHIVE = re.compile(r"\b(zip|unzip|tar|archive|compress|extract)\b")
+_COMPARE = re.compile(
+    r"\b(compare|diff|differ|different|changed|missing from|not in)\b"
+)
+
+
+def looks_like_walk_files(task: str) -> bool:
+    """True when the job is to reach files under a folder, not one known path."""
+    text = task.strip().lower()
+    if looks_like_question(text) or looks_like_ship(text):
+        return False
+    return bool(_WALK_FILES.search(text))
+
+
+def looks_like_archive(task: str) -> bool:
+    text = task.strip().lower()
+    if looks_like_question(text) or looks_like_ship(text):
+        return False
+    return bool(_ARCHIVE.search(text))
+
+
+def looks_like_compare(task: str) -> bool:
+    text = task.strip().lower()
+    if looks_like_question(text) or looks_like_ship(text):
+        return False
+    return bool(_COMPARE.search(text))

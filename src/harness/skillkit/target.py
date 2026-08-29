@@ -133,6 +133,16 @@ def pick_target(
     )
 
 
+def _writes_a_whole_module(body: str) -> bool:
+    """True when the skill hands over a file, not a change to one.
+
+    `Action: edit` with a module body creates a file. `Action: patch` with
+    Find or Append edits one that is already there, and only that case
+    should be pointed at an existing file.
+    """
+    return bool(re.search(r"^Action:\s*edit\s*$", body, re.MULTILINE))
+
+
 def retarget(body: str, target: Target, project: Path | None = None) -> str:
     """Fill placeholders, then repoint any path this project does not have."""
     values = {
@@ -148,10 +158,22 @@ def retarget(body: str, target: Target, project: Path | None = None) -> str:
         return text
     root = project.resolve()
 
+    creates_module = _writes_a_whole_module(text)
+
     def _path(match: re.Match[str]) -> str:
         key, rel = match.group(1), match.group(2)
         if (root / rel).is_file() or Path(rel).name in _KEEP_NAMES:
             return match.group(0)
+        if creates_module and not _is_test(rel):
+            # The skill writes a new module, not a change to an existing one.
+            # Repointing it onto a file that already exists made the model
+            # write the function twice: once where it was sent, once where
+            # the skill said. Keep the name, move it beside this project's
+            # own modules.
+            home = Path(target.module).parent
+            name = Path(rel).name
+            moved = (home / name).as_posix() if home != Path(".") else name
+            return f"{key}: {moved}"
         return f"{key}: {target.test if _is_test(rel) else target.module}"
 
     def _scope(match: re.Match[str]) -> str:

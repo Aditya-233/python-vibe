@@ -169,7 +169,25 @@ def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")
         picked.extend(s for s in catalog if s.name == "write-tests")
-    from harness.task import looks_like_review_code, looks_unclear
+    from harness.task import (
+        looks_like_archive,
+        looks_like_compare,
+        looks_like_review_code,
+        looks_like_walk_files,
+        looks_unclear,
+    )
+
+    # Scripting jobs: the model reaches for the shallow primitive on its own
+    # (os.listdir for "under a folder", a shell call for a zip), so the skill
+    # is what supplies the right one.
+    for matches, skill_name in (
+        (looks_like_archive, "use-archive"),
+        (looks_like_compare, "compare-things"),
+        (looks_like_walk_files, "walk-files"),
+    ):
+        if matches(task) and not any(s.name == skill_name for s in picked):
+            picked.extend(s for s in catalog if s.name == skill_name)
+            break
 
     if looks_unclear(task):
         picked.extend(s for s in catalog if s.name == "ask-when-unclear")
