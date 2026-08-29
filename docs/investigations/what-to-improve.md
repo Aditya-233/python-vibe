@@ -61,7 +61,7 @@ Ship these before training another model.
 2. **Auto-pick** `review-design`, `refactor-split`, and `readable-layout`. Thin-review refuse is in the `done` handler.
 3. **Verify writes.** Add / bug / rename / refactor / a design-loop write: inject tests or `run`. `done` is refused until a passing unittest.
 4. **Deeper small-file reads.** Files under 12 KB are read whole. Larger files still truncate at 3500 characters plus a tail.
-5. **Measure bigger local models.** Same three probes on a pulled 7B and any 30B coder already on disk. Do not change the default until 8B is still the best laptop tradeoff.
+5. **Measure bigger local models.** 29 Aug 2026, this laptop: 8B first Action was `done` on `complete` (thin summary), `patch` on add-multiply (tests file first, not impl), `read` on a dirty design review (skills were auto-picked; prelude asked for `edit`). The on-disk 30B coder timed out at the 180s Ollama cap. 7B coder is not pulled. Default stays 8B.
 6. **Raise the live parse floor.** `eval/action_prompts.jsonl` has more than three rows. Everyday-ready still means beating an untuned 8B on parse **and** a real ≥1 KB fix.
 7. **Traces, then a 7B LoRA.** Only after the loop is stable. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
 
