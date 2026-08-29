@@ -1,16 +1,16 @@
-"""Is this project's structure readable? Deterministic. No model.
+"""Report why a project is difficult to read, and what to change first.
 
-Answers the question a newcomer asks first: *where does anything live?*
-It reports the four things that make that unanswerable, worst first, and
-then names one move. One move, not a plan — an 8B that is handed five
-findings rewrites the tree; handed one, it does the one.
+Four problems are detected, listed here in the order they are worth
+fixing:
 
-Findings, in the order they are worth fixing:
+* `cycle`    - two modules import each other, so neither can be read alone.
+* `flat`     - one directory holds many modules with no grouping.
+* `god`      - one module is much larger than the others around it.
+* `no-tests` - the project contains no test files.
 
-* `cycle`     — two modules import each other. Nothing can be read alone.
-* `flat`      — one package holding too many modules and no grouping.
-* `god`       — one module far larger than its neighbours.
-* `no-tests`  — code with no `tests/` beside it.
+Only the first problem is turned into an instruction. A model given four
+instructions at once tends to change four things at once; a model given one
+instruction changes one thing, which can then be checked.
 """
 
 from __future__ import annotations
@@ -29,6 +29,14 @@ MAX_FINDINGS = 4
 
 @dataclass(frozen=True)
 class Finding:
+    """One structural problem found in a project.
+
+    Fields:
+        kind: "cycle", "flat", "god" or "no-tests".
+        detail: what was found, naming the files involved.
+        move: the change to make, written as an instruction.
+    """
+
     kind: str
     detail: str
     move: str

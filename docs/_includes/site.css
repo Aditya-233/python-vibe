@@ -1,0 +1,297 @@
+:root {
+  color-scheme: light dark;
+  --paper: #f3eee4;
+  --ink: #16140f;
+  --mute: #3f3a33;
+  --line: #cfc6b6;
+  --accent: #8a2d0f;
+  --code: #e8e1d4;
+  --focus: #0b57d0;
+  --space: clamp(1rem, 3vw, 1.35rem);
+  --measure: 40rem;
+  --wide: 48rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14130f;
+    --ink: #ece7dc;
+    --mute: #c4bdb0;
+    --line: #3a372f;
+    --accent: #e8a07a;
+    --code: #1e1c17;
+    --focus: #8ab4ff;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root { --line: currentColor; --mute: var(--ink); }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font: 1rem/1.6 ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.skip {
+  position: absolute;
+  left: var(--space);
+  top: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--paper);
+  color: var(--ink);
+  transform: translateY(-160%);
+  z-index: 5;
+}
+
+.skip:focus { transform: none; }
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1.25rem;
+  width: min(var(--wide), 100%);
+  margin: 0 auto;
+  padding: 0.7rem var(--space);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+.mark {
+  font: 600 0.95rem/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.15rem;
+  font: 0.8rem/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.nav a {
+  color: var(--accent);
+  text-decoration: none;
+  min-height: 2.75rem;
+  padding: 0 0.55rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav a[aria-current="page"] {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+.page {
+  flex: 1;
+  width: min(var(--wide), 100%);
+  margin: 0 auto;
+  padding: 1.35rem var(--space) 2.75rem;
+}
+
+.page > :is(p, ul, ol, .lede) { max-width: var(--measure); }
+
+.crumbs {
+  font: 0.8rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--mute);
+  margin: 0 0 1rem;
+}
+
+.crumbs a { color: var(--accent); }
+
+.toc {
+  max-width: var(--measure);
+  margin: 0 0 1.5rem;
+  padding: 0.7rem 0 0.7rem 1rem;
+  border-left: 2px solid var(--line);
+}
+
+.toc p { margin: 0 0 0.35rem; color: var(--mute); font-size: 0.85rem; }
+.toc ol { margin: 0; padding-left: 1.1rem; }
+
+.foot {
+  width: min(var(--wide), 100%);
+  margin: 0 auto;
+  padding: 1rem var(--space) 2.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--mute);
+  font-size: 0.88rem;
+}
+
+.quiet { font-size: 0.8rem; }
+
+h1, h2, h3 {
+  line-height: 1.25;
+  font-weight: 600;
+  text-wrap: balance;
+  scroll-margin-top: 4.25rem;
+}
+
+h1 { font-size: clamp(1.45rem, 1.1rem + 1.4vw, 1.85rem); margin: 0 0 0.55rem; }
+h2 { font-size: 1.2rem; margin: 1.85rem 0 0.5rem; }
+h3 { font-size: 1.02rem; margin: 1.3rem 0 0.35rem; }
+
+p, li { color: var(--ink); }
+.lede, .page > p:first-of-type { color: var(--mute); }
+
+a { color: var(--accent); text-underline-offset: 0.15em; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+:target { outline: 2px dashed var(--line); outline-offset: 4px; }
+
+code, pre, kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+code, kbd {
+  background: var(--code);
+  padding: 0.1em 0.35em;
+}
+
+pre {
+  background: var(--code);
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  -webkit-overflow-scrolling: touch;
+}
+
+pre code { background: none; padding: 0; font-size: 0.95em; }
+
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 1rem 0 1.35rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+thead, tbody { display: table; width: 100%; }
+
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.7rem 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 1.15rem 0 1.5rem;
+}
+
+.stat {
+  border-top: 2px solid var(--ink);
+  padding-top: 0.4rem;
+}
+
+.stat b {
+  display: block;
+  font: 600 1.25rem/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.stat span { color: var(--mute); font-size: 0.85rem; }
+
+.tracks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin: 1.15rem 0;
+}
+
+@media (min-width: 720px) {
+  .tracks { grid-template-columns: 1fr 1fr; }
+}
+
+.track {
+  border: 1px solid var(--line);
+  padding: 0.85rem 1rem;
+}
+
+.track h2 { margin-top: 0; }
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 1rem 0 1.35rem;
+}
+
+.cta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  text-decoration: none;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+
+.cta a:first-child {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.need {
+  max-width: var(--measure);
+  margin: 0 0 1.25rem;
+  padding-left: 1.15rem;
+}
+
+ul { padding-left: 1.2rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media print {
+  .skip, .top, .cta, .foot { display: none; }
+  body { background: #fff; color: #000; }
+  a { color: inherit; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; }
+  pre, table { overflow: visible; }
+}

@@ -1,0 +1,43 @@
+{% assign desc = page.description | default: site.description %}
+{% assign title = page.title | default: site.title %}
+{% assign canon = page.url | absolute_url %}
+{% assign raw_md = site.markdown_raw | append: "/" | append: page.path %}
+<title>{% if page.url == '/' %}{{ site.title }} · {{ title }}{% else %}{{ title }} · {{ site.title }}{% endif %}</title>
+<meta name="description" content="{{ desc | escape }}">
+<meta name="author" content="{{ site.author.name }}">
+{% if page.robots %}
+<meta name="robots" content="{{ page.robots }}">
+{% else %}
+<meta name="robots" content="index, follow, max-snippet:200, max-image-preview:none">
+{% endif %}
+<meta name="googlebot" content="{{ page.robots | default: 'index, follow, max-snippet:200' }}">
+<link rel="canonical" href="{{ canon }}">
+<link rel="license" href="https://www.apache.org/licenses/LICENSE-2.0">
+<link rel="author" href="{{ site.author.url }}">
+<link rel="describedby" href="{{ '/llms.txt' | absolute_url }}" type="text/markdown" title="llms.txt">
+<link rel="alternate" type="text/plain" href="{{ '/llms.txt' | absolute_url }}" title="LLM index">
+<link rel="alternate" type="text/plain" href="{{ '/llms-full.txt' | absolute_url }}" title="LLM full context">
+{% if page.path %}
+<link rel="alternate" type="text/markdown" href="{{ raw_md }}" title="Source markdown">
+{% endif %}
+<link rel="sitemap" type="application/xml" href="{{ '/sitemap.xml' | absolute_url }}">
+<meta property="og:site_name" content="{{ site.title }}">
+<meta property="og:locale" content="en">
+<meta property="og:title" content="{{ title | escape }}">
+<meta property="og:description" content="{{ desc | escape }}">
+<meta property="og:url" content="{{ canon }}">
+<meta property="og:type" content="{% if page.type == 'article' %}article{% else %}website{% endif %}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ title | escape }}">
+<meta name="twitter:description" content="{{ desc | escape }}">
+{% if page.date %}
+<meta property="article:published_time" content="{{ page.date | date_to_xmlschema }}">
+<meta property="article:modified_time" content="{{ page.date | date_to_xmlschema }}">
+<meta name="citation_title" content="{{ title | escape }}">
+<meta name="citation_author" content="{{ site.author.name }}">
+<meta name="citation_publication_date" content="{{ page.date | date: '%Y/%m/%d' }}">
+<meta name="citation_online_date" content="{{ page.date | date: '%Y/%m/%d' }}">
+<meta name="citation_language" content="en">
+<meta name="citation_public_url" content="{{ canon }}">
+{% endif %}
+{% include schema.html %}

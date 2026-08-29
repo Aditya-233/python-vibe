@@ -1,4 +1,5 @@
-"""Layer: what a run leaves behind. Deterministic, no model.
+"""Record what a run did.
 
-Redacted trace records, the Markdown report, and the offline eval gate.
+Holds the redacted trace writer, the Markdown report writer, and the
+offline checks used as the merge gate.
 """

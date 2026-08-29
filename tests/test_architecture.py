@@ -23,6 +23,10 @@ DEPTH = {
     "act": 4,
     "locate": 5,
     "observe": 6,
+    "agent": 7,
+    "server": 8,
+    "cli": 9,
+    "__main__": 10,
 }
 
 

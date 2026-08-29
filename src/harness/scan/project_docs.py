@@ -1,9 +1,13 @@
-"""Read the target project's own agent instructions. Deterministic. No model.
+"""Read the instructions a project publishes for contributors.
 
-Every mature harness loads the repo's `AGENTS.md` before it acts. This one
-walked into other people's repos with only its own kit conventions, so it
-had no way to know that *this* project puts tests somewhere else or forbids
-a dependency. Budgeted hard: house rules are a preamble, not the context.
+A project states its own conventions in `AGENTS.md`, `CLAUDE.md` or
+`CONTRIBUTING.md`: where new code belongs, which test runner is used, what
+must not be changed. Those instructions are more accurate for that project
+than the general skills shipped with this harness, so they are placed
+before them in the prompt.
+
+The text is truncated to a fixed number of characters, because it is meant
+as a short preface and not as the main content of the prompt.
 """
 
 from __future__ import annotations

@@ -8,6 +8,11 @@ Large repos: a scoped harness so the model never loads the whole tree.
 The public 0.5B LoRA is a **style prior**. Daily work uses an **8B** Ollama
 model plus the jail in `scripts/agent.py`.
 
+Site: [yauhenbichel.github.io/python-vibe](https://yauhenbichel.github.io/python-vibe/)
+([llms.txt](https://yauhenbichel.github.io/python-vibe/llms.txt) for coding agents).
+Research: [local loop vs hosted agents](./docs/investigations/local-vs-cloud.md),
+[what to improve](./docs/investigations/what-to-improve.md).
+
 Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b).
 
 | Track | What to run | Role |
@@ -22,6 +27,25 @@ not need a GPU to run tests.
 
 Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md) · security: [SECURITY.md](./SECURITY.md).
 Vulnerabilities: open a **public** GitHub issue. Do not paste live keys.
+
+## Use it
+
+```python
+from harness import Agent, AgentOptions
+
+result = Agent(AgentOptions(project=Path("~/app"))).run("fix the NameError")
+result.summary, result.writes
+```
+
+```bash
+python -m harness brief  ~/app                    # no model
+python -m harness layout ~/app                    # no model
+python -m harness run    ~/app "add multiply(a, b) and a test"
+python -m harness serve  --project ~/app          # 127.0.0.1, read-only
+```
+
+Full settings, read-only runs, and the HTTP routes: [docs/api.md](./docs/api.md).
+Layers and the rule that keeps them: [docs/architecture.md](./docs/architecture.md).
 
 ## Everyday agent
 
@@ -85,7 +109,9 @@ PYTHONPATH=src python3.13 scripts/eval_everyday.py --live
 Do not call this everyday-ready until `--live` beats an untuned 8B on parse
 rate and a real ≥1 KB fix. Notes:
 [docs/investigations/everyday-laptop.md](./docs/investigations/everyday-laptop.md) ·
-[docs/research-vibe-review.md](./docs/research-vibe-review.md).
+[docs/research-vibe-review.md](./docs/research-vibe-review.md) ·
+[docs/investigations/local-vs-cloud.md](./docs/investigations/local-vs-cloud.md) ·
+[docs/investigations/what-to-improve.md](./docs/investigations/what-to-improve.md).
 
 ## Tiny sidecar (0.5B)
 

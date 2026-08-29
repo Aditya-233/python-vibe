@@ -1,6 +1,6 @@
-"""Layer: what ships and what is refused. Deterministic, no model.
+"""Checks that decide what is allowed to be written or returned.
 
-The draft guard (`PythonVibeGuard`), the generate/revise/fallback loop, and
-the loop-level refusals. This layer is the safety boundary: it must never
-import a layer that can write.
+Holds the draft guard, the generate-and-retry loop, and the checks the
+agent loop applies to a proposed action. No module in this package may
+import a package that changes files.
 """

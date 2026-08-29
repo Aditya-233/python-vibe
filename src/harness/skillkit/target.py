@@ -1,18 +1,21 @@
-"""Point a kit skill at *this* project. Deterministic. No model.
+"""Replace the file paths inside a skill with paths from this project.
 
-A skill for an 8B is one copy-paste `Action:` block, so the paths inside it
-have to be real. A kit skill that ships a fixture path (`pkg/mathy.py`) gets
-copied verbatim, and the harness then creates that file in a stranger's
-repo. So before the model sees a skill, every `Path:`/`Scope:` in it that
-does not exist in the target project is rewritten to one that does.
+A skill is written as a block of text for the model to copy, so any file
+path inside it will be copied as well. A path that refers to this
+repository's test fixtures does not exist in the user's project, and
+writing to it creates a file the user did not ask for.
 
-Two mechanisms, both deterministic:
+Two replacements are made before the model sees a skill:
 
-* `{{module}}` `{{test}}` `{{scope}}` `{{symbol}}` placeholders are filled.
-* A `Path:` that is not a real file here is repointed — to the project's
-  test file if it looks like a test, otherwise to its main module.
+* The placeholders `{{module}}`, `{{test}}`, `{{scope}}` and `{{symbol}}`
+  are filled in from the project.
+* Any `Path:` or `Scope:` that does not exist in the project is replaced
+  with one that does.
 
-A skill whose paths already exist (the eval fixtures) is left alone.
+A path that does exist in the project is left unchanged, which is what
+keeps the fixture-based tests working. A path ending in `__init__.py` is
+also left unchanged, because creating a package legitimately names a file
+that does not exist yet.
 """
 
 from __future__ import annotations
@@ -36,6 +39,15 @@ FALLBACK_TEST = "tests/test_module.py"
 
 @dataclass(frozen=True)
 class Target:
+    """The files in this project that a skill should refer to.
+
+    Fields:
+        module: file where new code belongs.
+        test: file where new tests belong.
+        scope: directory to stay within.
+        symbol: name from the task, used to fill in a search query.
+    """
+
     module: str
     test: str
     scope: str

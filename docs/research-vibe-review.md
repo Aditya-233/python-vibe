@@ -1,3 +1,10 @@
+---
+title: 0.5B vibe review
+description: Held-out laptop vibe tasks failed. A 100-file stub walk returned no issues. The 0.5B LoRA is a style prior, not a reviewer.
+date: 2026-08-29
+type: article
+---
+
 # Research: can a 0.5B LoRA vibe-code and review a real repo?
 
 **Weights:** [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b)

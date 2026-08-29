@@ -57,7 +57,7 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 | `src/harness/ship/` | Jailed `issue` `branch` `commit` `push` `pr` `merge` |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
 | `data/python-vibe/` | Short stdlib train/valid/test JSONL |
-| `docs/` | GitHub Pages + investigations |
+| `docs/` | Project site (GitHub Pages) + investigations |
 | `tests/` | Fast unit tests (the merge gate) |
 
 ## How to change things
@@ -108,6 +108,14 @@ between two candidates; ambiguity is a refusal.
 
 **Investigations.** New measurement pages go in `docs/investigations/`. Add the
 file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.
+
+**Site.** `docs/` is the public site (Jekyll → GitHub Pages). CSS is inlined
+from `_includes/site.css` (one HTML request, no webfonts, no script). After
+the first `Pages` workflow, turn on **Settings → Pages → GitHub Actions**.
+URL: `https://yauhenbichel.github.io/python-vibe/`. `llms.txt` and
+`llms-full.txt` are the map for coding agents (llms.txt v2). Do not name
+third-party editors or chat products. Do not put personal paths. Do not add
+analytics, webfonts, or a JS bundle.
 
 ## What not to “fix”
 

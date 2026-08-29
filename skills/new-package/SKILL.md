@@ -8,3 +8,6 @@ Path: pkg/__init__.py
 ```python
 """Public exports only. Implementation lives in sibling modules."""
 ```
+
+New code goes in `pkg/<noun>.py`, not `__init__.py` and not
+`scripts/`. One noun per module.

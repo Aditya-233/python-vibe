@@ -118,6 +118,12 @@ def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")
         picked.extend(s for s in catalog if s.name == "write-tests")
+    from harness.task import looks_like_review_code, looks_unclear
+
+    if looks_unclear(task):
+        picked.extend(s for s in catalog if s.name == "ask-when-unclear")
+    if looks_like_review_code(task) and not picked:
+        picked.extend(s for s in catalog if s.name == "review-code")
     lowered = task.strip().lower()
     if "test" in lowered and not any(s.name == "write-tests" for s in picked):
         picked.extend(s for s in catalog if s.name == "write-tests")
