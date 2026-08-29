@@ -4,6 +4,7 @@
 [![CI](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-2F6FED)](https://yauhenbichel.github.io/python-vibe/)
 [![Pages](https://github.com/YauhenBichel/python-vibe/actions/workflows/pages.yml/badge.svg)](https://yauhenbichel.github.io/python-vibe/)
+[![Contributors](https://img.shields.io/github/contributors/YauhenBichel/python-vibe)](https://github.com/YauhenBichel/python-vibe#contributors)
 
 Everyday Python vibe coding on a laptop. Small repos: explore, edit, run.
 Large repos: a scoped harness so the model never loads the whole tree.
@@ -24,7 +25,8 @@ Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/Ya
 | Tiny (Hub / smoke) | `scripts/vibe.py`, `serve.py`, `--tiny` | 0.5B drafts through `PythonVibeGuard` |
 
 Join: [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue) ·
-[Discussions](https://github.com/YauhenBichel/python-vibe/discussions). You do
+[Discussions](https://github.com/YauhenBichel/python-vibe/discussions) ·
+[Contributors](#contributors). You do
 not need a GPU to run tests.
 
 Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md) · security: [SECURITY.md](./SECURITY.md).
@@ -282,10 +284,24 @@ PYTHONPATH=src python3.13 scripts/push_hf.py python-vibe --what adapters --publi
 
 ## Contributors
 
-Thank you to everyone who has helped this project. Your code, reviews, issues, and pull requests are appreciated.
+Thank you to everyone who has helped python-vibe. Your code, reviews, issues, and pull requests are appreciated.
 
-- [@kkkhs](https://github.com/kkkhs)
-- [@xianjianlf2](https://github.com/xianjianlf2)
-- [@YauhenBichel](https://github.com/YauhenBichel)
+<p>
+  <a href="https://github.com/ItzSaurav"><img src="https://github.com/ItzSaurav.png?size=72" width="72" height="72" alt="ItzSaurav"/></a>
+  <a href="https://github.com/kkkhs"><img src="https://github.com/kkkhs.png?size=72" width="72" height="72" alt="kkkhs"/></a>
+  <a href="https://github.com/xianjianlf2"><img src="https://github.com/xianjianlf2.png?size=72" width="72" height="72" alt="xianjianlf2"/></a>
+  <a href="https://github.com/YauhenBichel"><img src="https://github.com/YauhenBichel.png?size=72" width="72" height="72" alt="YauhenBichel"/></a>
+</p>
 
-See the [full contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors).
+[![Contributors](https://contrib.rocks/image?repo=YauhenBichel/python-vibe)](https://github.com/YauhenBichel/python-vibe/graphs/contributors)
+
+| Person | GitHub |
+| --- | --- |
+| ItzSaurav | [@ItzSaurav](https://github.com/ItzSaurav) |
+| Huangshuo Kuang | [@kkkhs](https://github.com/kkkhs) |
+| Mark Xian | [@xianjianlf2](https://github.com/xianjianlf2) |
+| Yauhen Bichel | [@YauhenBichel](https://github.com/YauhenBichel) |
+
+The picture above updates from GitHub commits. The table also thanks people who opened pull requests.
+
+See the [full contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors). Want to be on this list? Start with a [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue).
