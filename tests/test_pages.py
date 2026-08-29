@@ -19,6 +19,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "start.md",
             "api.md",
             "architecture.md",
+            "skills.md",
             "local-editor.md",
             "research-vibe-review.md",
             "investigations/index.md",
@@ -29,6 +30,16 @@ class PagesInvestigationsTest(unittest.TestCase):
             "investigations/what-to-improve.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]
+        self.assertEqual(missing, [])
+
+    def test_skills_page_lists_every_kit_skill(self) -> None:
+        page = (DOCS / "skills.md").read_text(encoding="utf-8")
+        names = sorted(
+            path.parent.name
+            for path in (ROOT / "skills").glob("*/SKILL.md")
+        )
+        self.assertGreaterEqual(len(names), 14)
+        missing = [name for name in names if f"`{name}`" not in page]
         self.assertEqual(missing, [])
 
     def test_seo_and_llm_discovery_files_exist(self) -> None:
@@ -177,3 +188,30 @@ class SiteFrontMatterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CrossPlatformDocsTest(unittest.TestCase):
+    """Pages that teach how to run the agent must work on every platform.
+
+    `PYTHONPATH=src python3.13 ...` is not valid in cmd or PowerShell, and
+    `pip install -r requirements.txt` pulls MLX, which does not install off
+    Apple Silicon. A page that offers only those shuts Windows out.
+    """
+
+    RUN_PAGES = ("start.md", "api.md", "skills.md")
+
+    def test_each_page_shows_the_installed_command(self) -> None:
+        missing = [
+            name
+            for name in self.RUN_PAGES
+            if "python-vibe " not in (DOCS / name).read_text(encoding="utf-8")
+        ]
+        self.assertEqual(missing, [])
+
+    def test_no_page_offers_the_mlx_requirements_as_the_way_in(self) -> None:
+        offenders = [
+            str(path.relative_to(ROOT))
+            for path in DOCS.rglob("*.md")
+            if "pip install -r requirements.txt" in path.read_text(encoding="utf-8")
+        ]
+        self.assertEqual(offenders, [])

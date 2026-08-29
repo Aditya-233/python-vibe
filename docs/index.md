@@ -29,8 +29,8 @@ PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
 <div class="tracks">
   <section class="track">
     <h2>Everyday</h2>
-    <p><code>scripts/agent.py</code> with <code>llama3.1:8b</code>. Typed Actions, a write jail, skills, and a locate prelude. Comfortable on trees of ≤40 first-party <code>.py</code>/<code>.md</code> files and ≤200 KB.</p>
-    <p><a href="{{ '/start/' | relative_url }}">Full install</a></p>
+    <p><code>scripts/agent.py</code> with <code>llama3.1:8b</code>. Typed Actions, a write jail, <a href="{{ '/skills/' | relative_url }}">skills</a>, and a locate prelude. Comfortable on trees of ≤40 first-party <code>.py</code>/<code>.md</code> files and ≤200 KB.</p>
+    <p><a href="{{ '/start/' | relative_url }}">Full install</a> · <a href="{{ '/skills/' | relative_url }}">Skills the agent uses</a></p>
   </section>
   <section class="track">
     <h2>Tiny sidecar</h2>
@@ -60,6 +60,7 @@ Use a hosted IDE agent when the job is multi-file across languages, needs extra 
 - [Local loop vs hosted agents]({{ '/investigations/local-vs-cloud/' | relative_url }}) — every shipped path, same jobs
 - [What to improve]({{ '/investigations/what-to-improve/' | relative_url }}) — harness work that closes a gap, and work that does not
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}) — why 0.5B is not daily work
+- [Skills]({{ '/skills/' | relative_url }}) — the fourteen kit skills and when the harness loads each one
 - [Everyday skills]({{ '/investigations/everyday-skills/' | relative_url }}) — skills written for an 8B
 - [Harness comparison]({{ '/investigations/harness-comparison/' | relative_url }}) — what transfers from other agent harnesses
 - [Architecture]({{ '/architecture/' | relative_url }}) — layer rule

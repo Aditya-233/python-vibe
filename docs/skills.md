@@ -1,0 +1,96 @@
+---
+title: Skills
+description: Kit skills the everyday agent loads. Each one is a short copy-paste Action. The harness picks them from the task, or you pass --skill.
+permalink: /skills/
+date: 2026-08-29
+---
+
+# Skills
+
+The everyday agent does not invent a plan from a long essay. It loads one or
+more **skills** from `skills/*/SKILL.md`. A skill is a short copy-paste
+`Action:` block written for an 8B. Paths inside a skill are rewritten to
+files in *your* project before the model sees them.
+
+Your project's `AGENTS.md` is read first and outranks the kit. A skill with
+the same name in `<project>/skills/` replaces the kit copy.
+
+See which skills a task would load, with no model:
+
+```bash
+python-vibe brief /path/to/your/app
+python-vibe run   /path/to/your/app --skill add-feature \
+  "add a function multiply(a, b) and a unit test"
+```
+
+Mid-loop: `Action: skill` plus `Name: write-tests`, or `Action: write-tests`
+as a shortcut.
+
+How they are written, and what failed on an 8B: [Everyday skills]({{ '/investigations/everyday-skills/' | relative_url }}).
+
+## How the harness picks them
+
+`--skill` names win. Otherwise the wording of the task chooses. A large tree
+also gets `stay-scoped`.
+
+| If the task looks like… | Skills loaded |
+| --- | --- |
+| A what / why / how question | `answer-question` |
+| Merge a pull request | `merge-pr` |
+| Open a PR, commit, or push | `open-pr` |
+| Read a GitHub issue | `read-issue` |
+| Create a package or project layout | `new-package` |
+| Rename or clean up a smell | `fix-smell` |
+| Review one named file | `review-code` |
+| Review structure / design / layout | `review-design`, `refactor-split`, `readable-layout` |
+| Add, implement, or introduce | `add-feature`, `write-tests` |
+| Vague, no file and no symbol | `ask-when-unclear` |
+| Mentions tests | `write-tests` |
+| Mode is large | `stay-scoped` as well |
+
+A question is never treated as a write. Ship skills (`read-issue`, `open-pr`,
+`merge-pr`) do not force, do not target `main` / `master`, and skip secret
+filenames.
+
+## Kit catalog
+
+Fourteen skills ship with python-vibe.
+
+### Code changes
+
+| Skill | What it tells the model to do | When it is used |
+| --- | --- | --- |
+| [`add-feature`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/add-feature/SKILL.md) | Add one requested function, then a test. One `Append:` patch. | Task starts with add, implement, or introduce. Not for questions or one-line bugs. |
+| [`write-tests`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/write-tests/SKILL.md) | Add one AAA unittest that names the behavior. | After `add-feature`, or when the task asks for tests. |
+| [`new-package`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/new-package/SKILL.md) | Scaffold `pkg/` + `tests/` with an exports-only `__init__.py`. | Create a package or project structure. Not for one function on an existing module. |
+| [`fix-smell`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/fix-smell/SKILL.md) | Rename one opaque function to readable snake_case. One `Find:` / `Replace:`. | Smell, rename, or clean up. Not for add or questions. |
+| [`refactor-split`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/refactor-split/SKILL.md) | Split one god module into `pkg/<concern>.py`. | Refactor or extract. Does not rewrite the whole tree. |
+
+### Questions and reviews
+
+| Skill | What it tells the model to do | When it is used |
+| --- | --- | --- |
+| [`answer-question`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/answer-question/SKILL.md) | Answer from the locate prelude. `Action: done` with a short fact. | The task is a what / why / how question. |
+| [`ask-when-unclear`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/ask-when-unclear/SKILL.md) | Ask you one short question before changing anything. | No file and no symbol, or two files would both be reasonable. Not when locate already found the file. |
+| [`review-code`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/review-code/SKILL.md) | Report defects in one file. Do not edit it. | Review, check, or find bugs. Not when the task asks for a fix. |
+| [`review-design`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/review-design/SKILL.md) | Read the design scan, then one split until the scan is clean. | Review, structure, or system design of the tree. |
+| [`readable-layout`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/readable-layout/SKILL.md) | Say why the tree is hard to read (cycle, flat package, god module, no tests) and name **one** move. | Structure, layout, layers, organise, or refactor. Not for adding one function. |
+
+### Ship and large trees
+
+| Skill | What it tells the model to do | When it is used |
+| --- | --- | --- |
+| [`read-issue`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/read-issue/SKILL.md) | `Action: issue` plus `Number: N`. | The task names an issue. |
+| [`open-pr`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/open-pr/SKILL.md) | Commit, push, then open a PR (`Title:` / `Body: Closes #N`). | The task says PR, commit, or push. |
+| [`merge-pr`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/merge-pr/SKILL.md) | `Action: merge` plus `Number: N`. No force. | The task says merge. |
+| [`stay-scoped`](https://github.com/YauhenBichel/python-vibe/blob/HEAD/skills/stay-scoped/SKILL.md) | Stay in one folder. Do not grep the whole tree. | Mode is large, grep is truncated, or you named a folder with `--scope`. |
+
+## What a skill is not
+
+- Not a hosted IDE tool server. The model still emits one text `Action:` per turn.
+- Not training data for the 0.5B LoRA. Do not train more 0.5B weights to “learn skills”.
+- Not a place to name other editors or chat products. Skills are copy-paste blocks.
+
+[Architecture]({{ '/architecture/' | relative_url }}) describes `skillkit/`
+(catalog, target, style). [Using]({{ '/api/' | relative_url }}) shows the
+`skills` field on `AgentOptions`.

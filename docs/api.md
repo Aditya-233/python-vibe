@@ -32,7 +32,7 @@ result.refusals  # what the harness stopped, and why
 | `model` | `llama3.1:8b` | Ollama model name |
 | `engine` | `ollama` | `ollama` or `mlx` |
 | `scope` | `""` | Stay inside this subdirectory |
-| `skills` | `()` | Skill names to load. Empty means choose from the task |
+| `skills` | `()` | Skill names to load. Empty means choose from the task. Catalog: [Skills]({{ '/skills/' | relative_url }}) |
 | `steps` | `20` | Maximum model turns before the run stops |
 | `max_tokens` | `700` | Maximum length of one model reply |
 | `allow_writes` | `True` | When `False`, patch, edit and run are refused |
