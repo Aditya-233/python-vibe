@@ -329,12 +329,21 @@ def opening_question(task: str, pre) -> Question | None:
 
 
 def _instruction_lines(pre) -> tuple[str, ...]:
-    """The skill lines the model was handed, so an echo can be spotted."""
+    """Every line the model was handed, so an echo of any of them is caught.
+
+    The skills were checked but the system prompt was not, and its examples
+    are handed over on every single turn. Asked what a function returns, an
+    8B answered with the system prompt's own example line: "one short
+    question, when the task could mean two different things".
+    """
     lines: list[str] = []
-    for skill in pre.skills:
+    sources = [skill.body for skill in pre.skills]
+    if getattr(pre, "system", ""):
+        sources.append(pre.system)
+    for body in sources:
         lines.extend(
             line.strip()
-            for line in skill.body.splitlines()
+            for line in body.splitlines()
             if len(line.strip()) >= 12 and not line.strip().startswith("Action:")
         )
     return tuple(lines)
