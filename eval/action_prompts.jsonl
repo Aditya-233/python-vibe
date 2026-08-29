@@ -10,3 +10,4 @@
 {"action": "layout", "prompt": "Task: review the project layout\n# skill readable-layout\nLook before you move anything.\nAction: layout"}
 {"action": "edit", "prompt": "Task: implement binary search\n# skill write-algorithm\nNext Action must be edit Path: pkg/index_of.py with one function.\nDo not write the test in this Action."}
 {"action": "edit", "prompt": "Task: fetch json from the HTTP API\n# skill call-http\nNext Action must be edit Path: pkg/fetch_json.py. urllib only. No curl."}
+{"action": "edit", "prompt": "Task: write a pathlib helper for the venv\n# skill write-paths\nNext Action must be edit Path: pkg/paths.py. pathlib. No os.path.join."}

@@ -10,8 +10,10 @@ from harness.task import (
     looks_like_add_feature,
     looks_like_bugfix,
     looks_like_design_loop,
+    covered_symbol,
     looks_like_everyday_code,
     looks_like_fix_smell,
+    looks_like_write_tests,
     looks_like_new_package,
     looks_like_refactor,
     rename_pair,
@@ -360,6 +362,26 @@ def refuse_done_oracle(task: str, project: Path, last_path: str) -> str:
                     f"undefined name {leftover[0]} in {rel}. "
                     f"Action: patch Path: {rel} Find: {leftover[0]} "
                     "Replace: the name you assigned."
+                )
+    if looks_like_write_tests(task):
+        symbol = covered_symbol(task)
+        if symbol:
+            tests = Path(project) / "tests"
+            body = ""
+            if tests.is_dir():
+                for path in sorted(tests.glob("test_*.py")):
+                    try:
+                        body += path.read_text(encoding="utf-8")
+                    except OSError:
+                        continue
+            if symbol not in body:
+                test_rel = "tests/test_module.py"
+                if named:
+                    test_rel = f"tests/test_{Path(named).stem}.py"
+                return (
+                    f"no test names {symbol}. "
+                    f"Action: patch Path: {test_rel} "
+                    f"Append: one AAA test that calls {symbol}."
                 )
     if looks_like_fix_smell(task) and named:
         old, new = rename_pair(task)

@@ -15,6 +15,7 @@ constrain the next step, then let a compiler-shaped oracle decide whether
 the work is done.
 
 Related: [what to improve]({{ '/investigations/what-to-improve/' | relative_url }})
+· [fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | relative_url }})
 · [everyday skills]({{ '/investigations/everyday-skills/' | relative_url }})
 · [harness comparison]({{ '/investigations/harness-comparison/' | relative_url }}).
 

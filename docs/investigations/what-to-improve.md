@@ -68,7 +68,7 @@ Ship these before training another model.
 9. **Everyday laptop Python.** Skills `write-script`, `call-http`, `analyze-data`, `write-algorithm`. Prelude now quotes the skill `Path:` (`pkg/weekday_name.py`, not `pkg/<noun>.py`). Drafts that emit `curl` / `wget` / `os.system` are refused.
 10. **Compiler oracle.** Undefined-name scan (`scan/names.py`). `done` is refused if a bugfix file still has `subtotl`. Tests in an impl file are refused. A rename that still defines the old name is refused. See [small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }}).
 11. **Platform paths.** Skill `write-paths`. Jail includes `.toml` / `.yml` / `.json`. Drafts that use `os.path.join`, a hardcoded home or `/tmp`, or a POSIX-only venv path are refused. See [platform engineering]({{ '/investigations/platform-engineering/' | relative_url }}).
-12. **Traces, then a 7B LoRA.** Only after a live design loop reaches no structure findings. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough.
+12. **Traces, then a 7B LoRA.** Only after a live design loop reaches no structure findings. `--record` into `data/agent-loop/extra.jsonl` (gitignored). Thirty seed rows are not enough. Decision write-up: [fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | relative_url }}).
 
 ## What not to spend a week on
 

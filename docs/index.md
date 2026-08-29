@@ -50,7 +50,7 @@ Use a hosted IDE agent when the job is multi-file across languages, needs extra 
 ## Honest limits
 
 - No general shell. `Action: run` is Python argv only.
-- Writes are `.py` / `.pyi` / `.md` under `--project`, with `.bak`, a 2/3-length guard, and `ast.parse`.
+- Writes are project text files under `--project` (Python plus a few config suffixes; no secret names), with `.bak`, a 2/3-length guard, and `ast.parse`.
 - Large trees need `--scope` and `Action: map`. An 8B will not walk a hundred files.
 - The 7B everyday LoRA (`python-vibe-8b`) is a config. It is not trained.
 - Live parse on this kit (29 Aug 2026) is **2 / 3**. That is not everyday-ready.
@@ -60,6 +60,7 @@ Use a hosted IDE agent when the job is multi-file across languages, needs extra 
 - [Local loop vs hosted agents]({{ '/investigations/local-vs-cloud/' | relative_url }}) — every shipped path, same jobs
 - [What to improve]({{ '/investigations/what-to-improve/' | relative_url }}) — harness work that closes a gap, and work that does not
 - [Small models, classic development]({{ '/investigations/small-llm-harness/' | relative_url }}) — oracles that make an 8B finish a change
+- [Fine-tune or harness]({{ '/investigations/fine-tune-or-harness/' | relative_url }}) — when new weights help, and when they do not
 - [Everyday laptop]({{ '/investigations/everyday-laptop/' | relative_url }}) — why 0.5B is not daily work
 - [Demo]({{ '/demo/' | relative_url }}) — eleven everyday tasks on one small tree, including misses
 - [Skills]({{ '/skills/' | relative_url }}) — the nineteen kit skills and when the harness loads each one

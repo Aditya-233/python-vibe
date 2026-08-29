@@ -8,3 +8,4 @@
 {"action": "plan", "draft": "Action: plan\nSummary: read util_stats then patch return tota"}
 {"action": "skill", "draft": "Action: skill\nName: add-feature"}
 {"action": "locate", "draft": "Action: locate\nQuery: apply_source"}
+{"action": "edit", "draft": "Action: edit\nPath: pkg/paths.py"}
