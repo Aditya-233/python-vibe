@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from finetune.huggingface_store import push_folder, require_token  # noqa: E402
+from finetune.huggingface_store import push_card, push_folder, require_token  # noqa: E402
 from finetune.models import SPECS  # noqa: E402
 
 
@@ -19,9 +19,12 @@ def main() -> None:
     parser.add_argument("model", choices=sorted(SPECS))
     parser.add_argument(
         "--what",
-        choices=("fused", "adapters"),
+        choices=("fused", "adapters", "card"),
         default="fused",
-        help="fused model folder is the big artifact; adapters are the small LoRA files",
+        help=(
+            "fused is the big artifact; adapters are the small LoRA files; "
+            "card uploads only README.md and leaves the weights alone"
+        ),
     )
     parser.add_argument(
         "--public",
@@ -30,6 +33,9 @@ def main() -> None:
     )
     args = parser.parse_args()
     spec = SPECS[args.model]
+    if args.what == "card":
+        print(push_card(spec, token=require_token()))
+        return
     if args.what == "adapters":
         from finetune.huggingface_store import stage_adapter_bundle
 

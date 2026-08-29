@@ -1,0 +1,147 @@
+"""Parse one agent turn. Deterministic. No model."""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+
+from harness.act.code import extract_python
+
+# Hyphens are allowed so a skill name works as an action: every kit
+# skill is hyphenated, and `\w+` could not match one.
+_ACTION = re.compile(r"^Action:\s*([\w-]+)\s*$", re.MULTILINE | re.IGNORECASE)
+# Every verb the loop can carry out. A model that writes `Action: find`
+# has put a field name on the Action line; that block is skipped so the
+# turn is not spent on an unknown verb.
+KNOWN_ACTIONS = frozenset(
+    {
+        "glob", "grep", "read", "edit", "patch", "run", "map", "plan",
+        "skill", "locate", "layout", "ask", "done",
+        "issue", "branch", "commit", "push", "pr", "merge",
+    }
+)
+_FIELD = re.compile(
+    r"^(Path|File|Query|Pattern|Argv|Summary|Scope|Name|Number|Title):\s*(.+)$",
+    re.MULTILINE,
+)
+_STOP = re.compile(
+    r"^(Action|Path|File|Query|Pattern|Argv|Summary|Scope|Name|Number|Title|Body|Find|Replace|Append|Add):\s*",
+    re.IGNORECASE,
+)
+
+
+def _block(text: str, key: str) -> str:
+    match = re.search(rf"^{key}:\s*(.*)$", text, re.MULTILINE | re.IGNORECASE)
+    if not match:
+        return ""
+    lines: list[str] = []
+    first = match.group(1).rstrip()
+    if first:
+        lines.append(first)
+    for line in text[match.end() :].lstrip("\n").splitlines():
+        if _STOP.match(line):
+            break
+        lines.append(line.rstrip())
+    return "\n".join(lines).rstrip()
+
+
+@dataclass(frozen=True)
+class AgentTurn:
+    action: str
+    path: str = ""
+    query: str = ""
+    pattern: str = ""
+    argv: tuple[str, ...] = ()
+    summary: str = ""
+    source: str | None = None
+    find: str = ""
+    replace: str = ""
+    scope: str = ""
+    name: str = ""
+    append: str = ""
+    number: str = ""
+    title: str = ""
+    body: str = ""
+
+
+_PREFERRED_WRITE = ("patch", "edit", "run", "locate", "done")
+_PREFERRED_QUESTION = ("done", "locate", "grep", "read")
+_PREFERRED_SHIP = (
+    "issue",
+    "branch",
+    "commit",
+    "push",
+    "pr",
+    "merge",
+    "patch",
+    "done",
+)
+
+
+def parse_turn(text: str) -> AgentTurn | None:
+    match = _ACTION.search(text)
+    if not match:
+        return None
+    action = match.group(1).lower()
+    fields = {m.group(1).lower(): m.group(2).strip() for m in _FIELD.finditer(text)}
+    argv = tuple(part for part in fields.get("argv", "").split() if part)
+    source = extract_python(text) if action == "edit" else None
+    if action == "edit" and not source:
+        extra = _block(text, "Append") or _block(text, "Add")
+        if extra:
+            source = extra
+    return AgentTurn(
+        action=action,
+        path=fields.get("path") or fields.get("file", ""),
+        query=fields.get("query", ""),
+        pattern=fields.get("pattern", ""),
+        argv=argv,
+        summary=fields.get("summary", ""),
+        source=source,
+        find=_block(text, "Find"),
+        replace=_block(text, "Replace"),
+        scope=fields.get("scope", ""),
+        name=fields.get("name", ""),
+        append=_block(text, "Append") or _block(text, "Add"),
+        number=fields.get("number", ""),
+        title=fields.get("title", ""),
+        body=_block(text, "Body"),
+    )
+
+
+def _is_skill_name(verb: str) -> bool:
+    """`Action: write-tests` names a skill, which the loop loads."""
+    return "-" in verb or "_" in verb
+
+
+def parse_turn_smart(
+    text: str, *, question: bool = False, ship: bool = False
+) -> AgentTurn | None:
+    """Small models paste the Action menu. Pick one block by task kind."""
+    matches = [
+        match
+        for match in _ACTION.finditer(text)
+        if match.group(1).lower() in KNOWN_ACTIONS or _is_skill_name(match.group(1))
+    ]
+    if not matches:
+        return parse_turn(text)
+    if len(matches) == 1:
+        return parse_turn(text[matches[0].start() :])
+    if question:
+        prefer = _PREFERRED_QUESTION
+    elif ship:
+        prefer = _PREFERRED_SHIP
+    else:
+        prefer = _PREFERRED_WRITE
+    chosen = matches[0]
+    for match in matches:
+        if match.group(1).lower() in prefer:
+            chosen = match
+            break
+    start = chosen.start()
+    end = len(text)
+    for match in matches:
+        if match.start() > start:
+            end = match.start()
+            break
+    return parse_turn(text[start:end])

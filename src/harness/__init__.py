@@ -1,13 +1,34 @@
-"""Deterministic wrapper around the python-vibe model.
+"""python-vibe: a deterministic harness around a small local model.
 
-The model drafts, the harness decides whether that draft ships.
+The model drafts; the harness decides what ships.
+
+    from harness import Agent, AgentOptions
+
+    agent = Agent(AgentOptions(project=Path("~/app"), scope="src"))
+    result = agent.run("add multiply(a, b) and a unit test")
+    print(result.summary, result.writes)
+
+Read-only is one flag:
+
+    AgentOptions(project=..., allow_writes=False)
+
+Command line and HTTP are the same object:
+
+    python -m harness run ~/app "fix the NameError"
+    python -m harness serve --project ~/app
 """
 
-from harness.python_vibe import PythonVibeGuard
-from harness.run import complete
-from harness.types import Finding, Outcome
+from harness.agent import Agent, AgentOptions, AgentResult, Question, Step
+from harness.guard.python_vibe import PythonVibeGuard
+from harness.guard.run import complete
+from harness.guard.types import Finding, Outcome
 
 __all__ = [
+    "Agent",
+    "AgentOptions",
+    "AgentResult",
+    "Question",
+    "Step",
     "PythonVibeGuard",
     "complete",
     "Finding",

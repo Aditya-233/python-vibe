@@ -5,15 +5,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.smart import (
+from harness.locate import (
     def_hit_path,
     locate_py,
     prelude,
     refuse_early_done,
+    refuse_design_dirty,
     refuse_question_write,
     refuse_redundant_explore,
     refuse_redundant_locate,
     refuse_shallow_done,
+    refuse_thin_review,
     return_annotation,
     signature_line,
 )
@@ -22,7 +24,7 @@ from harness.smart import (
 class SmartHarnessTest(unittest.TestCase):
     def test_def_hit_prefers_definition(self) -> None:
         grep = (
-            "src/a.py:1:from harness.code import apply_source\n"
+            "src/a.py:1:from harness.act.code import apply_source\n"
             "src/harness/code.py:84:def apply_source(path, source, *, original):\n"
         )
         self.assertEqual(def_hit_path(grep, "apply_source"), "src/harness/code.py")
@@ -82,6 +84,20 @@ class SmartHarnessTest(unittest.TestCase):
             refuse_question_write("what does complete do?", "patch").lower(),
         )
         self.assertEqual(refuse_question_write("add a function multiply", "patch"), "")
+        self.assertEqual(
+            refuse_question_write("review the project structure", "edit"),
+            "",
+        )
+        from harness.locate import refuse_question_ask
+
+        self.assertIn(
+            "already located",
+            refuse_question_ask("what does add return?", "ask", "pkg/mathy.py"),
+        )
+        self.assertEqual(
+            refuse_question_ask("what does add return?", "ask", ""),
+            "",
+        )
         self.assertIn(
             "auto-read",
             refuse_redundant_explore(
@@ -138,6 +154,30 @@ class SmartHarnessTest(unittest.TestCase):
         self.assertEqual(
             refuse_redundant_locate(
                 "add a function multiply(a, b) and a unit test", "locate", False
+            ),
+            "",
+        )
+
+    def test_design_loop_refuses_done_while_dirty(self) -> None:
+        dirty = "design review\n- god module: pkg/kitchen.py has 4 top-level functions"
+        self.assertIn(
+            "findings remain",
+            refuse_design_dirty("review the project structure", dirty),
+        )
+        clean = "no structure findings in scope — pkg/ and tests/ look split"
+        self.assertEqual(
+            refuse_design_dirty("review the project structure", clean),
+            "",
+        )
+        self.assertIn(
+            "no structure findings",
+            refuse_thin_review("review the project structure", "looks fine", clean),
+        )
+        self.assertEqual(
+            refuse_thin_review(
+                "review the project structure",
+                "no structure findings",
+                clean,
             ),
             "",
         )

@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "python-vibe: ask",
+      "type": "shell",
+      "command": "__RUNNER__ ask \"${workspaceFolder}\" \"${input:task}\"",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "python-vibe: run",
+      "type": "shell",
+      "command": "__RUNNER__ run \"${workspaceFolder}\" \"${input:task}\"",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "python-vibe: brief",
+      "type": "shell",
+      "command": "__RUNNER__ brief \"${workspaceFolder}\"",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "task",
+      "description": "What should python-vibe do?",
+      "type": "promptString",
+      "default": "add multiply(a, b) and a unit test"
+    }
+  ]
+}

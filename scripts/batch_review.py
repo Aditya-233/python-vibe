@@ -24,13 +24,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from harness.code import apply_source, extract_python, read_project_file  # noqa: E402
-from harness.engine import make_generate  # noqa: E402
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.project_scan import list_small_py_files  # noqa: E402
-from harness.report_md import write_report  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.act.code import apply_source, extract_python, read_project_file  # noqa: E402
+from harness.model.engine import make_generate  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.scan.project_scan import list_small_py_files  # noqa: E402
+from harness.observe.report_md import write_report  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 REPORT = ROOT / "scratch" / "batch-review.jsonl"
 REPORT_MD = ROOT / "scratch" / "batch-review.md"

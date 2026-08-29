@@ -44,6 +44,30 @@ def write_card(spec: ModelSpec, dest: Path) -> Path:
     return readme
 
 
+def push_card(spec: ModelSpec, *, token: str) -> str:
+    """Upload only the model card, leaving the weights untouched.
+
+    The description changes far more often than the weights do, and
+    re-uploading a folder to change one text file is both slow and a way to
+    publish something by accident.
+    """
+    import tempfile
+
+    from huggingface_hub import HfApi
+
+    repo_id = publish_hf_repo(spec)
+    with tempfile.TemporaryDirectory() as tmp:
+        readme = write_card(spec, Path(tmp))
+        HfApi(token=token).upload_file(
+            path_or_fileobj=str(readme),
+            path_in_repo="README.md",
+            repo_id=repo_id,
+            repo_type="model",
+            commit_message=f"update the {spec.name} card",
+        )
+    return f"https://huggingface.co/{repo_id}"
+
+
 def push_folder(spec: ModelSpec, folder: Path, *, private: bool, token: str) -> str:
     if not folder.is_dir() or not any(folder.iterdir()):
         raise FileNotFoundError(f"nothing to upload in {folder}")

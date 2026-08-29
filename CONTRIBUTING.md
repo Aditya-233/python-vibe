@@ -27,7 +27,10 @@ PYTHONPATH=src python -m unittest discover -s tests -q
 You do **not** need a Hugging Face token, Ollama, or a GPU to run the harness
 tests. Training the tiny LoRA uses MLX on Apple Silicon (Homebrew Python 3.13).
 Everyday agent work uses Ollama 8B+ — see [AGENTS.md](./AGENTS.md) and
-[docs/local-editor.md](./docs/local-editor.md).
+[docs/local-editor.md](./docs/local-editor.md). The project site is
+[yauhenbichel.github.io/python-vibe](https://yauhenbichel.github.io/python-vibe/).
+New public notes go in `docs/` (Jekyll). Do not name other editors or chat
+products there.
 
 Uploads go to **your** Hub namespace (`HF_USER=yourname` or `HF_REPO=…`), never
 to the official weights repo unless you are a maintainer. Anyone can download
@@ -38,7 +41,9 @@ the public adapters without an account.
 - More **short** Python training pairs (stdlib first, type hints, no secrets)
 - A harness rule with **two fixtures**: one string that must `block`, one
   near-miss that must `pass`
-- Docs, CI, and eval prompts
+- An 8B-shaped skill (`skills/<name>/SKILL.md`, one `Action:` block) after
+  `scripts/skill_probe.py` shows the intended first Action
+- Docs, CI, eval prompts, and drop-in files under `editors/`
 
 ## Before you open a pull request
 

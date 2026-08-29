@@ -20,17 +20,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from harness.code import (  # noqa: E402
+from harness.act.code import (  # noqa: E402
     apply_source,
     extract_python,
     read_project_file,
     resolve_project_file,
     write_and_run,
 )
-from harness.engine import make_generate  # noqa: E402
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.model.engine import make_generate  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 SCRATCH = ROOT / "scratch" / "last.py"
 HELP = "commands: /open FILE  /review  /apply  /run [args...]  /reset  /q"

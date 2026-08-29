@@ -43,17 +43,24 @@ PYTHONPATH=src python scripts/smoke.py --mlx
 
 | Path | Role |
 | --- | --- |
-| `src/harness/` | Guard, serve helpers, agent parse/tools, report formatter |
-| `src/harness/skill_target.py` | Repoints a kit skill's paths at the target project |
-| `src/harness/patch_fix.py` | Recovers a near-miss `Find:` and names the closest lines |
-| `src/harness/repo_map.py` | Signature outline under `Action: map` |
+| `src/harness/task.py` | What the user asked for (leaf; every layer reads it) |
+| `src/harness/guard/` | What ships and what is refused — the safety boundary |
+| `src/harness/scan/` | Facts about a tree: brief, map, outline, house rules, layout |
+| `src/harness/skillkit/` | Loads skills and repoints their paths at the target project |
+| `src/harness/act/` | Intent becomes a change: parse, tools, patch recovery, jail |
+| `src/harness/model/` | Talking to weights (the only non-deterministic layer) |
+| `src/harness/observe/` | Traces, report, offline eval gate |
 | `src/finetune/` | Specs, splits, Hub card, agent system prompt |
 | `scripts/vibe.py` | Laptop REPL (`/run`, `--then`, `--project`) |
 | `scripts/serve.py` | Local HTTP sidecar |
-| `scripts/agent.py` | Everyday explore / edit / run (use a **larger** Ollama model) |
+| `scripts/agent.py` | Everyday explore / edit / run / ship (use a **larger** Ollama model) |
+| `src/harness/mcp_stdio.py` | Local MCP over stdio (editor child process, not an 8B Action) |
+| `src/harness/editor_kit.py` | `python -m harness editors cursor` (MCP + tasks; `--global` merges `~/.cursor/mcp.json`) |
+| `editors/` | Drop-in tasks.json, Continue yaml, MCP json |
+| `src/harness/ship/` | Jailed `issue` `branch` `commit` `push` `pr` `merge` |
 | `scripts/batch_review.py` | One-file-at-a-time review of up to 100 files |
 | `data/python-vibe/` | Short stdlib train/valid/test JSONL |
-| `docs/` | GitHub Pages + investigations |
+| `docs/` | Project site (GitHub Pages) + investigations |
 | `tests/` | Fast unit tests (the merge gate) |
 
 ## How to change things
@@ -89,6 +96,14 @@ then `scripts/build_agent_data.py` and `scripts/train.py --everyday`. Name it in
 Ollama with `scripts/export_ollama.py --create`. Do not spend more 0.5B train
 steps expecting everyday-agent quality.
 
+**Layers.** `src/harness/` is ordered bottom-up and a module may import a
+layer strictly below it, never one above or beside it. `tests/test_architecture.py`
+is the gate: it fails on an upward import, a cycle, a `parents[N]`, or a
+`guard/` module importing anything that writes. New shared predicate about
+the *task*? It goes in `task.py`, not in whichever module needs it first —
+that is how the last three cycles happened. See
+[architecture](docs/architecture.md).
+
 **Edit tool.** `Find:` stays exact-substring: it fails loudly instead of
 editing the wrong line. A miss must come back *recoverable* — whitespace
 retry, then the closest real lines. Do not add fuzzy matching that guesses
@@ -96,6 +111,19 @@ between two candidates; ambiguity is a refusal.
 
 **Investigations.** New measurement pages go in `docs/investigations/`. Add the
 file to `tests/test_pages.py`. Do not claim the LoRA audited a real repo.
+
+**Site.** `docs/` is the public site (Jekyll → GitHub Pages). CSS is inlined
+from `_includes/site.css` (one HTML request, no webfonts, no script). The
+first `Pages` job 404s until you turn the site on in a browser: **Settings →
+Pages → Build and deployment → Source → GitHub Actions**. The default Actions
+token cannot create that site. Then re-run the workflow. Pages publishes from
+the default branch only. Every page needs `title:` and `description:` front
+matter and an entry in `sitemap.md`; `tests/test_pages.py` checks both.
+URL: `https://yauhenbichel.github.io/python-vibe/`. `llms.txt` and
+`llms-full.txt` are the map for coding agents (llms.txt v2). Name a
+third-party editor only where this repo ships an integration for it, as
+`editors/` does; a page must not otherwise advertise or compare products.
+Do not put personal paths. Do not add analytics, webfonts, or a JS bundle.
 
 ## What not to “fix”
 

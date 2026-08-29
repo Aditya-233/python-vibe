@@ -5,15 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.project_brief import (
-    classify_project,
-    looks_like_question,
-    question_symbol,
-    render_brief,
-    render_map,
-    resolve_scope,
-    start_hint,
-)
+from harness.task import looks_like_question, question_symbol
+from harness.scan.project_brief import classify_project, render_brief, render_map, resolve_scope, start_hint
 
 
 class ProjectBriefTest(unittest.TestCase):
@@ -71,6 +64,7 @@ class ProjectBriefTest(unittest.TestCase):
             brief = classify_project(root)
             self.assertIn("question", start_hint(brief, "what is ok.py?"))
             self.assertEqual(question_symbol("what does apply_source refuse?"), "apply_source")
+            self.assertEqual(question_symbol("what does add return?"), "add")
             self.assertEqual(
                 question_symbol("add a function multiply(a, b) and a unit test"),
                 "multiply",

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3eee4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14130f" media="(prefers-color-scheme: dark)">
+  {% include head-seo.html %}
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2316140f'/%3E%3Ctext x='5' y='22' font-family='ui-monospace,monospace' font-size='13' fill='%23f3eee4'%3Epv%3C/text%3E%3C/svg%3E">
+  <style>{% include site.css %}</style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="mark" href="{{ '/' | relative_url }}">python-vibe</a>
+    {% include nav.html %}
+  </header>
+  <main id="main" class="page" tabindex="-1">
+    {% assign u = page.url %}
+    {% if u != '/' and u != '/index.html' and u != '/start/' and u != '/investigations/' and u != '/404.html' %}
+    <nav class="crumbs" aria-label="Breadcrumb">
+      {% if u contains '/investigations' or u contains '/research-vibe-review' %}
+      <a href="{{ '/investigations/' | relative_url }}">Research</a>
+      {% else %}
+      <a href="{{ '/' | relative_url }}">Home</a>
+      {% endif %}
+      <span aria-hidden="true"> / </span>
+      <span aria-current="page">{{ page.title }}</span>
+    </nav>
+    {% endif %}
+    {{ content }}
+  </main>
+  <footer class="foot">
+    <p>Yauhen Bichel · Apache-2.0 ·
+      <a href="https://github.com/YauhenBichel/python-vibe" rel="noreferrer">GitHub</a> ·
+      <a href="https://huggingface.co/YauhenBichel/python-vibe-0.5b" rel="noreferrer">Hub weights</a>
+    </p>
+    <p class="quiet">
+      <a href="{{ '/llms.txt' | relative_url }}">llms.txt</a> ·
+      <a href="{{ '/llms-full.txt' | relative_url }}">llms-full.txt</a> ·
+      <a href="{{ '/sitemap.xml' | relative_url }}">sitemap</a>
+      — for crawlers and coding agents.
+    </p>
+    <p class="quiet">Public copy names this project and its own tools. It does not name other editors or chat products.</p>
+  </footer>
+</body>
+</html>

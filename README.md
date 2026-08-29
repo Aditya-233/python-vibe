@@ -2,32 +2,63 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 [![CI](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/YauhenBichel/python-vibe/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-2F6FED)](https://yauhenbichel.github.io/python-vibe/)
+[![Pages](https://github.com/YauhenBichel/python-vibe/actions/workflows/pages.yml/badge.svg)](https://yauhenbichel.github.io/python-vibe/)
+[![Contributors](https://img.shields.io/github/contributors/YauhenBichel/python-vibe)](https://github.com/YauhenBichel/python-vibe#contributors)
 
 Everyday Python vibe coding on a laptop. Small repos: explore, edit, run.
 Large repos: a scoped harness so the model never loads the whole tree.
 The public 0.5B LoRA is a **style prior**. Daily work uses an **8B** Ollama
 model plus the jail in `scripts/agent.py`.
 
+Site: [yauhenbichel.github.io/python-vibe](https://yauhenbichel.github.io/python-vibe/)
+([llms.txt](https://yauhenbichel.github.io/python-vibe/llms.txt) for coding agents).
+Research: [local loop vs hosted agents](./docs/investigations/local-vs-cloud.md),
+[what to improve](./docs/investigations/what-to-improve.md).
+
 Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b).
 
 | Track | What to run | Role |
 | --- | --- | --- |
 | Everyday (laptop) | `scripts/agent.py` (default `llama3.1:8b`) | Comfortable explore / edit / run; `--scope` on large trees |
-| Local editor | [docs/local-editor.md](./docs/local-editor.md) | OpenAI-compatible Ollama on this machine |
+| Cursor / editor | `python-vibe editors cursor --allow-writes` | One command. Then reload and enable MCP. [docs/cursor.md](./docs/cursor.md) |
 | Tiny (Hub / smoke) | `scripts/vibe.py`, `serve.py`, `--tiny` | 0.5B drafts through `PythonVibeGuard` |
 
 Join: [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue) ·
-[Discussions](https://github.com/YauhenBichel/python-vibe/discussions). You do
+[Discussions](https://github.com/YauhenBichel/python-vibe/discussions) ·
+[Contributors](#contributors). You do
 not need a GPU to run tests.
 
 Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md) · security: [SECURITY.md](./SECURITY.md).
 Vulnerabilities: open a **public** GitHub issue. Do not paste live keys.
 
+## Use it
+
+```python
+from harness import Agent, AgentOptions
+
+result = Agent(AgentOptions(project=Path("~/app"))).run("fix the NameError")
+result.summary, result.writes
+```
+
+```bash
+python -m harness brief  ~/app                    # no model
+python -m harness layout ~/app                    # no model
+python -m harness run    ~/app "add multiply(a, b) and a test"
+python -m harness serve    --project ~/app          # 127.0.0.1, read-only
+python -m harness editors  cursor --allow-writes    # Cursor MCP + tasks (this folder)
+```
+
+Full settings, read-only runs, and the HTTP routes: [docs/api.md](./docs/api.md).
+Layers and the rule that keeps them: [docs/architecture.md](./docs/architecture.md).
+
 ## Everyday agent
 
 `scripts/agent.py` defaults to `llama3.1:8b`. Pass `--tiny` only for smoke.
 
-**Small** (≤40 first-party `.py`/`.md`, ≤200 KB): the agent gets a file list.
+**Small** (≤40 first-party text files, ≤200 KB): the agent gets a file list.
+The jail is Python plus a few config suffixes (`.toml`, `.yml`, `.json`);
+secret names are refused. Path helpers use `pathlib` on every OS.
 Questions → read → `Action: done`. Bugs → `Action: patch` → run.
 
 **Large**: the agent gets top-level counts. Start with `Action: map`. Stay
@@ -61,10 +92,12 @@ with the closest real lines. A repeated read-only action is refused once.
 Your project's own `AGENTS.md` is read first and outranks the kit skills.
 Why each of those: [harness-comparison](./docs/investigations/harness-comparison.md).
 
-Best-practice skills live in `skills/` (`add-feature`, `write-tests`,
-`stay-scoped`, `new-package`, `fix-smell`). The agent preloads them when
-the task says “add” / “test” / “create a package” / “rename”, or you pass
-`--skill`. `Action: skill` + `Name:` loads one mid-loop.
+Best-practice skills live in `skills/`. The agent preloads them when the
+task says “add” / “test” / “path” / “venv” / “create a package” / “rename” / “issue” / “PR”,
+or you pass `--skill`. `Action: skill` + `Name:` loads one mid-loop. Ship
+actions (`issue`, `branch`, `commit`, `push`, `pr`, `merge`) are jailed:
+no force, not `main`/`master`, no secret filenames. Full catalog and when
+each one loads: [Skills](https://yauhenbichel.github.io/python-vibe/skills/).
 
 ```bash
 PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \
@@ -82,7 +115,9 @@ PYTHONPATH=src python3.13 scripts/eval_everyday.py --live
 Do not call this everyday-ready until `--live` beats an untuned 8B on parse
 rate and a real ≥1 KB fix. Notes:
 [docs/investigations/everyday-laptop.md](./docs/investigations/everyday-laptop.md) ·
-[docs/research-vibe-review.md](./docs/research-vibe-review.md).
+[docs/research-vibe-review.md](./docs/research-vibe-review.md) ·
+[docs/investigations/local-vs-cloud.md](./docs/investigations/local-vs-cloud.md) ·
+[docs/investigations/what-to-improve.md](./docs/investigations/what-to-improve.md).
 
 ## Tiny sidecar (0.5B)
 
@@ -279,3 +314,29 @@ namespace — set `HF_USER` / `HF_REPO`, never implied as the official account):
 ```bash
 PYTHONPATH=src python3.13 scripts/push_hf.py python-vibe --what adapters --public
 ```
+
+---
+
+## Contributors
+
+Thank you to everyone who has helped python-vibe. Your code, reviews, issues, and pull requests are appreciated.
+
+<p>
+  <a href="https://github.com/ItzSaurav"><img src="https://github.com/ItzSaurav.png?size=72" width="72" height="72" alt="ItzSaurav"/></a>
+  <a href="https://github.com/kkkhs"><img src="https://github.com/kkkhs.png?size=72" width="72" height="72" alt="kkkhs"/></a>
+  <a href="https://github.com/xianjianlf2"><img src="https://github.com/xianjianlf2.png?size=72" width="72" height="72" alt="xianjianlf2"/></a>
+  <a href="https://github.com/YauhenBichel"><img src="https://github.com/YauhenBichel.png?size=72" width="72" height="72" alt="YauhenBichel"/></a>
+</p>
+
+[![Contributors](https://contrib.rocks/image?repo=YauhenBichel/python-vibe)](https://github.com/YauhenBichel/python-vibe/graphs/contributors)
+
+| Person | GitHub |
+| --- | --- |
+| ItzSaurav | [@ItzSaurav](https://github.com/ItzSaurav) |
+| Huangshuo Kuang | [@kkkhs](https://github.com/kkkhs) |
+| Mark Xian | [@xianjianlf2](https://github.com/xianjianlf2) |
+| Yauhen Bichel | [@YauhenBichel](https://github.com/YauhenBichel) |
+
+The picture above updates from GitHub commits. The table also thanks people who opened pull requests.
+
+See the [full contributor graph](https://github.com/YauhenBichel/python-vibe/graphs/contributors). Want to be on this list? Start with a [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good%20first%20issue).

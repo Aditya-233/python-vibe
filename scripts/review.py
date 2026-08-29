@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from harness.project_scan import list_small_py_files  # noqa: E402
+from harness.scan.project_scan import list_small_py_files  # noqa: E402
 
 
 def main() -> None:

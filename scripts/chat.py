@@ -12,10 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.models import SPECS  # noqa: E402
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.ollama_generate import OllamaGenerate  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.model.ollama_generate import OllamaGenerate  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 
 def main() -> None:

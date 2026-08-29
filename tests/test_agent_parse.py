@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_parse import parse_turn, parse_turn_smart
+from harness.act.parse import parse_turn, parse_turn_smart
 
 
 class AgentParseTest(unittest.TestCase):
@@ -92,6 +92,20 @@ class AgentParseTest(unittest.TestCase):
         assert turn is not None
         self.assertEqual(turn.action, "read")
         self.assertEqual(turn.path, "src/harness/http.py")
+
+    def test_issue_and_pr_fields(self) -> None:
+        issue = parse_turn("Action: issue\nNumber: 50")
+        assert issue is not None
+        self.assertEqual(issue.action, "issue")
+        self.assertEqual(issue.number, "50")
+        pr = parse_turn(
+            "Action: pr\nTitle: After locate, questions must Action: done\n"
+            "Body: Closes #50\n"
+        )
+        assert pr is not None
+        self.assertEqual(pr.action, "pr")
+        self.assertIn("locate", pr.title)
+        self.assertIn("Closes", pr.body)
 
     def test_unparsed(self) -> None:
         self.assertIsNone(parse_turn("no issues"))

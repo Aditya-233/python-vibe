@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_tools import (
+from harness.act.tools import (
     edit_py,
     grep_py,
     map_py,
@@ -14,7 +14,7 @@ from harness.agent_tools import (
     repair_unittest_append,
     run_python,
 )
-from harness.code import resolve_project_file
+from harness.act.code import resolve_project_file
 
 
 class AgentToolsTest(unittest.TestCase):
@@ -41,6 +41,21 @@ class AgentToolsTest(unittest.TestCase):
             edit_py(root, "ok.py", rewrite)
             self.assertIn("value_0 = 1", dest.read_text(encoding="utf-8"))
             self.assertTrue(dest.with_suffix(".py.bak").is_file())
+
+    def test_edit_refuses_a_god_module(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dest = root / "kitchen.py"
+            dest.write_text(
+                "def one():\n    return 1\n\n"
+                "def two():\n    return 2\n\n"
+                "def three():\n    return 3\n\n"
+                "def four():\n    return 4\n",
+                encoding="utf-8",
+            )
+            result = edit_py(root, "kitchen.py", "def one():\n    return 1\n")
+            self.assertIn("already has 4", result)
+            self.assertIn("def four", dest.read_text(encoding="utf-8"))
 
     def test_patch_append_adds_function(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -116,6 +131,43 @@ class AgentToolsTest(unittest.TestCase):
         self.assertIn("from pkg.mathy import add, multiply", out)
         self.assertLess(out.index("def test_multiply"), out.index("if __name__"))
         self.assertIn("class TestMathy", out.split("def test_multiply")[0])
+
+    def test_patch_refuses_a_test_that_asserts_without_arranging(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            dest = root / "tests"
+            dest.mkdir()
+            dest.joinpath("test_mathy.py").write_text(
+                "import unittest\n\n"
+                "class TestMathy(unittest.TestCase):\n"
+                "    def test_add_returns_the_sum(self) -> None:\n"
+                "        got = add(2, 3)\n"
+                "        self.assertEqual(got, 5)\n",
+                encoding="utf-8",
+            )
+            weak = patch_py(
+                root,
+                "tests/test_mathy.py",
+                "",
+                "",
+                "    def test_multiply(self) -> None:\n"
+                "        self.assertEqual(multiply(2, 3), 6)\n",
+            )
+            # The name says what it tests; the arrangement is the problem.
+            self.assertIn("AAA", weak)
+            good = patch_py(
+                root,
+                "tests/test_mathy.py",
+                "",
+                "",
+                "    def test_multiply_returns_the_product(self) -> None:\n"
+                "        left, right = 2, 3\n"
+                "        got = multiply(left, right)\n"
+                "        self.assertEqual(got, 6)\n",
+            )
+            self.assertTrue(good.startswith("patched"), good)
+            body = dest.joinpath("test_mathy.py").read_text(encoding="utf-8")
+            self.assertIn("got = multiply", body)
 
     def test_run_refuses_dash_c(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

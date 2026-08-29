@@ -22,10 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.models import SPECS  # noqa: E402
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.ollama_generate import OllamaGenerate  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.model.ollama_generate import OllamaGenerate  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 
 def _route():
@@ -48,8 +48,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(raw)))
+        # Say the exchange is over. A client left waiting blocks until its
+        # own timeout, which is how this failed on Windows.
+        self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(raw)
+        self.wfile.flush()
+        self.close_connection = True
 
     def do_GET(self) -> None:  # noqa: N802
         if urlparse(self.path).path != "/health":

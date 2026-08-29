@@ -1,3 +1,10 @@
+---
+title: Everyday skills
+description: Skills for the everyday 8B are one copy-paste Action. Publish only after skill_probe.py shows the intended first Action.
+date: 2026-08-29
+type: article
+---
+
 # Investigation: skills written for the everyday 8B
 
 The everyday brain is small. It does not follow a 7-step essay. It copies
@@ -57,12 +64,27 @@ These kit skills, each a **single copy-paste Action** (no essays):
 
 - `skills/answer-question/SKILL.md`
 - `skills/add-feature/SKILL.md`
-- `skills/write-tests/SKILL.md`
+- `skills/write-paths/SKILL.md` — one `pathlib` helper. Both venv
+  layouts. `Path.home()`. No `os.path.join`.
+- `skills/write-tests/SKILL.md` — one AAA method named
+  `test_<unit>_<result>` (`got = multiply(...)`, then assert `got`).
+  A single new test that asserts without arranging is refused, as is an
+  opaque name such as `test_it_works`. A short name that still says what it
+  covers, such as `test_health`, is allowed: the rule is calibrated so that
+  none of this project's own 26 test files is refused by it.
 - `skills/stay-scoped/SKILL.md`
 - `skills/new-package/SKILL.md` — `pkg/__init__.py` exports only, then
   `pkg/<noun>.py`. SoC, not a SOLID lecture.
 - `skills/fix-smell/SKILL.md` — one `Find:` / `Replace:` to a readable
   snake_case name (`total_price`, not `calc`).
+- `skills/read-issue/SKILL.md` — `Action: issue Number: N`
+- `skills/open-pr/SKILL.md` — `Action: pr Title:` + `Body: Closes #N`
+- `skills/merge-pr/SKILL.md` — `Action: merge Number: N` only when the
+  task says merge
+
+Ship is jailed (`src/harness/ship/git_ship.py`): no `--force`, not
+`main`/`master`, unstage `.env` / `credentials.json`. Order: issue →
+branch → patch → commit → push → pr.
 
 Harness: `refuse_opaque_names` (`calc`/`tmp`/`x`, CamelCase functions,
 snake_case classes) and `refuse_layout` (no impl in `__init__.py` or
@@ -70,6 +92,11 @@ snake_case classes) and `refuse_layout` (no impl in `__init__.py` or
 
 Plus harness: `prelude()` locate before the model, `Action: locate`,
 `parse_turn_smart`, syntax reject, skill-name-as-action.
+
+Live `create a package for total_price` (empty dir, 29 Aug 2026):
+`pkg/__init__.py` (export only) → `pkg/total_price.py` → a `TestCase` →
+`unittest` OK → done. A bare `def test_*(self)` is wrapped. `done`
+before a passing run is refused.
 
 Do not publish a new skill until `skill_probe.py` shows the intended
 `action` with `"prelude": true`.
