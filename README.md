@@ -190,12 +190,47 @@ PYTHONPATH=src python3.13 scripts/train.py --everyday
 
 ## Test
 
-Harness only (no GPU, no Ollama):
+Harness tests require Python 3.11 or newer and need no GPU or Ollama. On macOS
+and Linux:
 
 ```bash
-PYTHONPATH=src python3.13 -m unittest discover -s tests -q
-PYTHONPATH=src python3.13 scripts/validate.py
+PYTHONPATH=src python -m unittest discover -s tests -q
+PYTHONPATH=src python scripts/validate.py
 ```
+
+On Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m unittest discover -s tests -q
+python scripts/validate.py
+```
+
+On Windows Command Prompt:
+
+```batch
+set PYTHONPATH=src
+python -m unittest discover -s tests -q
+python scripts/validate.py
+```
+
+On Linux, everyday agent use runs through Ollama rather than MLX:
+
+```bash
+ollama pull llama3.1:8b
+PYTHONPATH=src python scripts/agent.py --project /path/to/your/app --brief
+```
+
+For the tiny sidecar on those platforms, use the base coder model:
+
+```bash
+ollama pull qwen2.5-coder:0.5b
+PYTHONPATH=src python scripts/serve.py
+```
+
+Training the LoRA itself requires Apple Silicon, MLX, and Python 3.13. See
+[discussion #14](https://github.com/YauhenBichel/python-vibe/discussions/14) for
+the open discussion about training without MLX.
 
 Live Ollama (base 0.5B through `PythonVibeGuard`):
 
