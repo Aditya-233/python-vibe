@@ -6,7 +6,8 @@ body:
     attributes:
       value: |
         Thanks for reporting. **Do not paste real API keys.**
-        If this is a security vulnerability, email info@molecare.co.uk instead.
+        If this is a security vulnerability, open a public issue and add the
+        `security` label. Do not paste live keys.
   - type: textarea
     id: what-happened
     attributes:

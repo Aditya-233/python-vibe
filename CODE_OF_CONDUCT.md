@@ -21,8 +21,8 @@ people of any background, experience level, or identity.
 
 ## Enforcement
 
-Report unacceptable behaviour to **info@molecare.co.uk** or via GitHub
-private vulnerability reporting. Reports are handled confidentially.
+Report unacceptable behaviour in a **public** GitHub issue on this repo.
+Do not paste live keys or other people's private information.
 Maintainers may warn, remove content, or ban a contributor depending on
 severity.
 

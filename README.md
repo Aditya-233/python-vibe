@@ -9,7 +9,6 @@ The public 0.5B LoRA is a **style prior**. Daily work uses an **8B** Ollama
 model plus the jail in `scripts/agent.py`.
 
 Weights (public tiny): [YauhenBichel/python-vibe-0.5b](https://huggingface.co/YauhenBichel/python-vibe-0.5b).
-Skin-health Q&A is a separate repo: [MoleCare/skincare-qa](https://github.com/MoleCare/skincare-qa).
 
 | Track | What to run | Role |
 | --- | --- | --- |
@@ -22,7 +21,7 @@ Join: [good first issue](https://github.com/YauhenBichel/python-vibe/labels/good
 not need a GPU to run tests.
 
 Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md) · security: [SECURITY.md](./SECURITY.md).
-Vulnerabilities go to **info@molecare.co.uk**, not a public issue.
+Vulnerabilities: open a **public** GitHub issue. Do not paste live keys.
 
 ## Everyday agent
 

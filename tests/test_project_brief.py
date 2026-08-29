@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from harness.project_brief import (
     classify_project,
     looks_like_question,
+    question_symbol,
     render_brief,
     render_map,
     resolve_scope,
@@ -69,6 +70,11 @@ class ProjectBriefTest(unittest.TestCase):
             (root / "ok.py").write_text("print(1)\n", encoding="utf-8")
             brief = classify_project(root)
             self.assertIn("question", start_hint(brief, "what is ok.py?"))
+            self.assertEqual(question_symbol("what does apply_source refuse?"), "apply_source")
+            hint = start_hint(brief, "what does apply_source refuse?")
+            self.assertIn("grep", hint)
+            self.assertIn("apply_source", hint)
+            self.assertTrue(hint.index("grep") < hint.index("read"))
 
 
 if __name__ == "__main__":

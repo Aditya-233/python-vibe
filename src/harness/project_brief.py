@@ -6,6 +6,7 @@ Large repos get a harness: map, --scope, do not read everything.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,27 @@ SMALL_MAX_FILES = 40
 SMALL_MAX_BYTES = 200_000
 MAP_MAX_ENTRIES = 80
 QUESTION_PREFIXES = ("what ", "why ", "how ", "where ", "which ", "explain ", "list ", "who ")
+_SYMBOL = re.compile(r"\b([a-z_][a-z0-9_]{4,})\b")
+_SYMBOL_SKIP = frozenset(
+    {
+        "what",
+        "does",
+        "this",
+        "that",
+        "with",
+        "from",
+        "return",
+        "where",
+        "which",
+        "explain",
+        "refuse",
+        "about",
+        "after",
+        "before",
+        "source",
+        "apply",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -50,6 +72,15 @@ def resolve_scope(project: Path, scope: str) -> Path:
 def looks_like_question(task: str) -> bool:
     text = task.strip().lower()
     return text.endswith("?") or text.startswith(QUESTION_PREFIXES)
+
+
+def question_symbol(task: str) -> str:
+    hits = [
+        word
+        for word in _SYMBOL.findall(task.lower())
+        if word not in _SYMBOL_SKIP
+    ]
+    return hits[0] if hits else ""
 
 
 def iter_text_files(project: Path, scope: str = "") -> list[tuple[Path, int]]:
@@ -150,6 +181,13 @@ def start_hint(brief: ProjectBrief, task: str) -> str:
     if brief.kind == "large":
         return "Start with Action: map, then grep. Do not Action: done yet."
     if looks_like_question(task):
+        symbol = question_symbol(task)
+        if symbol:
+            return (
+                f"This is a question. First Action: grep Query: {symbol}. "
+                "Then Action: read the file that defines it. "
+                "Then Action: done with the answer. Do not edit unless asked."
+            )
         return (
             "This is a question. Read what you need, then Action: done with the answer. "
             "Do not edit unless asked."

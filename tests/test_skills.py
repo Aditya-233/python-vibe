@@ -12,6 +12,7 @@ from harness.skills import (
     pick_skills,
     render_catalog,
     render_skill,
+    skill_from_action,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +48,17 @@ class SkillsTest(unittest.TestCase):
         assert turn is not None
         self.assertEqual(turn.action, "skill")
         self.assertEqual(turn.name, "add-feature")
+
+    def test_action_write_tests_is_a_skill(self) -> None:
+        shortcut = skill_from_action("write-tests", project=ROOT)
+        self.assertIsNotNone(shortcut)
+        assert shortcut is not None
+        self.assertEqual(shortcut.name, "write-tests")
+        self.assertIsNone(skill_from_action("grep", project=ROOT))
+        named = skill_from_action("skill", name="add-feature", project=ROOT)
+        self.assertIsNotNone(named)
+        assert named is not None
+        self.assertEqual(named.name, "add-feature")
 
 
 if __name__ == "__main__":
