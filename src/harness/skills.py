@@ -101,6 +101,10 @@ def looks_like_add_feature(task: str) -> bool:
 
 def pick_skills(task: str, catalog: list[Skill]) -> list[Skill]:
     picked: list[Skill] = []
+    from harness.project_brief import looks_like_question
+
+    if looks_like_question(task):
+        picked.extend(s for s in catalog if s.name == "answer-question")
     if looks_like_add_feature(task):
         picked.extend(s for s in catalog if s.name == "add-feature")
         picked.extend(s for s in catalog if s.name == "write-tests")

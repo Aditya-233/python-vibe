@@ -36,6 +36,8 @@ _SYMBOL_SKIP = frozenset(
         "before",
         "source",
         "apply",
+        "function",
+        "feature",
     }
 )
 

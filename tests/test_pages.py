@@ -10,6 +10,7 @@ class PagesInvestigationsTest(unittest.TestCase):
         required = (
             "local-editor.md",
             "investigations/everyday-laptop.md",
+            "investigations/everyday-skills.md",
             "research-vibe-review.md",
         )
         missing = [name for name in required if not (DOCS / name).is_file()]

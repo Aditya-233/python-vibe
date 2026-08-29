@@ -22,11 +22,13 @@ class SkillsTest(unittest.TestCase):
     def test_kit_lists_add_feature(self) -> None:
         catalog = list_skills(ROOT)
         names = {item.name for item in catalog}
-        self.assertEqual(names, {"add-feature", "write-tests", "stay-scoped"})
+        self.assertEqual(
+            names, {"add-feature", "answer-question", "write-tests", "stay-scoped"}
+        )
         loaded = get_skill("add-feature", ROOT)
         self.assertIsNotNone(loaded)
         assert loaded is not None
-        self.assertIn("When to add", loaded.body)
+        self.assertIn("Append:", loaded.body)
 
     def test_pick_on_add_task_not_on_question(self) -> None:
         catalog = list_skills(ROOT)
@@ -34,7 +36,10 @@ class SkillsTest(unittest.TestCase):
         self.assertFalse(looks_like_add_feature("what does add return?"))
         picked = pick_skills("add a function multiply(a, b) and a unit test", catalog)
         self.assertEqual([item.name for item in picked], ["add-feature", "write-tests"])
-        self.assertEqual(pick_skills("what does add return?", catalog), [])
+        self.assertEqual(
+            [item.name for item in pick_skills("what does add return?", catalog)],
+            ["answer-question"],
+        )
 
     def test_render_and_parse_skill_action(self) -> None:
         catalog = list_skills(ROOT)

@@ -71,6 +71,10 @@ class ProjectBriefTest(unittest.TestCase):
             brief = classify_project(root)
             self.assertIn("question", start_hint(brief, "what is ok.py?"))
             self.assertEqual(question_symbol("what does apply_source refuse?"), "apply_source")
+            self.assertEqual(
+                question_symbol("add a function multiply(a, b) and a unit test"),
+                "multiply",
+            )
             hint = start_hint(brief, "what does apply_source refuse?")
             self.assertIn("grep", hint)
             self.assertIn("apply_source", hint)

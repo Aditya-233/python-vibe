@@ -1,14 +1,16 @@
 ---
 name: stay-scoped
-description: Keeps work inside one subdirectory on a large tree. Use when the brief is Mode large, or the user names a folder, or grep hits are truncated.
+description: Stays in one folder on a large tree. Use when Mode is large, grep is truncated, or the user names a folder.
 ---
 
-# Stay scoped
+Copy this first:
 
-Large trees are a harness problem, not a “read everything” problem.
+Action: map
+Scope: src
 
-1. `Action: map` (optional `Scope:`).
-2. Pick one folder. Prefer `--scope` on the next run, or `Scope:` on map/grep/glob.
-3. Tight `Query:` on grep. If you see `# … truncated`, narrow the query.
-4. Do not `Action: done` after one tiny `__init__.py`.
-5. Do not add a feature in a second package “while you are here”.
+Then:
+
+Action: locate
+Query: the_symbol_from_the_task
+
+Do not Action: done after `__init__.py`. Do not edit a second package.

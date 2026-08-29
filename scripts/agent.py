@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.agent_system import AGENT_SYSTEM  # noqa: E402
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA, TINY_OLLAMA, is_tiny_model  # noqa: E402
-from harness.agent_parse import parse_turn  # noqa: E402
+from harness.agent_parse import parse_turn_smart  # noqa: E402
 from harness.agent_tools import (  # noqa: E402
     edit_py,
     glob_py,
@@ -37,7 +37,13 @@ from harness.agent_tools import (  # noqa: E402
     run_python,
 )
 from harness.engine import make_generate  # noqa: E402
-from harness.project_brief import classify_project, render_brief, start_hint  # noqa: E402
+from harness.project_brief import (  # noqa: E402
+    classify_project,
+    looks_like_question,
+    render_brief,
+    start_hint,
+)
+from harness.smart import locate_py, prelude, refuse_early_done  # noqa: E402
 from harness.python_vibe import PythonVibeGuard  # noqa: E402
 from harness.skills import (  # noqa: E402
     get_skill,
@@ -49,7 +55,7 @@ from harness.skills import (  # noqa: E402
 )
 from harness.trace_record import append_turn  # noqa: E402
 
-_ACTIONS = "glob|grep|read|edit|patch|run|map|plan|skill|done"
+_ACTIONS = "glob|grep|read|edit|patch|run|map|plan|skill|locate|done"
 
 
 def _remember(generate_once, prompt: str, draft: str) -> None:
@@ -72,6 +78,9 @@ def _tool(project: Path, turn, last_path: str, scope: str) -> tuple[str, str]:
             f"{render_catalog(list_skills(project))}",
             last_path,
         )
+    if turn.action == "locate":
+        query = turn.query or turn.name
+        return locate_py(project, query, used_scope)
     if turn.action == "map":
         return map_py(project, used_scope), last_path
     if turn.action == "plan":
@@ -184,6 +193,11 @@ def main() -> None:
         file=sys.stderr,
     )
     last_path = ""
+    located_path = ""
+    pre_text, located_path = prelude(project, args.task, args.scope)
+    if pre_text:
+        last_path = located_path
+        print(pre_text[:2000], file=sys.stderr)
     preloaded = []
     for name in args.skill:
         loaded = get_skill(name, project)
@@ -203,7 +217,8 @@ def main() -> None:
         f"{render_brief(brief, scope=args.scope)}\n\n"
         f"{render_catalog(catalog)}\n\n"
         f"{skill_block}"
-        f"Project root: {project}\n"
+        + (f"{pre_text}\n\n" if pre_text else "")
+        + f"Project root: {project}\n"
         + (f"Scope: {args.scope}\n" if args.scope else "")
         + f"Task: {args.task}\n"
         + start_hint(brief, args.task)
@@ -212,7 +227,7 @@ def main() -> None:
         draft = generate_once(prompt)
         _remember(generate_once, prompt, draft)
         print(f"\n--- step {step} ---\n{draft}\n", flush=True)
-        turn = parse_turn(draft)
+        turn = parse_turn_smart(draft, question=looks_like_question(args.task))
         if args.record:
             append_turn(
                 args.record.expanduser(),
@@ -222,6 +237,11 @@ def main() -> None:
             prompt = f"Could not parse. One Action: {_ACTIONS}"
             continue
         if turn.action == "done":
+            blocked = refuse_early_done(args.task, last_path, located_path)
+            if blocked:
+                prompt = blocked
+                print(blocked[:500], file=sys.stderr)
+                continue
             print(turn.summary or "done")
             return
         try:
