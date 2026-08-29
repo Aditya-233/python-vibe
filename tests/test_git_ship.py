@@ -35,8 +35,7 @@ class GitShipTest(unittest.TestCase):
         self.assertFalse(looks_like_ship("what does apply_source refuse?"))
 
     def test_branch_and_commit_in_temp_repo(self) -> None:
-        here = Path(__file__).resolve().parent
-        with tempfile.TemporaryDirectory(dir=here) as tmp:
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             _git(root, "init", "-b", "proceed/test")
             _git(root, "config", "user.email", "t@localhost")

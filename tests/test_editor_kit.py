@@ -56,7 +56,7 @@ class EverydayKindsTest(unittest.TestCase):
         )
 
     def test_prelude_and_hint_ask_for_edit_not_patch(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "pkg").mkdir()
             (root / "pkg" / "app.py").write_text("def go() -> int:\n    return 1\n")
@@ -95,7 +95,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class EditorInstallTest(unittest.TestCase):
     def test_vscode_and_continue_and_cursor(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
+        with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             vscode = install_editors(root, "vscode")
             cont = install_editors(root, "continue")

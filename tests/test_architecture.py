@@ -121,3 +121,28 @@ class LayerRuleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TempDirectoryTest(unittest.TestCase):
+    """A test must not create files inside the checkout.
+
+    AGENTS.md asks for `tempfile.TemporaryDirectory`. Passing `dir=ROOT`
+    puts the directory in the repository instead of the system temp area,
+    so a crashed run leaves it behind, where the suite's own scans of the
+    project will then find it.
+    """
+
+    TESTS = Path(__file__).resolve().parent
+
+    def test_no_test_creates_a_temporary_directory_in_the_repo(self) -> None:
+        offenders: list[str] = []
+        for path in sorted(self.TESTS.glob("test_*.py")):
+            for number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), 1
+            ):
+                stripped = line.strip()
+                if "TemporaryDirectory(" not in stripped:
+                    continue
+                if "dir=" in stripped and "dir=tmp" not in stripped:
+                    offenders.append(f"{path.name}:{number}: {stripped}")
+        self.assertEqual(offenders, [], "use the system temp area")
