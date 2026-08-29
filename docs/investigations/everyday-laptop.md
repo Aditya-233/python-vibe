@@ -1,10 +1,19 @@
+---
+title: Everyday laptop
+description: The 0.5B LoRA is not daily work. Comfortable explore / edit / run needs a larger local model, tool traces, and a write jail.
+date: 2026-08-29
+type: article
+---
+
 # Investigation: can python-vibe be everyday laptop work?
 
 **Answer:** no — not this 0.5B LoRA. Comfortable daily explore / edit / run
 needs a larger model, tool-use training, and a local editor wired to Ollama.
 Keep python-vibe-0.5b as a cheap draft + harness.
 
-Related: [research-vibe-review](../research-vibe-review.md) · issues
+Related: [research-vibe-review](../research-vibe-review.md) ·
+[local loop vs hosted agents](./local-vs-cloud.md) ·
+[what to improve](./what-to-improve.md) · issues
 [#8](https://github.com/YauhenBichel/python-vibe/issues/8),
 [#9](https://github.com/YauhenBichel/python-vibe/issues/9).
 

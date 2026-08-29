@@ -1,6 +1,6 @@
-"""Layer: the skill kit. Deterministic, no model.
+"""Load skills and prepare them for a specific project.
 
-Loads `SKILL.md` files, picks which apply to a task, and repoints their
-paths at the project actually in front of the model. Depends on
-`harness.task` and `harness.scan`.
+Reads `SKILL.md` files, selects the ones that apply to a task, and replaces
+the file paths inside them with paths that exist in the project being
+worked on.
 """

@@ -1,14 +1,17 @@
-"""Recover a near-miss `Find:` block. Deterministic. No model.
+"""Match a `Find:` block against a file, and explain a failed match.
 
-Exact-string replace is the right primitive — it fails loudly instead of
-silently editing the wrong line. What it must not do is fail *unhelpfully*.
-A small model reproduces the words of a line and loses its indentation, so
-this module retries on whitespace-normalised lines and, when it still
-cannot match, hands back the closest lines in the file so the next turn is
-a fix rather than another guess.
+`patch` replaces an exact substring. Exact matching is deliberate: it fails
+instead of editing a line the user did not mean. The cost is that a small
+model, which often reproduces the words of a line but not its indentation,
+gets no way forward when the match fails.
 
-Ambiguity is still refused: a normalised match that hits twice is not a
-match.
+These functions add two recoveries that do not weaken the guarantee:
+
+* Retry the match ignoring differences in whitespace only. If that matches
+  in exactly one place, use it. If it matches in more than one place, the
+  match is rejected rather than guessed.
+* When there is still no match, return the lines in the file that are most
+  similar, so the next attempt can copy a real line.
 """
 
 from __future__ import annotations
@@ -36,7 +39,12 @@ def _windows(lines: list[str], size: int) -> list[tuple[int, int]]:
 
 
 def find_match(text: str, find: str) -> Match | None:
-    """The literal `find` if unique, else a unique whitespace-only variant."""
+    """Find where `find` occurs in `text`.
+
+    Returns the exact text to replace, and whether it matched exactly.
+    Returns None when there is no match, or when a whitespace-insensitive
+    match occurs in more than one place.
+    """
     if not find:
         return None
     hits = text.count(find)
@@ -62,7 +70,10 @@ def find_match(text: str, find: str) -> Match | None:
 
 
 def suggestions(text: str, find: str, *, limit: int = MAX_SUGGESTIONS) -> list[str]:
-    """Closest real lines, as `line_no: content`, for the refusal message."""
+    """Return the lines in `text` most similar to `find`, for an error message.
+
+    Each entry is formatted as "line number: line content".
+    """
     head = normalize(find.strip("\n").splitlines()[0]) if find.strip() else ""
     if not head:
         return []
@@ -109,7 +120,12 @@ def miss_message(text: str, find: str) -> str:
 
 
 def align_indent(matched: str, replace: str) -> str:
-    """Re-indent a Replace: that lost the leading whitespace of its target."""
+    """Give `replace` the leading whitespace of the line it will replace.
+
+    A small model often reproduces a line without its indentation. If the
+    replacement has no leading whitespace and the matched text does, the
+    replacement is indented to match.
+    """
     if not matched or not replace.strip():
         return replace
     first = matched.splitlines()[0]

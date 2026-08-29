@@ -1,0 +1,23 @@
+title: python-vibe
+description: Everyday Python vibe coding on a laptop. Small repos explore, edit, and run. Large repos stay inside a scoped harness.
+url: https://yauhenbichel.github.io
+baseurl: /python-vibe
+lang: en
+author:
+  name: Yauhen Bichel
+  url: https://github.com/YauhenBichel
+markdown_raw: https://raw.githubusercontent.com/YauhenBichel/python-vibe/HEAD/docs
+permalink: pretty
+markdown: kramdown
+kramdown:
+  input: GFM
+  auto_ids: true
+exclude:
+  - Gemfile
+  - Gemfile.lock
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

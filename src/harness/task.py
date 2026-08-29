@@ -1,12 +1,12 @@
-"""What the user asked for. Deterministic. No model. Imports nothing.
+"""Read the user's task and report what kind of work it asks for.
 
-This is the bottom of the harness. Every other layer reads the task the
-same way, so the predicates live here and not in whichever module happened
-to need them first — that is what let `project_brief`, `skills`, and
-`style` import each other in a circle.
+Every layer needs to know whether the task is a question, a request to add
+code, a rename, or a request to create a package. These functions are the
+single place that decision is made, so the layers above agree with each
+other. This module imports nothing from the rest of the harness.
 
-One rule holds the set together: a question is never a write. Every
-`looks_like_*` writer predicate returns False for a question.
+Rule shared by all of the writer functions below: a question is never a
+write, so each one returns False when the task is a question.
 """
 
 from __future__ import annotations
@@ -118,6 +118,11 @@ def looks_like_refactor(task: str) -> bool:
     return bool(_REFACTOR.search(task.lower()))
 
 
+def looks_like_design_loop(task: str) -> bool:
+    """Review, then one-split, then review again until the scan is clean."""
+    return looks_like_review(task) or looks_like_refactor(task)
+
+
 def looks_like_review(task: str) -> bool:
     if looks_like_new_package(task) or looks_like_ship(task):
         return False
@@ -182,3 +187,53 @@ def smell_symbol(task: str) -> str:
 def rename_target(task: str) -> str:
     """The name a rename task wants: `rename calc to x` -> "x"."""
     return rename_pair(task)[1]
+
+
+_REVIEW_CODE = re.compile(r"\b(review|check|find bugs?|defects?|audit)\b")
+
+
+def looks_like_review_code(task: str) -> bool:
+    """True when the task asks for problems to be reported, not fixed."""
+    text = task.strip().lower()
+    if looks_like_new_package(text) or looks_like_ship(text):
+        return False
+    if looks_like_add_feature(text) or looks_like_fix_smell(text):
+        return False
+    return bool(_REVIEW_CODE.search(text))
+
+
+_IDENTIFIER = re.compile(r"[A-Za-z_]\w*_\w+|\w+\s*\(|\S+\.py\b|\b[A-Za-z]\w*/\S+")
+
+
+def names_something_concrete(task: str) -> bool:
+    """True when the task names a file, a call, or a snake_case identifier.
+
+    `question_symbol` will return any five-letter word, including ordinary
+    English like "clean", so it cannot be used on its own to decide whether
+    the agent has been told what to work on.
+    """
+    return bool(_IDENTIFIER.search(task))
+
+
+def looks_unclear(task: str) -> bool:
+    """True when the task is short and names nothing the agent can search for.
+
+    A task like "clean this up" gives the agent no file and no symbol, so
+    asking one question is better than guessing which file to change.
+    """
+    text = task.strip()
+    if looks_like_question(text) or looks_like_ship(text):
+        return False
+    if names_something_concrete(text):
+        return False
+    # If the kind of work is recognised, the agent has a skill and a first
+    # action for it, so a short task is still workable.
+    known = (
+        looks_like_add_feature,
+        looks_like_fix_smell,
+        looks_like_new_package,
+        looks_like_review_code,
+    )
+    if any(check(text) for check in known):
+        return False
+    return len(text.split()) <= 6

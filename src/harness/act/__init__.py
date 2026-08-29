@@ -1,6 +1,6 @@
-"""Layer: intent becomes a change. Deterministic, no model.
+"""Read a proposed action and carry it out on the file system.
 
-Parses one `Action:` turn and runs it against the tree: glob, grep, read,
-patch, edit, run. Every write goes through the jail in `act.code`.
-Depends on `harness.scan`.
+Parses one action from the model's reply and provides the operations it can
+request: search, read, patch, replace and run. All file writes pass through
+the path restriction and backup in `harness.act.code`.
 """

@@ -1,0 +1,132 @@
+{% assign desc = page.description | default: site.description %}
+{% assign title = page.title | default: site.title %}
+{% assign home = site.url | append: site.baseurl | append: "/" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": {{ home | append: "#website" | jsonify }},
+      "url": {{ home | jsonify }},
+      "name": {{ site.title | jsonify }},
+      "description": {{ site.description | jsonify }},
+      "inLanguage": "en",
+      "publisher": {"@id": {{ home | append: "#author" | jsonify }}},
+      "sourceOrganization": {"@id": {{ home | append: "#author" | jsonify }}}
+    },
+    {
+      "@type": "Person",
+      "@id": {{ home | append: "#author" | jsonify }},
+      "name": {{ site.author.name | jsonify }},
+      "url": {{ site.author.url | jsonify }}
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "@id": {{ home | append: "#code" | jsonify }},
+      "name": "python-vibe",
+      "description": {{ site.description | jsonify }},
+      "url": {{ home | jsonify }},
+      "codeRepository": "https://github.com/YauhenBichel/python-vibe",
+      "programmingLanguage": ["Python"],
+      "runtimePlatform": ["Ollama", "Python 3.13"],
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "author": {"@id": {{ home | append: "#author" | jsonify }}},
+      "sameAs": [
+        "https://github.com/YauhenBichel/python-vibe",
+        "https://huggingface.co/YauhenBichel/python-vibe-0.5b"
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": {{ home | append: "#app" | jsonify }},
+      "name": "python-vibe agent",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Linux",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+      "softwareHelp": {{ "/start/" | absolute_url | jsonify }},
+      "isRelatedTo": {"@id": {{ home | append: "#code" | jsonify }}}
+    }{% if page.type == "article" %},
+    {
+      "@type": "TechArticle",
+      "@id": {{ page.url | absolute_url | append: "#article" | jsonify }},
+      "headline": {{ title | jsonify }},
+      "description": {{ desc | jsonify }},
+      "url": {{ page.url | absolute_url | jsonify }},
+      "inLanguage": "en",
+      "datePublished": {{ page.date | date: "%Y-%m-%d" | default: "2026-08-29" | jsonify }},
+      "dateModified": {{ page.date | date: "%Y-%m-%d" | default: "2026-08-29" | jsonify }},
+      "author": {"@id": {{ home | append: "#author" | jsonify }}},
+      "publisher": {"@id": {{ home | append: "#author" | jsonify }}},
+      "isPartOf": {"@id": {{ home | append: "#website" | jsonify }}},
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "encodingFormat": "text/html",
+      "alternateName": {{ page.path | jsonify }}
+    }{% endif %}{% if page.url == "/" or page.url == "/index.html" %},
+    {
+      "@type": "FAQPage",
+      "@id": {{ home | append: "#faq" | jsonify }},
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "When should I use python-vibe?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use it for a cheap offline explore, edit, and run loop on a small Python tree (at most 40 first-party .py or .md files and 200 KB), with writes jailed. Keep the 0.5B Hub adapters for demos and CI. Daily work is an 8B local model plus scripts/agent.py."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is python-vibe everyday-ready?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not yet. Live Action parse on 29 Aug 2026 was 2 out of 3. Do not call it everyday-ready until eval_everyday.py --live beats an untuned 8B on parse rate and a real fix of at least 1 KB."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the public 0.5B model for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "YauhenBichel/python-vibe-0.5b is a style prior. Held-out vibe tasks scored 0 out of 4. It misses Action lines. Do not train more 0.5B weights for agency."
+          }
+        }
+      ]
+    }{% endif %}
+  ]
+}
+</script>
+{% if page.url != "/" and page.url != "/index.html" and page.url != "/404.html" %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": {{ home | jsonify }}
+    }{% if page.url contains "/investigations" or page.url contains "/research-vibe-review" %},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Research",
+      "item": {{ "/investigations/" | absolute_url | jsonify }}
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ title | jsonify }},
+      "item": {{ page.url | absolute_url | jsonify }}
+    }{% else %},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ title | jsonify }},
+      "item": {{ page.url | absolute_url | jsonify }}
+    }{% endif %}
+  ]
+}
+</script>
+{% endif %}

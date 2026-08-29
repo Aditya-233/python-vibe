@@ -1,11 +1,11 @@
-"""Signature outline for a tree. Deterministic. No model.
+"""List the functions and classes each Python file defines.
 
-`map` answers *where* files are. An outline answers *what they export*,
-which is what an 8B needs before its first grep. Sizes do not help it pick
-a file; `def apply_source(path, source, *, original) -> None` does.
+`map` reports which files exist and how large they are. That is not enough
+to choose a file to open. This module reports the signature of every
+top-level function and class instead, which names the file's purpose.
 
-Budgeted on purpose: an outline that overflows the window is a file list
-with extra steps.
+Output is capped by file count and line count so it stays small enough to
+send to a model with a limited context window.
 """
 
 from __future__ import annotations

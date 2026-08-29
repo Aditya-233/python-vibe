@@ -1,9 +1,11 @@
-"""Refuse a repeated explore action. Deterministic. No model.
+"""Reject an action that has already been run with the same arguments.
 
-A small model that does not know what to do next re-runs the last grep.
-The loop then burns its whole `--steps` budget on identical tool results.
-Only read-only actions are guarded: re-running tests after a patch is
-progress, re-grepping the same query is not.
+A model that is unsure what to do next will often repeat its last search.
+The tool returns the same output, the model is no better informed, and the
+step budget is spent.
+
+Only read-only actions are checked. Running the tests again after a change
+is progress, not repetition, so `run` and `patch` are never rejected here.
 """
 
 from __future__ import annotations

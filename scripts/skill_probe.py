@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-"""One-turn probe: how this Ollama model uses a skill. No writes.
+"""One-turn probe: how this model uses a skill. No writes.
 
-  PYTHONPATH=src python3.13 scripts/skill_probe.py --project eval/fixtures/add_feature_pkg \\
+Uses `harness.agent.prompt.build_preamble`, the same builder the real loop
+uses, so what this measures is what the loop actually sends.
+
+  PYTHONPATH=src python3.13 scripts/skill_probe.py \\
+    --project eval/fixtures/add_feature_pkg \\
     --skill add-feature "add a function multiply(a, b) and a unit test"
 """
 
@@ -15,19 +19,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from finetune.agent_system import AGENT_SYSTEM  # noqa: E402
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA  # noqa: E402
 from harness.act.parse import parse_turn_smart  # noqa: E402
+from harness.agent.options import AgentOptions  # noqa: E402
+from harness.agent.prompt import build_preamble  # noqa: E402
 from harness.model.engine import make_generate  # noqa: E402
-from harness.task import looks_like_question
-from harness.scan.project_brief import (  # noqa: E402
-    classify_project,
-    render_brief,
-    start_hint,
-)
-from harness.skillkit.target import pick_target  # noqa: E402
-from harness.skillkit.catalog import get_skill, list_skills, pick_skills, render_catalog, render_skill  # noqa: E402
-from harness.locate import prelude  # noqa: E402
+from harness.task import looks_like_question  # noqa: E402
 
 
 def main() -> None:
@@ -40,49 +37,40 @@ def main() -> None:
     parser.add_argument("--max-tokens", type=int, default=400)
     parser.add_argument("--no-prelude", action="store_true")
     args = parser.parse_args()
-    project = args.project.expanduser().resolve()
-    brief = classify_project(project, args.scope)
-    catalog = list_skills(project)
-    preloaded = [get_skill(name, project) for name in args.skill]
-    preloaded = [item for item in preloaded if item is not None]
-    if not preloaded:
-        preloaded = pick_skills(args.task, catalog)
-    pre_text, _path = ("", "")
-    if not args.no_prelude:
-        pre_text, _path = prelude(project, args.task, args.scope)
-    prompt = (
-        f"{render_brief(brief, scope=args.scope)}\n\n"
-        f"{render_catalog(catalog)}\n\n"
-        + (
-            "\n\n".join(
-                render_skill(item, pick_target(project, args.task, args.scope, _path), project)
-                for item in preloaded
-            )
-            + "\n\n"
-            if preloaded
-            else ""
-        )
-        + (f"{pre_text}\n\n" if pre_text else "")
-        + f"Task: {args.task}\n"
-        + start_hint(brief, args.task, located=bool(_path))
+
+    options = AgentOptions(
+        project=args.project,
+        task=args.task,
+        scope=args.scope,
+        skills=tuple(args.skill),
+        model=args.model,
+        max_tokens=args.max_tokens,
     )
-    _label, generate_once = make_generate(
-        "ollama", args.max_tokens, model=args.model, system=AGENT_SYSTEM
+    pre = build_preamble(options)
+    prompt = pre.prompt
+    if args.no_prelude and pre.pre_text:
+        prompt = prompt.replace(f"{pre.pre_text}\n\n", "")
+    _label, generate = make_generate(
+        "ollama", args.max_tokens, model=args.model, system=options.system
     )
-    draft = generate_once(prompt)
+    draft = generate(prompt)
     turn = parse_turn_smart(draft, question=looks_like_question(args.task))
-    row = {
-        "model": args.model,
-        "task": args.task,
-        "skills": [item.name for item in preloaded],
-        "prelude": bool(pre_text),
-        "action": turn.action if turn else None,
-        "path": turn.path if turn else "",
-        "query": turn.query if turn else "",
-        "append": bool(turn.append) if turn else False,
-        "draft_head": (draft or "")[:240],
-    }
-    print(json.dumps(row, indent=2))
+    print(
+        json.dumps(
+            {
+                "model": args.model,
+                "task": args.task,
+                "skills": [item.name for item in pre.skills],
+                "prelude": bool(pre.pre_text) and not args.no_prelude,
+                "action": turn.action if turn else None,
+                "path": turn.path if turn else "",
+                "query": turn.query if turn else "",
+                "append": bool(turn.append) if turn else False,
+                "draft_head": (draft or "")[:240],
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

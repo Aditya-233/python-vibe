@@ -1,3 +1,9 @@
+---
+title: Local editor
+description: Point an OpenAI-compatible editor at local Ollama 8B. The write jail stays in scripts/agent.py. This changes the brain, not the tools.
+date: 2026-08-29
+---
+
 # Use a local everyday model in an OpenAI-compatible editor
 
 The 0.5B LoRA is a style prior, not a daily coding brain. Point your editor

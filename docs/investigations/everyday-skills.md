@@ -1,3 +1,10 @@
+---
+title: Everyday skills
+description: Skills for the everyday 8B are one copy-paste Action. Publish only after skill_probe.py shows the intended first Action.
+date: 2026-08-29
+type: article
+---
+
 # Investigation: skills written for the everyday 8B
 
 The everyday brain is small. It does not follow a 7-step essay. It copies

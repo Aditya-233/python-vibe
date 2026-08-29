@@ -1,3 +1,10 @@
+---
+title: Harness comparison
+description: What transfers from other agent harnesses to an 8B on a laptop. Edit recovery and context assembly transfer. A free shell tool does not.
+date: 2026-08-29
+type: article
+---
+
 # Investigation: what other agent harnesses do, and what this one was missing
 
 **Question.** `scripts/agent.py` is a harness around a model too small to
@@ -79,8 +86,8 @@ the eval fixture.
 
 - `src/harness/skill_target.py` — before the model sees a skill, any
   `Path:`/`Scope:` in it that is not real *here* is repointed at this
-  project's module or test file. Placeholders `{{module}} {{test}}
-  {{scope}} {{symbol}}` are filled the same way. A path that does exist
+  project's module or test file. Placeholders {% raw %}`{{module}} {{test}}
+  {{scope}} {{symbol}}`{% endraw %} are filled the same way. A path that does exist
   (the eval fixtures) is left alone, and `__init__.py` is never repointed
   because scaffolding legitimately names a file that does not exist yet.
 - `src/harness/patch_fix.py` — an exact `Find:` still wins. A miss retries
@@ -116,7 +123,7 @@ the eval fixture.
 ## Do not
 
 - Do not add a kit skill with a literal path unless that path is an eval
-  fixture. Use `{{module}}` / `{{test}}`.
+  fixture. Use {% raw %}`{{module}}` / `{{test}}`{% endraw %}.
 - Do not let a skill instruct a `Find:` where an `Append:` already works.
 - Do not name third-party products in skill text. This page is a
   comparison; skills are copy-paste blocks.
@@ -132,6 +139,5 @@ the eval fixture.
   over file lists, ranked, token-budgeted.
 - [The harness problem](https://stencil.so/blog/the-harness-problem) — edit
   format alone, 16 models, ~+15 points average and 6.7% → 68.3% worst case.
-- [Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) —
-  description says what *and when*, concise bodies, one default not a menu,
-  evaluations before documentation.
+- Public agent-skill authoring notes — description says what *and when*,
+  concise bodies, one default not a menu, evaluations before documentation.
