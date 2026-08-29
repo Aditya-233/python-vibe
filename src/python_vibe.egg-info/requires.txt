@@ -1,0 +1,8 @@
+
+[hub]
+huggingface_hub>=0.26.0
+
+[train]
+mlx-lm[train]>=0.26.0
+pyyaml>=6.0
+huggingface_hub>=0.26.0

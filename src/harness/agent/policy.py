@@ -22,17 +22,23 @@ from pathlib import Path
 from harness.act.tools import read_py
 from harness.agent.dispatch import SHIP_ACTIONS, WRITE_ACTIONS
 from harness.guard.loop_guard import LoopGuard
+from harness.paths import as_project_rel
 from harness.locate import (
+    refuse_design_dirty,
     refuse_early_done,
     refuse_question_write,
     refuse_redundant_explore,
     refuse_redundant_locate,
     refuse_shallow_done,
+    refuse_thin_review,
 )
 from harness.skillkit.catalog import get_skill, render_skill
-from harness.skillkit.style import refuse_package_done, refuse_smell_wrong_file
+from harness.skillkit.style import refuse_smell_wrong_file, refuse_write_done
 from harness.task import (
     looks_like_add_feature,
+    looks_like_bugfix,
+    looks_like_design_loop,
+    named_project_file,
     looks_like_fix_smell,
     looks_like_merge,
     looks_like_new_package,
@@ -61,6 +67,8 @@ class LoopState:
         allow_writes: whether file changes are permitted in this run.
         last_path: file the most recent action applied to.
         ran_tests: whether the test suite has passed during this run.
+        design_report: last deterministic structure scan, if any.
+        scope: optional subdirectory the run is limited to.
         questions_asked: how many questions the agent has put to the user.
         instructions: skill lines the model was given, used to detect a
             reply that repeats an instruction instead of answering.
@@ -75,9 +83,35 @@ class LoopState:
     allow_writes: bool = True
     last_path: str = ""
     ran_tests: bool = False
+    design_report: str = ""
+    scope: str = ""
     questions_asked: int = 0
+    wrote_something: bool = False
+    empty_done_refused: bool = False
     instructions: tuple[str, ...] = ()
     guard: LoopGuard = field(default_factory=LoopGuard)
+
+
+def refuse_wrong_file(task: str, project: Path, action: str, path: str) -> str:
+    """Reject a write to a file other than the one the task named.
+
+    When a task names exactly one file that exists, that file is the whole
+    instruction. An 8B given `src/harness/model/engine.py` was observed
+    patching `src/harness/act/patch_fix.py` instead.
+    """
+    if action not in WRITE_ACTIONS or action == "run":
+        return ""
+    named = named_project_file(task, project)
+    if not named:
+        return ""
+    wanted = as_project_rel(named)
+    got = as_project_rel(path)
+    if not got or got == wanted or wanted.endswith(got) or got.endswith(wanted):
+        return ""
+    return (
+        f"The task names {wanted}. Do not change {got}. "
+        f"Action: patch Path: {wanted}"
+    )
 
 
 def refuse_before(state: LoopState, turn) -> str:
@@ -92,7 +126,11 @@ def refuse_before(state: LoopState, turn) -> str:
             "You have already asked. Choose the most likely reading, say "
             "which you chose, and continue."
         )
-    blocked = refuse_question_write(state.task, turn.action)
+    blocked = refuse_wrong_file(
+        state.task, state.project, turn.action, turn.path or state.last_path
+    )
+    if not blocked:
+        blocked = refuse_question_write(state.task, turn.action)
     if not blocked:
         blocked = refuse_redundant_explore(
             state.task, turn.action, turn.path, state.located_path
@@ -170,6 +208,37 @@ def _squash(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+def refuse_done_without_change(state: LoopState, turn) -> str:
+    """Reject the first `done` on a change task that changed nothing.
+
+    An 8B told to fix a named file was seen finishing after four steps with
+    no write and a summary describing the project in general. Refused once
+    only: a file that is already correct is a real answer, but the model
+    has to say so rather than drift.
+    """
+    if state.wrote_something or state.empty_done_refused:
+        return ""
+    task = state.task
+    if looks_like_question(task) or looks_like_ship(task):
+        return ""
+    wants_change = (
+        looks_like_add_feature(task)
+        or looks_like_fix_smell(task)
+        or looks_like_new_package(task)
+        or bool(named_project_file(task, state.project))
+    )
+    if not wants_change:
+        return ""
+    state.empty_done_refused = True
+    named = named_project_file(task, state.project)
+    where = f"Path: {named}" if named else "Path: the file you read"
+    return (
+        f"Nothing was changed. Action: patch {where} with a Find: line "
+        "copied whole from the file and a Replace:. If the file is already "
+        "correct, Action: done Summary: say which line is already correct."
+    )
+
+
 def refuse_done(state: LoopState, turn) -> str:
     """The model says it is finished. Return a refusal, or ""."""
     blocked = refuse_echoed_summary(turn.summary, state.instructions)
@@ -180,7 +249,15 @@ def refuse_done(state: LoopState, turn) -> str:
             state.task, turn.summary, state.located_signature
         )
     if not blocked:
-        blocked = refuse_package_done(state.task, state.ran_tests)
+        blocked = refuse_design_dirty(state.task, state.design_report)
+    if not blocked:
+        blocked = refuse_thin_review(state.task, turn.summary, state.design_report)
+    if not blocked:
+        blocked = refuse_write_done(
+            state.task, state.ran_tests, wrote=state.wrote_something
+        )
+    if not blocked:
+        blocked = refuse_done_without_change(state, turn)
     return blocked
 
 
@@ -188,10 +265,28 @@ def next_prompt(state: LoopState, turn, result: str, target=None) -> str:
     """A tool just ran. Name the one right next step, or "" to stay open."""
     path = (turn.path or state.last_path).lower()
     wrote = result.startswith(("patched", "wrote"))
+    if looks_like_design_loop(state.task) and wrote:
+        from harness.scan.design import design_is_clean, render_design_review
+
+        state.design_report = render_design_review(state.project, state.scope)
+        if not design_is_clean(state.design_report):
+            return (
+                f"{state.design_report}\n\n"
+                "Next Action must be edit Path: pkg/<new_concern>.py "
+                "with one function.\n"
+            )
+        return (
+            f"{state.design_report}\n\n"
+            "Next Action must be run Argv: -m unittest discover -s tests -q\n"
+        )
     if not wrote:
         return ""
     is_test = "test" in path
-    if looks_like_add_feature(state.task) and turn.action == "patch" and not is_test:
+    if (
+        (looks_like_add_feature(state.task) or looks_like_bugfix(state.task))
+        and turn.action == "patch"
+        and not is_test
+    ):
         loaded = get_skill("write-tests", state.project)
         if loaded is not None:
             return (

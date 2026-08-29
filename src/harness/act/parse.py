@@ -7,7 +7,19 @@ from dataclasses import dataclass
 
 from harness.act.code import extract_python
 
-_ACTION = re.compile(r"^Action:\s*(\w+)\s*$", re.MULTILINE | re.IGNORECASE)
+# Hyphens are allowed so a skill name works as an action: every kit
+# skill is hyphenated, and `\w+` could not match one.
+_ACTION = re.compile(r"^Action:\s*([\w-]+)\s*$", re.MULTILINE | re.IGNORECASE)
+# Every verb the loop can carry out. A model that writes `Action: find`
+# has put a field name on the Action line; that block is skipped so the
+# turn is not spent on an unknown verb.
+KNOWN_ACTIONS = frozenset(
+    {
+        "glob", "grep", "read", "edit", "patch", "run", "map", "plan",
+        "skill", "locate", "layout", "ask", "done",
+        "issue", "branch", "commit", "push", "pr", "merge",
+    }
+)
 _FIELD = re.compile(
     r"^(Path|File|Query|Pattern|Argv|Summary|Scope|Name|Number|Title):\s*(.+)$",
     re.MULTILINE,
@@ -97,13 +109,24 @@ def parse_turn(text: str) -> AgentTurn | None:
     )
 
 
+def _is_skill_name(verb: str) -> bool:
+    """`Action: write-tests` names a skill, which the loop loads."""
+    return "-" in verb or "_" in verb
+
+
 def parse_turn_smart(
     text: str, *, question: bool = False, ship: bool = False
 ) -> AgentTurn | None:
     """Small models paste the Action menu. Pick one block by task kind."""
-    matches = list(_ACTION.finditer(text))
-    if len(matches) <= 1:
+    matches = [
+        match
+        for match in _ACTION.finditer(text)
+        if match.group(1).lower() in KNOWN_ACTIONS or _is_skill_name(match.group(1))
+    ]
+    if not matches:
         return parse_turn(text)
+    if len(matches) == 1:
+        return parse_turn(text[matches[0].start() :])
     if question:
         prefer = _PREFERRED_QUESTION
     elif ship:

@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
 from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.paths import venv_python  # noqa: E402
 from harness.guard.run import complete  # noqa: E402
 
 PROMPT = "jsonl reader that skips bad lines"
@@ -70,7 +71,7 @@ def _mlx_python() -> str:
     extra = os.environ.get("MLX_PYTHON", "")
     candidates = [
         sys.executable,
-        str(ROOT / ".venv" / "bin" / "python"),
+        str(venv_python(ROOT / ".venv")),
         *([extra] if extra else []),
     ]
     for exe in candidates:

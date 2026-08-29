@@ -13,10 +13,11 @@ HARNESS = Path(__file__).resolve().parents[1] / "src" / "harness"
 
 # Lower number = deeper. A layer may only import strictly lower layers.
 DEPTH = {
-    "task": 0,
+    # `paths` and `task` are the bottom: they import nothing of their own.
     "paths": 0,
-    "model": 0,
-    "ship": 0,
+    "task": 0,
+    "model": 1,
+    "ship": 1,
     "guard": 1,
     "scan": 2,
     "skillkit": 3,

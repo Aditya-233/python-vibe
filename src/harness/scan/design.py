@@ -9,6 +9,7 @@ from harness.scan.project_brief import iter_text_files
 
 MAX_FINDINGS = 16
 GOD_DEFS = 4
+CLEAN_PHRASE = "no structure findings"
 
 
 def _defs(source: str) -> list[str]:
@@ -68,7 +69,12 @@ def render_design_review(project: Path, scope: str = "") -> str:
         if len(findings) >= MAX_FINDINGS:
             break
     if not findings:
-        findings.append("no structure findings in scope — pkg/ and tests/ look split")
+        findings.append(f"{CLEAN_PHRASE} in scope — pkg/ and tests/ look split")
     lines = ["design review (deterministic, not a model opinion):"]
     lines.extend(f"- {item}" for item in findings[:MAX_FINDINGS])
     return "\n".join(lines)
+
+
+def design_is_clean(report: str) -> bool:
+    """True when the last scan reported no structure findings."""
+    return CLEAN_PHRASE in (report or "")

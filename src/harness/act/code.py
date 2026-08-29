@@ -9,9 +9,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from harness.paths import as_project_rel
+
 _FENCE = re.compile(r"```(?:python|py)?\s*\n(.*?)```", re.DOTALL | re.IGNORECASE)
 _SKIP_PARTS = {".git", ".venv", "node_modules", "adapters", "fused", "__pycache__"}
 MAX_FILE_CHARS = 3500
+# Small files are read whole so nearby constants (env, argv) stay in the quote.
+WHOLE_FILE_CHARS = 12_000
 
 
 def extract_python(text: str) -> str | None:
@@ -54,6 +58,7 @@ def write_and_run(
 
 def resolve_project_file(project: Path, rel: str) -> Path:
     root = project.resolve()
+    rel = as_project_rel(rel)
     path = (root / rel).resolve() if not Path(rel).is_absolute() else Path(rel).resolve()
     try:
         path.relative_to(root)
@@ -68,7 +73,8 @@ def resolve_project_file(project: Path, rel: str) -> Path:
 
 def read_project_file(path: Path, *, limit: int = MAX_FILE_CHARS) -> str:
     text = path.read_text(encoding="utf-8")
-    if len(text) <= limit:
+    cap = WHOLE_FILE_CHARS if limit == MAX_FILE_CHARS else limit
+    if len(text) <= cap:
         return text
     tail = min(800, max(0, len(text) - limit))
     omitted = len(text) - limit - tail

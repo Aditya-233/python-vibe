@@ -93,8 +93,8 @@ A free bash tool does not transfer to an 8B on a laptop working tree.
 
 ## Improve next (already specified in-tree)
 
-1. Wire the design loop (looks_like_design_loop is unused). Allow edits on review tasks. Re-scan after each one-split. Refuse done while findings remain.
-2. Auto-pick review-design, refactor-split, readable-layout. Wire refuse_thin_review.
+1. Design loop is wired: review may edit, re-scan after each one-split, refuse done while findings remain.
+2. Auto-pick review-design, refactor-split, readable-layout. refuse_thin_review is in the done handler.
 3. Refuse done on add / rename until a passing unittest (new-package already does).
 4. Quote more of a small file so answers include nearby constants.
 5. Measure 7B and any 30B coder already on disk before changing the default.

@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from harness.act.code import apply_source, read_project_file, resolve_project_file
+from harness.paths import rel_posix
 from harness.act.patch_fix import align_indent, find_match, miss_message
 from harness.scan.project_brief import render_map, resolve_scope
 from harness.scan.project_scan import SKIP_DIR
@@ -25,7 +26,7 @@ def glob_py(project: Path, pattern: str, scope: str = "") -> str:
         if any(part in SKIP_DIR for part in path.parts):
             continue
         if path.is_file():
-            hits.append(str(path.relative_to(root)))
+            hits.append(rel_posix(path, root))
         if len(hits) >= MAX_HITS:
             return "\n".join(hits) + _TRUNC
     if not hits:
@@ -34,7 +35,7 @@ def glob_py(project: Path, pattern: str, scope: str = "") -> str:
             if any(part in SKIP_DIR for part in path.parts):
                 continue
             if path.is_file():
-                hits.append(str(path.relative_to(root)))
+                hits.append(rel_posix(path, root))
             if len(hits) >= MAX_HITS:
                 return "\n".join(hits) + _TRUNC
     return "\n".join(hits) or "(no files)"
@@ -58,7 +59,7 @@ def grep_py(project: Path, query: str, scope: str = "") -> str:
                 continue
             for i, line in enumerate(text.splitlines(), 1):
                 if rx.search(line):
-                    rel = path.relative_to(root)
+                    rel = rel_posix(path, root)
                     lines.append(f"{rel}:{i}:{line.strip()[:160]}")
                     if len(lines) >= MAX_HITS:
                         return "\n".join(lines) + _TRUNC
@@ -162,7 +163,7 @@ def patch_py(
         )
     apply_source(path, text, original=original)
     return (
-        f"patched {path.relative_to(project.resolve())} "
+        f"patched {rel_posix(path, project.resolve())} "
         f"(backup {path.name}.bak){note}"
     )
 
@@ -171,7 +172,7 @@ def edit_py(project: Path, rel: str, source: str) -> str:
     path = resolve_project_file(project, rel)
     original = path.read_text(encoding="utf-8") if path.is_file() else ""
     apply_source(path, source, original=original)
-    return f"wrote {path.relative_to(project.resolve())} (backup {path.name}.bak)"
+    return f"wrote {rel_posix(path, project.resolve())} (backup {path.name}.bak)"
 
 
 def run_python(project: Path, argv: tuple[str, ...]) -> str:

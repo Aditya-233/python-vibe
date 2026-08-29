@@ -69,6 +69,22 @@ class ExtractPythonTest(unittest.TestCase):
             self.assertIn("return tota", shown)
             self.assertIn("truncated", shown)
 
+    def test_read_keeps_a_small_file_whole(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "listen.py"
+            body = (
+                "HOST = os.environ.get('HOST', '127.0.0.1')\n"
+                "def listen_addr(argv=None) -> tuple[str, int]:\n"
+                "    return HOST, 8080\n"
+            ) * 80
+            dest.write_text(body, encoding="utf-8")
+            self.assertGreater(len(body), 3500)
+            self.assertLess(len(body), 12_000)
+            shown = read_project_file(dest)
+            self.assertNotIn("truncated", shown)
+            self.assertIn("HOST", shown)
+            self.assertIn("listen_addr", shown)
+
     def test_apply_refuses_syntax_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "ok.py"

@@ -11,13 +11,14 @@ from pathlib import Path
 from finetune.huggingface_store import BEST_ADAPTER, ensure_adapters
 from finetune.models import SPECS
 from finetune.paths import PROJECT_ROOT
+from harness.paths import venv_python
 
 
 def mlx_pythons() -> list[str]:
     extra = os.environ.get("MLX_PYTHON", "")
     return [
         sys.executable,
-        str(PROJECT_ROOT / ".venv" / "bin" / "python"),
+        str(venv_python(PROJECT_ROOT / ".venv")),
         *([extra] if extra else []),
     ]
 

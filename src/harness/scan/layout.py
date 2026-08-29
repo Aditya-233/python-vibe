@@ -19,6 +19,7 @@ import ast
 from dataclasses import dataclass
 from pathlib import Path
 
+from harness.paths import rel_posix
 from harness.scan.project_scan import SKIP_DIR
 
 FLAT_MAX_MODULES = 12
@@ -89,7 +90,7 @@ def find_flat_packages(project: Path) -> list[tuple[str, int]]:
     counts: dict[str, int] = {}
     for path in _modules(project):
         parent = path.parent
-        key = str(parent.relative_to(root)) if parent != root else "."
+        key = rel_posix(parent, root) if parent != root else "."
         counts[key] = counts.get(key, 0) + 1
     return sorted(
         ((name, n) for name, n in counts.items() if n > FLAT_MAX_MODULES),
@@ -102,7 +103,7 @@ def find_god_modules(project: Path) -> list[tuple[str, int]]:
     sizes = []
     for path in _modules(project):
         try:
-            sizes.append((str(path.relative_to(root)), path.stat().st_size))
+            sizes.append((rel_posix(path, root), path.stat().st_size))
         except OSError:
             continue
     if len(sizes) < 3:

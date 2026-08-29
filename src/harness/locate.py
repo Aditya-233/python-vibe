@@ -9,6 +9,8 @@ from harness.act.tools import grep_py, read_py
 from harness.task import looks_like_question, question_symbol
 from harness.task import looks_like_add_feature
 from harness.task import (
+    named_project_file,
+    looks_like_design_loop,
     looks_like_fix_smell,
     looks_like_new_package,
     looks_like_refactor,
@@ -88,19 +90,52 @@ def locate_py(project: Path, query: str, scope: str = "") -> tuple[str, str]:
 
 def prelude(project: Path, task: str, scope: str = "") -> tuple[str, str]:
     """Run locate before the model. Small models skip the first grep."""
-    if looks_like_review(task) or looks_like_refactor(task):
-        from harness.scan.design import render_design_review
+    if looks_like_design_loop(task):
+        from harness.scan.design import design_is_clean, render_design_review
 
         report = render_design_review(project, scope)
         kind = "refactor" if looks_like_refactor(task) and not looks_like_review(task) else "review"
-        next_line = (
-            "Next Action must be edit Path: pkg/<new_concern>.py with one function."
-            if kind == "refactor"
-            else "Next Action must be done. Quote one finding (SoC, god module, or missing tests)."
-        )
+        if design_is_clean(report):
+            next_line = (
+                "Next Action must be done. Summary: quote no structure findings."
+            )
+        else:
+            next_line = (
+                "Next Action must be edit Path: pkg/<new_concern>.py with one function."
+            )
         return f"Harness design review ({kind})\n{next_line}\n\n{report}", ""
     if looks_like_new_package(task):
         return "", ""
+
+    # A task that names a file has already said which file to open. Looking
+    # up a word out of that path instead finds every file in the project:
+    # "src/harness/model/engine.py" was searched for as "harness".
+    named = named_project_file(task, project)
+    if named:
+        try:
+            body = read_py(project, named)
+        except (OSError, ValueError):
+            body = ""
+        if body:
+            if looks_like_question(task):
+                next_line = (
+                    "Next Action must be done. Quote what this file does. "
+                    "Do not grep, read, or edit."
+                )
+            else:
+                next_line = (
+                    f"Next Action must be patch Path: {named} with a Find: "
+                    "line copied whole from the file below, and a Replace:. "
+                    "Do not map or grep."
+                )
+            return (
+                f"Harness opened the file named in the task: {named}\n"
+                f"{next_line}\n"
+                f"Only {named} may be changed.\n\n"
+                f"# auto-read {named}\n{body}",
+                named,
+            )
+
     symbol = smell_symbol(task) if looks_like_fix_smell(task) else question_symbol(task)
     if not symbol and looks_like_add_feature(task):
         symbol = question_symbol(task) or ""
@@ -153,11 +188,8 @@ def refuse_redundant_locate(task: str, action: str, prelude_ran: bool) -> str:
 
 
 def refuse_question_write(task: str, action: str) -> str:
-    if looks_like_review(task) and not looks_like_refactor(task) and action in _QUESTION_WRITE:
-        return (
-            "Reviews do not edit. "
-            "Action: done Summary: quote one finding from the design review."
-        )
+    if looks_like_design_loop(task):
+        return ""
     if looks_like_question(task) and action in _QUESTION_WRITE:
         return (
             "Questions do not edit. "
@@ -167,8 +199,16 @@ def refuse_question_write(task: str, action: str) -> str:
 
 
 def refuse_thin_review(task: str, summary: str, report: str) -> str:
-    if not looks_like_review(task) or looks_like_refactor(task):
+    if not looks_like_review(task):
         return ""
+    from harness.scan.design import design_is_clean
+
+    if design_is_clean(report):
+        if "no structure findings" in (summary or "").lower():
+            return ""
+        return (
+            "too thin. Action: done Summary: quote no structure findings"
+        )
     keys = [
         word
         for word in ("SoC", "god", "tests", "scripts", "split", "__init__")
@@ -182,6 +222,20 @@ def refuse_thin_review(task: str, summary: str, report: str) -> str:
     return (
         "too thin. Action: done Summary: quote one finding "
         f"({', '.join(keys[:3])})"
+    )
+
+
+def refuse_design_dirty(task: str, report: str) -> str:
+    if not looks_like_design_loop(task):
+        return ""
+    from harness.scan.design import design_is_clean
+
+    if design_is_clean(report):
+        return ""
+    return (
+        "not done. Structure findings remain. "
+        "Action: edit Path: pkg/<new_concern>.py with one function. "
+        "Then the harness will re-scan."
     )
 
 

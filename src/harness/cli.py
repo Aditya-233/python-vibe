@@ -79,8 +79,16 @@ def _add_agent_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
 
 
+def _program_name() -> str:
+    """What to print in usage: the installed command, or the module form."""
+    name = Path(sys.argv[0]).name
+    if name.startswith("python-vibe"):
+        return "python-vibe"
+    return "python -m harness"
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="python -m harness")
+    parser = argparse.ArgumentParser(prog=_program_name())
     subs = parser.add_subparsers(dest="command", required=True)
 
     brief = subs.add_parser("brief", help="small/large brief and skills. No model.")
