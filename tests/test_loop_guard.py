@@ -1,7 +1,7 @@
 import unittest
 
-from harness.agent_parse import AgentTurn
-from harness.loop_guard import LoopGuard
+from harness.act.parse import AgentTurn
+from harness.guard.loop_guard import LoopGuard
 
 
 class LoopGuardTest(unittest.TestCase):

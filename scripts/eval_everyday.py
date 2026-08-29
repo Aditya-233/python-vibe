@@ -20,8 +20,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from finetune.agent_system import AGENT_SYSTEM  # noqa: E402
 from finetune.everyday import DEFAULT_EVERYDAY_OLLAMA, is_tiny_model  # noqa: E402
-from harness.agent_parse import parse_turn  # noqa: E402
-from harness.eval_gate import action_parse_rate, bugfix_fixture_ready, held_out_run_pass  # noqa: E402
+from harness.act.parse import parse_turn  # noqa: E402
+from harness.observe.eval_gate import action_parse_rate, bugfix_fixture_ready, held_out_run_pass  # noqa: E402
 
 
 def _offline() -> dict:
@@ -44,7 +44,7 @@ def _offline() -> dict:
 
 
 def _live(model: str) -> None:
-    from harness.ollama_generate import OllamaGenerate
+    from harness.model.ollama_generate import OllamaGenerate
 
     if is_tiny_model(model):
         print(f"warning: {model} is the 0.5B sidecar", file=sys.stderr)

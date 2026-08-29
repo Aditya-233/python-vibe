@@ -5,15 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.project_brief import (
-    classify_project,
-    looks_like_question,
-    question_symbol,
-    render_brief,
-    render_map,
-    resolve_scope,
-    start_hint,
-)
+from harness.task import looks_like_question, question_symbol
+from harness.scan.project_brief import classify_project, render_brief, render_map, resolve_scope, start_hint
 
 
 class ProjectBriefTest(unittest.TestCase):

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_tools import (
+from harness.act.tools import (
     edit_py,
     grep_py,
     map_py,
@@ -14,7 +14,7 @@ from harness.agent_tools import (
     repair_unittest_append,
     run_python,
 )
-from harness.code import resolve_project_file
+from harness.act.code import resolve_project_file
 
 
 class AgentToolsTest(unittest.TestCase):

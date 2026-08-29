@@ -3,9 +3,9 @@
 The model drafts, the harness decides whether that draft ships.
 """
 
-from harness.python_vibe import PythonVibeGuard
-from harness.run import complete
-from harness.types import Finding, Outcome
+from harness.guard.python_vibe import PythonVibeGuard
+from harness.guard.run import complete
+from harness.guard.types import Finding, Outcome
 
 __all__ = [
     "PythonVibeGuard",

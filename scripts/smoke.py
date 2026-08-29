@@ -18,9 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from harness.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
-from harness.python_vibe import PythonVibeGuard  # noqa: E402
-from harness.run import complete  # noqa: E402
+from harness.guard.fallbacks import PYTHON_VIBE_FALLBACK  # noqa: E402
+from harness.guard.python_vibe import PythonVibeGuard  # noqa: E402
+from harness.guard.run import complete  # noqa: E402
 
 PROMPT = "jsonl reader that skips bad lines"
 
@@ -38,7 +38,7 @@ def _harness() -> None:
 
 def _live() -> None:
     from finetune.models import SPECS
-    from harness.ollama_generate import OllamaGenerate
+    from harness.model.ollama_generate import OllamaGenerate
 
     spec = SPECS["python-vibe"]
     generate = OllamaGenerate(spec.ollama_base, spec.system)

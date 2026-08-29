@@ -62,9 +62,12 @@ Your project's own `AGENTS.md` is read first and outranks the kit skills.
 Why each of those: [harness-comparison](./docs/investigations/harness-comparison.md).
 
 Best-practice skills live in `skills/` (`add-feature`, `write-tests`,
-`stay-scoped`, `new-package`, `fix-smell`). The agent preloads them when
-the task says “add” / “test” / “create a package” / “rename”, or you pass
-`--skill`. `Action: skill` + `Name:` loads one mid-loop.
+`stay-scoped`, `new-package`, `fix-smell`, `read-issue`, `open-pr`,
+`merge-pr`). The agent preloads them when the task says “add” / “test” /
+“create a package” / “rename” / “issue” / “PR”, or you pass `--skill`.
+`Action: skill` + `Name:` loads one mid-loop. Ship actions (`issue`,
+`branch`, `commit`, `push`, `pr`, `merge`) are jailed: no force, not
+`main`/`master`, no secret filenames.
 
 ```bash
 PYTHONPATH=src python3.13 scripts/agent.py --project /path/to/your/app \

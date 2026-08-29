@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from harness.types import Finding, Outcome
+from harness.guard.types import Finding, Outcome
 
 RULESET_VERSION = "python-vibe-harness@0.1.0"
 MAX_CHARS = 8000

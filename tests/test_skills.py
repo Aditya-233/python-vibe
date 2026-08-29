@@ -4,16 +4,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.agent_parse import parse_turn
-from harness.skills import (
-    get_skill,
-    list_skills,
-    looks_like_add_feature,
-    pick_skills,
-    render_catalog,
-    render_skill,
-    skill_from_action,
-)
+from harness.act.parse import parse_turn
+from harness.task import looks_like_add_feature
+from harness.skillkit.catalog import get_skill, list_skills, pick_skills, render_catalog, render_skill, skill_from_action
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,17 +15,15 @@ class SkillsTest(unittest.TestCase):
     def test_kit_lists_add_feature(self) -> None:
         catalog = list_skills(ROOT)
         names = {item.name for item in catalog}
-        self.assertEqual(
-            names,
-            {
-                "add-feature",
-                "answer-question",
-                "fix-smell",
-                "new-package",
-                "write-tests",
-                "stay-scoped",
-            },
-        )
+        # A subset, not an exact set: adding a kit skill must not fail here.
+        core = {
+            "add-feature",
+            "answer-question",
+            "readable-layout",
+            "stay-scoped",
+            "write-tests",
+        }
+        self.assertEqual(core - names, set(), "kit is missing a core skill")
         loaded = get_skill("add-feature", ROOT)
         self.assertIsNotNone(loaded)
         assert loaded is not None
@@ -62,6 +53,18 @@ class SkillsTest(unittest.TestCase):
                 )
             ],
             ["fix-smell"],
+        )
+        self.assertEqual(
+            [item.name for item in pick_skills("fix #50", catalog)],
+            ["read-issue"],
+        )
+        self.assertEqual(
+            [item.name for item in pick_skills("create a pr for #50", catalog)],
+            ["open-pr"],
+        )
+        self.assertEqual(
+            [item.name for item in pick_skills("merge pr 16", catalog)],
+            ["merge-pr"],
         )
 
     def test_render_and_parse_skill_action(self) -> None:

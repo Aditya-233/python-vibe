@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.trace_record import append_turn, redact
+from harness.observe.trace_record import append_turn, redact
 
 
 class TraceRecordTest(unittest.TestCase):

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from harness.smart import (
+from harness.locate import (
     def_hit_path,
     locate_py,
     prelude,
@@ -22,7 +22,7 @@ from harness.smart import (
 class SmartHarnessTest(unittest.TestCase):
     def test_def_hit_prefers_definition(self) -> None:
         grep = (
-            "src/a.py:1:from harness.code import apply_source\n"
+            "src/a.py:1:from harness.act.code import apply_source\n"
             "src/harness/code.py:84:def apply_source(path, source, *, original):\n"
         )
         self.assertEqual(def_hit_path(grep, "apply_source"), "src/harness/code.py")

@@ -63,6 +63,14 @@ These kit skills, each a **single copy-paste Action** (no essays):
   `pkg/<noun>.py`. SoC, not a SOLID lecture.
 - `skills/fix-smell/SKILL.md` — one `Find:` / `Replace:` to a readable
   snake_case name (`total_price`, not `calc`).
+- `skills/read-issue/SKILL.md` — `Action: issue Number: N`
+- `skills/open-pr/SKILL.md` — `Action: pr Title:` + `Body: Closes #N`
+- `skills/merge-pr/SKILL.md` — `Action: merge Number: N` only when the
+  task says merge
+
+Ship is jailed (`src/harness/ship/git_ship.py`): no `--force`, not
+`main`/`master`, unstage `.env` / `credentials.json`. Order: issue →
+branch → patch → commit → push → pr.
 
 Harness: `refuse_opaque_names` (`calc`/`tmp`/`x`, CamelCase functions,
 snake_case classes) and `refuse_layout` (no impl in `__init__.py` or
