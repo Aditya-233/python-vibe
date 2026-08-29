@@ -60,6 +60,17 @@ Design questions go in [Discussions](https://github.com/YauhenBichel/python-vibe
 
 Open threads: [fused weights](https://github.com/YauhenBichel/python-vibe/discussions/11) · [stdlib vs FastAPI](https://github.com/YauhenBichel/python-vibe/discussions/12) · [eval protocol](https://github.com/YauhenBichel/python-vibe/discussions/13) · [train without MLX](https://github.com/YauhenBichel/python-vibe/discussions/14).
 
+## Project site
+
+The project site is published at https://yauhenbichel.github.io/python-vibe/.
+
+To enable GitHub Pages in a repository or fork:
+1. Go to **Settings** → **Pages**.
+2. Under **Build and deployment** → **Source**, select **GitHub Actions**.
+3. Ensure the default branch is added to the `github-pages` environment deployment allow-list.
+
+New public notes belong in `docs/` and must not name other editors or chat products.
+
 ## Reporting security issues
 
 Do **not** open a public issue. See [SECURITY.md](./SECURITY.md).
