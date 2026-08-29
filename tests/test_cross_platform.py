@@ -121,7 +121,7 @@ class NamedFileTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project = _project(tmp)
-            blocked = refuse_wrong_file(self.TASK, project, "patch", "tests/test_app.py")
+            blocked = refuse_wrong_file(self.TASK, project, "patch", "src/other.py")
         self.assertIn("src/app.py", blocked)
 
     def test_a_write_to_the_named_file_is_allowed(self) -> None:

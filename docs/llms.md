@@ -14,9 +14,11 @@ Measured on one laptop, 29 Aug 2026: 8B first Action on three scoped tasks 3/3; 
 
 - [Home]({{ '/' | absolute_url }}): What the project is, when to use it, honest limits.
 - [Start]({{ '/start/' | absolute_url }}): Install the 8B loop, run tests without a model, optional 0.5B sidecar.
-- [Skills]({{ '/skills/' | absolute_url }}): The fourteen kit skills and when the harness loads each one.
+- [Demo]({{ '/demo/' | absolute_url }}): Eleven everyday tasks on one small tree. Includes misses.
+- [Skills]({{ '/skills/' | absolute_url }}): The eighteen kit skills and when the harness loads each one.
+- [Demo]({{ '/demo/' | absolute_url }}): Eleven everyday tasks run against one small project, with an independent check of each outcome.
 - [Architecture]({{ '/architecture/' | absolute_url }}): Bottom-up harness layers. Imports only point downward.
-- [Local editor]({{ '/local-editor/' | absolute_url }}): Point an OpenAI-compatible editor at local Ollama. This changes the brain, not the tools.
+- [Local editor]({{ '/local-editor/' | absolute_url }}): One-command drop-in for VS Code tasks, Continue, or a local MCP. Chat override of localhost is optional.
 - [Research index]({{ '/investigations/' | absolute_url }}): Measurements and design notes.
 
 ## Research

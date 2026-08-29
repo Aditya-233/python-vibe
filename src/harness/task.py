@@ -170,6 +170,72 @@ def looks_like_bugfix(task: str) -> bool:
     return bool(_BUG.search(task))
 
 
+_SCRIPT = re.compile(
+    r"\b(script|cli|argparse|argv|command[ -]line|__main__)\b", re.I
+)
+_HTTP = re.compile(
+    r"\b(http api|rest api|fetch json|urllib|call the api|"
+    r"get json|post json|\bcurl\b|http get|http post)\b",
+    re.I,
+)
+_ANALYTICS = re.compile(
+    r"\b(analytics|group by|groupby|tally|histogram|counter|csv)\b", re.I
+)
+_ALGO = re.compile(
+    r"\b(algorithm|binary search|linked list|hash map|two pointers?|"
+    r"breadth.first|depth.first|\bbfs\b|\bdfs\b|quicksort|mergesort|"
+    r"implement (a |an )?(stack|queue|heap))\b",
+    re.I,
+)
+
+
+def looks_like_script(task: str) -> bool:
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    return bool(_SCRIPT.search(task))
+
+
+def looks_like_http_client(task: str) -> bool:
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    return bool(_HTTP.search(task))
+
+
+def looks_like_analytics(task: str) -> bool:
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    return bool(_ANALYTICS.search(task))
+
+
+def looks_like_algorithm(task: str) -> bool:
+    if looks_like_question(task) or looks_like_new_package(task) or looks_like_ship(task):
+        return False
+    return bool(_ALGO.search(task))
+
+
+def looks_like_everyday_code(task: str) -> bool:
+    """Simple script, HTTP client, tally, or algorithm — write then test."""
+    return (
+        looks_like_script(task)
+        or looks_like_http_client(task)
+        or looks_like_analytics(task)
+        or looks_like_algorithm(task)
+    )
+
+
+def everyday_skill_name(task: str) -> str:
+    """The kit skill for a script / HTTP / tally / algorithm task, or ""."""
+    if looks_like_http_client(task):
+        return "call-http"
+    if looks_like_analytics(task):
+        return "analyze-data"
+    if looks_like_algorithm(task):
+        return "write-algorithm"
+    if looks_like_script(task):
+        return "write-script"
+    return ""
+
+
 def looks_like_add_feature(task: str) -> bool:
     text = task.strip().lower()
     if looks_like_question(text):
@@ -182,7 +248,7 @@ def looks_like_add_feature(task: str) -> bool:
         or looks_like_refactor(text)
     ):
         return False
-    return bool(_ADD_START.search(text))
+    return bool(_ADD_START.search(text)) or looks_like_everyday_code(task)
 
 
 def rename_pair(task: str) -> tuple[str, str]:
@@ -269,6 +335,7 @@ def looks_unclear(task: str) -> bool:
     # action for it, so a short task is still workable.
     known = (
         looks_like_add_feature,
+        looks_like_everyday_code,
         looks_like_fix_smell,
         looks_like_new_package,
         looks_like_review_code,

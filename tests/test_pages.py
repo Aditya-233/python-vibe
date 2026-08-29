@@ -20,6 +20,7 @@ class PagesInvestigationsTest(unittest.TestCase):
             "api.md",
             "architecture.md",
             "skills.md",
+            "demo.md",
             "local-editor.md",
             "research-vibe-review.md",
             "investigations/index.md",

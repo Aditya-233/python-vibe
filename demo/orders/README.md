@@ -1,0 +1,12 @@
+# orders — the demo project
+
+A deliberately imperfect little app, used by `scripts/demo.py` to show what
+python-vibe does on ordinary daily tasks. Every problem here is planted:
+
+- `src/orders.py` has a latent `NameError` in `total_with_tax`, which no
+  test covers.
+- `src/util.py` has `calc`, a name that says nothing.
+- `src/report.py` and `src/render.py` import each other.
+- Nothing tests `apply_discount`.
+
+The demo copies this directory before each case, so a run never changes it.
