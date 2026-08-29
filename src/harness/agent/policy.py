@@ -131,11 +131,11 @@ def refuse_wrong_file(task: str, project: Path, action: str, path: str) -> str:
 
 def refuse_before(state: LoopState, turn) -> str:
     """The turn is about to run a tool. Return a refusal, or ""."""
-    if (
-        state.autofixed
-        and turn.action in {"edit", "patch"}
-        and "test" not in (turn.path or state.last_path or "").lower()
-    ):
+    if state.autofixed and turn.action not in {"run", "done"}:
+        if turn.action in {"edit", "patch"} and "test" in (
+            turn.path or state.last_path or ""
+        ).lower():
+            return ""
         return (
             "Harness already applied the mechanical fix. "
             "Action: run Argv: -m unittest discover -s tests -q"

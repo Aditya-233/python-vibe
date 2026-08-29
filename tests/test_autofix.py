@@ -3,7 +3,9 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from harness import Agent, AgentOptions
 from harness.act.autofix import (
     apply_function_rename,
     apply_mechanical,
@@ -12,7 +14,6 @@ from harness.act.autofix import (
     typo_pairs,
 )
 from harness.agent.prompt import build_preamble
-from harness.agent.options import AgentOptions
 
 ORDERS = '''TAX_RATE = 0.2
 
@@ -109,6 +110,38 @@ class MechanicalPreludeTest(unittest.TestCase):
         self.assertIn("subtotl", pre.autofix)
 
 
+class MechanicalFinishTest(unittest.TestCase):
+    """A unique typo plus a green suite does not need the model."""
+
+    def test_the_run_ends_before_the_engine_loads(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "tests").mkdir()
+            (root / "src" / "orders.py").write_text(ORDERS, encoding="utf-8")
+            (root / "tests" / "test_orders.py").write_text(
+                "import unittest\n\n\nclass OrdersTest(unittest.TestCase):\n"
+                "    def test_placeholder(self) -> None:\n"
+                "        self.assertEqual(1, 1)\n",
+                encoding="utf-8",
+            )
+            options = AgentOptions(
+                project=root,
+                task="find a real NameError in src/orders.py and fix it",
+            )
+            with mock.patch(
+                "harness.agent.loop.make_generate",
+                side_effect=AssertionError("model must not load after a mechanical pass"),
+            ):
+                result = Agent(options).run()
+            body = (root / "src" / "orders.py").read_text(encoding="utf-8")
+        self.assertTrue(result.ok)
+        self.assertEqual(result.stopped, "done")
+        self.assertEqual(result.writes, ("src/orders.py",))
+        self.assertIn("Tests passed", result.summary)
+        self.assertNotIn("subtotl", body)
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -174,3 +207,82 @@ class RenameScopeTest(unittest.TestCase):
 
     def test_nothing_happens_when_the_old_name_is_absent(self) -> None:
         self.assertEqual(apply_function_rename(self.SOURCE, "nope", "x"), self.SOURCE)
+
+
+class MechanicalFastPathTest(unittest.TestCase):
+    """A fix the harness can make itself should not need the model at all.
+
+    It must also stay inside the promises the rest of the harness makes: a
+    read-only run changes nothing, and a project without tests has not
+    failed anything.
+    """
+
+    TASK = "find a real NameError in src/orders.py and fix it"
+    BROKEN = (
+        "def total_with_tax(prices: list[int]) -> float:\n"
+        "    subtotal = sum(prices)\n"
+        "    return subtotl * 1.2\n"
+    )
+
+    def _project(self, tmp: str, *, with_tests: bool) -> Path:
+        root = Path(tmp)
+        (root / "src").mkdir()
+        (root / "src" / "orders.py").write_text(self.BROKEN, encoding="utf-8")
+        if with_tests:
+            (root / "tests").mkdir()
+            (root / "tests" / "test_smoke.py").write_text(
+                "import unittest\n\n\nclass TestSmoke(unittest.TestCase):\n"
+                "    def test_smoke_passes(self) -> None:\n"
+                "        self.assertTrue(True)\n",
+                encoding="utf-8",
+            )
+        return root
+
+    def _run(self, project: Path, **options):
+        from unittest import mock
+
+        from harness import Agent, AgentOptions
+
+        calls: list[int] = []
+
+        def generate(_prompt: str) -> str:
+            calls.append(1)
+            return "Action: done\nSummary: stub"
+
+        with mock.patch(
+            "harness.agent.loop.make_generate", lambda *a, **k: ("stub", generate)
+        ):
+            result = Agent(
+                AgentOptions(project=project, task=self.TASK, steps=2, **options)
+            ).run()
+        return result, len(calls)
+
+    def test_a_green_suite_finishes_without_the_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = self._project(tmp, with_tests=True)
+            result, calls = self._run(project)
+            fixed = (project / "src" / "orders.py").read_text(encoding="utf-8")
+        self.assertTrue(result.ok)
+        self.assertEqual(calls, 0)
+        self.assertIn("return subtotal", fixed)
+
+    def test_a_project_without_tests_is_not_treated_as_a_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result, calls = self._run(self._project(tmp, with_tests=False))
+        self.assertTrue(result.ok)
+        self.assertEqual(calls, 0)
+        self.assertIn("no tests", result.summary)
+
+    def test_the_summary_does_not_claim_the_fix_is_covered(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result, _calls = self._run(self._project(tmp, with_tests=False))
+        self.assertNotIn("Tests passed", result.summary)
+
+    def test_a_read_only_run_changes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = self._project(tmp, with_tests=True)
+            before = (project / "src" / "orders.py").read_text(encoding="utf-8")
+            result, _calls = self._run(project, allow_writes=False)
+            after = (project / "src" / "orders.py").read_text(encoding="utf-8")
+        self.assertEqual(before, after)
+        self.assertEqual(result.writes, ())

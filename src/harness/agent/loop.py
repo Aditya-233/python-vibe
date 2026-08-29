@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from harness.act.parse import parse_turn_smart
+from harness.act.tools import run_python
 from harness.agent.dispatch import ACTIONS, run_action
 from harness.agent.options import AgentOptions, AgentResult, Step
 from harness.agent.policy import LoopState, next_prompt, refuse_before, refuse_done
@@ -93,6 +94,33 @@ class Agent:
             options = _with_task(options, f"{options.task} ({answer})")
             pre = build_preamble(options)
             options.emit("preamble", f"user answered: {answer}")
+        writes: list[str] = []
+        leftover_tests = ""
+        if pre.autofix and pre.located_path:
+            writes.append(pre.located_path)
+            verdict, test_out = _verify_mechanical(self.project)
+            options.emit("result", test_out)
+            if verdict in {"passed", "no suite"}:
+                note = next(
+                    (
+                        line[2:]
+                        for line in pre.autofix.splitlines()
+                        if line.startswith("- ")
+                    ),
+                    "mechanical fix applied",
+                )
+                tail = (
+                    "Tests passed."
+                    if verdict == "passed"
+                    else "This project has no tests to check it against."
+                )
+                return AgentResult(
+                    ok=True,
+                    summary=f"{note}. {tail}",
+                    stopped="done",
+                    writes=tuple(writes),
+                )
+            leftover_tests = test_out
         label, generate = make_generate(
             options.engine,
             options.max_tokens,
@@ -119,10 +147,14 @@ class Agent:
             ),
         )
         prompt = pre.prompt
+        if leftover_tests:
+            prompt = (
+                f"{pre.prompt}\n\nHarness ran tests after the mechanical fix:\n"
+                f"{leftover_tests}\n"
+                "Action: patch the remaining failure, or Action: done if "
+                "the task is already met."
+            )
         steps: list[Step] = []
-        writes: list[str] = []
-        if pre.autofix and pre.located_path:
-            writes.append(pre.located_path)
 
         for number in range(1, options.steps + 1):
             draft = generate(prompt)
@@ -234,6 +266,21 @@ class Agent:
         if handler is None:
             return None
         return handler(question)
+
+
+def _verify_mechanical(project) -> tuple[str, str]:
+    """Run the project suite after a mechanical fix. No model.
+
+    Returns "passed", "failed", or "no suite". A project with no tests has
+    not failed anything, and saying so keeps the loop from asking the model
+    to repair a failure that does not exist.
+    """
+    result = run_python(project, ("-m", "unittest", "discover", "-s", "tests", "-q"))
+    if result.startswith("exit 0"):
+        return "passed", result
+    if "no tests/ directory" in result:
+        return "no suite", result
+    return "failed", result
 
 
 def opening_question(task: str, pre) -> Question | None:

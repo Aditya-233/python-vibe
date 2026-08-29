@@ -96,6 +96,18 @@ Publishing to the Hub needs `pip install -e ".[hub]"`.
 Paths are always written with forward slashes, on every platform, because
 the model is shown them and copies them back.
 
+### What `run` may do to your project
+
+`run` changes files inside the folder you give it, keeps a `.bak` copy of
+anything it edits, and **runs that project's test suite** to check its own
+work. If you would rather it did nothing, use `ask`, or pass
+`allow_writes=False` and `--dry-run`, which refuse every change and never
+run anything.
+
+Some fixes need no model at all. A misspelled name that Python cannot
+resolve, or a rename you asked for by name, are corrected directly; the
+suite is then run once, and if it passes the task ends there.
+
 ## Command line
 
 ```bash

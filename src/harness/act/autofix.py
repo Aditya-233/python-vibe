@@ -2,7 +2,8 @@
 
 Live 8B (29 Aug 2026): left `subtotal` unbound after a NameError task, and
 spent twelve `Find:` turns that never matched `def calc(x: int, ...)`.
-Those are compiler jobs. The harness does them before the first generate.
+Those are compiler jobs. The harness does them, then runs the suite,
+before the first generate. A green suite ends the run without a model.
 """
 
 from __future__ import annotations

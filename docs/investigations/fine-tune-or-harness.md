@@ -192,10 +192,12 @@ language, or a hundred-file review. Those are not this product.
 
 Order of work, cheapest first:
 
-1. **This week.** Live-retest `bugfix`, `write-tests`, and `rename` on
-   `demo/orders`. The harness now refuses `done` if the suite never named
-   the function, if `subtotl` is still unbound, or if `def calc` is still
-   there. A passing suite that never called the change is not a finish.
+1. **This week.** A unique NameError typo and a typed rename are
+   mechanical. The harness writes them, runs the suite, and ends
+   without a model when tests are already green. Live-retest
+   `write-tests` (still a model job) and any task that is *not* a
+   unique typo. A passing suite that never called the change is still
+   not a finish.
 2. **This month.** Use it on your own small Python trees. `--record` only
    turns the oracles already accept. Each finished job is money you did
    not spend.

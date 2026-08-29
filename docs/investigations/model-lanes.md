@@ -82,14 +82,18 @@ parsed `Action:` cannot sneak into a write.
 
 ## Live write jobs, same afternoon
 
-`scripts/demo.py` on `demo/orders`, `llama3.1:8b`, 12 steps, 29 Aug 2026
-~15:03.
+`scripts/demo.py` on `demo/orders`, `llama3.1:8b`.
 
-| Job | Verified | Seconds | What happened |
-| --- | --- | --- | --- |
-| write-tests for `apply_discount` | passed | 19 | Oracle held. Suite names the function. |
-| NameError in `src/orders.py` | failed | 37 | Left `subtotal` unbound. Hit the step budget. |
-| rename `calc` → `multiply` | failed | 26 | Twelve `patch` turns, **no writes**. `Find:` never hit. |
+| When | Job | Verified | Seconds | What happened |
+| --- | --- | --- | --- | --- |
+| 29 Aug ~15:03, 12 steps | write-tests for `apply_discount` | passed | 19 | Oracle held. Suite names the function. |
+| 29 Aug ~15:03 | NameError in `src/orders.py` | failed | 37 | Left `subtotal` unbound. Hit the step budget. |
+| 29 Aug ~15:03 | rename `calc` → `multiply` | failed | 26 | Twelve `patch` turns, **no writes**. `Find:` never hit. |
+| 29 Aug ~15:18, 8 steps | NameError | passed on disk | 13 | Autofix bound `subtotl`. 8B then asked a question. |
+| 29 Aug ~15:18 | rename | passed | 10 | Autofix renamed `def calc`. 8B ran tests and said done. |
+| 29 Aug ~15:20 | NameError | passed | 0.1 | Harness wrote the bind, ran tests, **no model**. |
+| 29 Aug ~15:20 | rename | passed | 0.1 | Harness renamed `def calc`, ran tests, **no model**. |
+| 29 Aug ~15:21 | write-tests for `apply_discount` | passed | 13 | Still a model job. Suite names the function. |
 
 A different weight would not have made `Find:` unique. Those two misses
 are now **harness jobs**. Before the first generate, the harness:
@@ -99,9 +103,8 @@ are now **harness jobs**. Before the first generate, the harness:
 - renames `def calc` to the name in the task and **keeps the typed
   signature** (the skill’s `def calc(x, y):` never matched
   `def calc(x: int, y: int)`)
-
-Then it refuses another patch of that file and asks for `run`. Same 8B.
-No 7B download.
+- runs the project suite itself. If that is green, the run ends
+  **without loading a model**. Same 8B. No 7B download.
 
 ## How to save money
 
@@ -112,8 +115,8 @@ No 7B download.
    measure `scripts/demo.py --model qwen2.5-coder:7b --case bugfix`
    against this afternoon’s 8B log. Keep it only if the independent
    file check passes and the 8B still fails.
-5. Fix `Find:` recovery and the leftover `subtotal` bind on the 8B
-   first. That is cheaper than a new download.
+5. A unique typo or rename is finished by the harness. Do not spend
+   tokens asking what to do next.
 
 The product that saves money is **one capable local model plus oracles**,
 not a menu of five weights for five moods.
